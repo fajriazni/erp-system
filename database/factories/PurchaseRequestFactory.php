@@ -13,7 +13,7 @@ class PurchaseRequestFactory extends Factory
     public function definition(): array
     {
         return [
-            'document_number' => 'PR-' . $this->faker->unique()->date('Ymd') . '-' . $this->faker->randomNumber(4),
+            'document_number' => 'PR-'.$this->faker->unique()->date('Ymd').'-'.$this->faker->randomNumber(4),
             'requester_id' => User::factory(),
             'date' => now(),
             'required_date' => now()->addDays(7),

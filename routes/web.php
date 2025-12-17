@@ -1,11 +1,11 @@
 <?php
 
+use App\Http\Controllers\Purchasing\GoodsReceiptController;
+use App\Http\Controllers\Purchasing\PurchaseOrderController;
+use App\Http\Controllers\Purchasing\VendorBillController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
-use App\Http\Controllers\Purchasing\PurchaseOrderController;
-use App\Http\Controllers\Purchasing\GoodsReceiptController;
-use App\Http\Controllers\Purchasing\VendorBillController;
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -50,14 +50,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('receipts', GoodsReceiptController::class);
         Route::post('receipts/{receipt}/post', [GoodsReceiptController::class, 'post'])->name('receipts.post');
+        // Landed Cost routes
+        Route::post('receipts/{receipt}/landed-costs', [GoodsReceiptController::class, 'storeLandedCost'])->name('receipts.landed-costs.store');
+        Route::delete('receipts/{receipt}/landed-costs/{landedCost}', [GoodsReceiptController::class, 'destroyLandedCost'])->name('receipts.landed-costs.destroy');
+        // QC routes
+        Route::post('receipts/{receipt}/qc/{item}/start', [GoodsReceiptController::class, 'startQc'])->name('receipts.qc.start');
+        Route::post('receipts/{receipt}/qc/{item}/inspect', [GoodsReceiptController::class, 'recordQcInspection'])->name('receipts.qc.inspect');
 
         Route::resource('bills', VendorBillController::class);
         Route::post('bills/{bill}/post', [VendorBillController::class, 'post'])->name('bills.post');
+
+        Route::resource('payments', \App\Http\Controllers\Purchasing\VendorPaymentController::class);
+        Route::get('payments/vendor/{vendor}/bills', [\App\Http\Controllers\Purchasing\VendorPaymentController::class, 'getUnpaidBills'])
+            ->name('payments.get-unpaid-bills');
+
+        // Purchase Returns
+        Route::post('returns/{return}/post', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'post'])->name('returns.post');
+        Route::resource('returns', \App\Http\Controllers\Purchasing\PurchaseReturnController::class);
+
+        // Price Lists
+        Route::get('pricelists/get-price', [\App\Http\Controllers\Purchasing\PricelistController::class, 'getPrice'])->name('pricelists.get-price');
+        Route::resource('pricelists', \App\Http\Controllers\Purchasing\PricelistController::class);
+
+        // RFQs
+        Route::resource('rfqs', \App\Http\Controllers\Purchasing\RfqController::class);
+        Route::post('rfqs/{rfq}/invite', [\App\Http\Controllers\Purchasing\RfqController::class, 'invite'])->name('rfqs.invite');
+        Route::post('rfqs/{rfq}/bid', [\App\Http\Controllers\Purchasing\RfqController::class, 'recordBid'])->name('rfqs.bid');
+        Route::post('quotations/{quotation}/award', [\App\Http\Controllers\Purchasing\RfqController::class, 'award'])->name('quotations.award');
+        // Reports
+        Route::get('reports', [\App\Http\Controllers\Purchasing\ReportController::class, 'index'])->name('reports.index');
     });
 
     Route::get('/accounting', function () {
         return Inertia::render('Accounting/Dashboard');
     })->name('accounting.dashboard');
+
+    // Finance Module (Budgets, etc.)
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::resource('budgets', \App\Http\Controllers\Finance\BudgetController::class);
+        Route::post('budgets/check', [\App\Http\Controllers\Finance\BudgetController::class, 'checkBudget'])->name('budgets.check');
+    });
+
+    // Admin Module (Settings, Approval Rules)
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::resource('approval-rules', \App\Http\Controllers\Admin\ApprovalRuleController::class);
+    });
 
     Route::get('/hrm', function () {
         return Inertia::render('HRM/Dashboard');
@@ -110,7 +147,6 @@ Route::middleware(['auth'])->prefix('workflows')->group(function () {
     Route::get('/instances/{instance}', [App\Http\Controllers\WorkflowInstanceController::class, 'show'])->name('workflows.instances.show');
     Route::post('/instances/{instance}/cancel', [App\Http\Controllers\WorkflowInstanceController::class, 'cancel'])->name('workflows.instances.cancel');
     Route::get('/my-approvals', [App\Http\Controllers\WorkflowManagementController::class, 'myApprovals'])->name('workflows.my-approvals');
-
 
     // Workflow CRUD
     Route::get('/create', [App\Http\Controllers\WorkflowController::class, 'create'])->name('workflows.create');

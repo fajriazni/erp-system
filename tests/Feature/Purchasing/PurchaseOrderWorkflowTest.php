@@ -18,17 +18,18 @@ class PurchaseOrderWorkflowTest extends TestCase
     use RefreshDatabase;
 
     public $user;
+
     protected $workflowEngine;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         \Illuminate\Support\Facades\Notification::fake();
 
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
-        
+
         $this->workflowEngine = app(WorkflowEngine::class);
     }
 
@@ -43,16 +44,16 @@ class PurchaseOrderWorkflowTest extends TestCase
             'module' => 'purchasing',
             'created_by' => $this->user->id,
         ]);
-        
+
         $step = $workflow->steps()->create([
             'name' => 'Manager Approval',
             'step_number' => 1,
             'config' => [
                 'approvers' => [
                     'type' => 'user',
-                    'user_ids' => [$this->user->id]
-                ]
-            ]
+                    'user_ids' => [$this->user->id],
+                ],
+            ],
         ]);
 
         // 2. Create PO
@@ -74,16 +75,16 @@ class PurchaseOrderWorkflowTest extends TestCase
             'quantity' => 10,
             'unit_price' => 10,
             'subtotal' => 100,
-            'uom_id' => $product->uom_id
+            'uom_id' => $product->uom_id,
         ]);
 
-        // 3. Submit PO (Starts Workflow) and manually trigger workflow logic if service not used, 
+        // 3. Submit PO (Starts Workflow) and manually trigger workflow logic if service not used,
         // but here we want to test interaction. Let's use SubmitService or manually start.
         // Let's mimic SubmitPurchaseOrderService logic
-        $po->status = 'rfq_sent'; 
+        $po->status = 'rfq_sent';
         $po->save();
         $instance = $this->workflowEngine->startWorkflow($workflow, $po, $this->user->id);
-        
+
         // Assert initial state
         $this->assertEquals('pending', $instance->status);
         $this->assertEquals('rfq_sent', $po->status);

@@ -97,10 +97,11 @@ class WorkflowEngine
         if ($this->checkAutoApproval($instance, $step)) {
             $this->logAction($instance, null, 'step_auto_approved', null, null, [
                 'step_id' => $step->id,
-                'reason' => 'Auto-approval rules met'
+                'reason' => 'Auto-approval rules met',
             ]);
             // Assuming transitionToNextStep is a new method or processNextStep is called
             $this->processNextStep($instance, $entity); // Call processNextStep to move to the next step
+
             return;
         }
 
@@ -161,15 +162,16 @@ class WorkflowEngine
         }
 
         if (empty($tasks)) {
-            // No approvers found for this step. 
-            // We should either skip this step or fail. 
+            // No approvers found for this step.
+            // We should either skip this step or fail.
             // For now, let's assume if no approvers, we skip to next step (auto-approve/pass-through).
             $this->logAction($instance, null, 'step_skipped', 'pending', 'skipped', [
                 'step_id' => $step->id,
                 'reason' => 'No approvers found',
             ]);
-            
+
             $this->processNextStep($instance, $entity);
+
             return;
         }
 
@@ -187,22 +189,22 @@ class WorkflowEngine
             // If assigned to user and that user is the initiator, and self-approval is allowed
             // Config: allow_self_approval = true/false (default false)
             $allowSelfApproval = $step->config['allow_self_approval'] ?? false;
-            
-            if ($task->assigned_to_user_id && 
-                $task->assigned_to_user_id === $instance->initiated_by && 
+
+            if ($task->assigned_to_user_id &&
+                $task->assigned_to_user_id === $instance->initiated_by &&
                 $allowSelfApproval
             ) {
                 // Auto approve
                 $approvalService = app(\App\Domain\Workflow\Services\ApprovalService::class);
                 $approvalService->approve($task, $task->assigned_to_user_id, 'Auto-approved (Self Approval)');
             } else {
-                 // Send notification
-                 if ($task->assigned_to_user_id) {
+                // Send notification
+                if ($task->assigned_to_user_id) {
                     $user = \App\Models\User::find($task->assigned_to_user_id);
                     if ($user) {
                         $user->notify(new \App\Notifications\WorkflowTaskAssignedNotification($task));
                     }
-                 }
+                }
             }
         }
     }
@@ -321,7 +323,7 @@ class WorkflowEngine
         }
 
         $entity = $instance->entity;
-        if (!$entity) {
+        if (! $entity) {
             return false;
         }
 
@@ -332,7 +334,7 @@ class WorkflowEngine
 
             $entityValue = data_get($entity, $field);
 
-            if (!$this->evaluateCondition($entityValue, $operator, $value)) {
+            if (! $this->evaluateCondition($entityValue, $operator, $value)) {
                 return false;
             }
         }
@@ -352,7 +354,7 @@ class WorkflowEngine
             '<' => $actual < $expected,
             '>=' => $actual >= $expected,
             '<=' => $actual <= $expected,
-            'in' => in_array($actual, (array)$expected),
+            'in' => in_array($actual, (array) $expected),
             default => false,
         };
     }

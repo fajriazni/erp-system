@@ -118,9 +118,9 @@ class PurchaseOrderController extends Controller
                     'approvalTasks' => function ($q) {
                         $q->with(['user', 'role', 'workflowStep']);
                     },
-                    'auditLogs.user'
+                    'auditLogs.user',
                 ]);
-            }
+            },
         ]);
 
         // Get pending approval task for current user

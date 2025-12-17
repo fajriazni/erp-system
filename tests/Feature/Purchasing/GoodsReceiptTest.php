@@ -12,23 +12,27 @@ use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
-use Spatie\Permission\Models\Role;
 
 class GoodsReceiptTest extends TestCase
 {
     use RefreshDatabase;
 
     public $user;
+
     protected $warehouse;
+
     protected $uom;
+
     protected $product;
+
     protected $vendor;
+
     protected $po;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
 
@@ -77,21 +81,21 @@ class GoodsReceiptTest extends TestCase
                     'product_id' => $this->product->id,
                     'uom_id' => $this->uom->id,
                     'quantity' => 5, // Partial receive
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertRedirect(route('purchasing.receipts.index'));
-        
+
         $this->assertDatabaseHas('goods_receipts', [
             'purchase_order_id' => $this->po->id,
             'status' => 'draft',
-            'receipt_number' => 'GR-001'
+            'receipt_number' => 'GR-001',
         ]);
 
         $this->assertDatabaseHas('goods_receipt_items', [
             'product_id' => $this->product->id,
-            'quantity_received' => 5
+            'quantity_received' => 5,
         ]);
     }
 
@@ -118,13 +122,13 @@ class GoodsReceiptTest extends TestCase
 
         // 3. Verify Status
         $this->assertEquals('posted', $gr->fresh()->status);
-        
+
         // 4. Verify Inventory
         $stock = DB::table('product_warehouse')
             ->where('product_id', $this->product->id)
             ->where('warehouse_id', $this->warehouse->id)
             ->first();
-            
+
         $this->assertNotNull($stock);
         $this->assertEquals(5, $stock->quantity);
 
@@ -144,12 +148,12 @@ class GoodsReceiptTest extends TestCase
             'uom_id' => $this->uom->id,
             'quantity_received' => 5,
         ]);
-        
+
         $this->post(route('purchasing.receipts.post', $gr2));
 
         // 7. Verify PO Status (Completed)
         $this->assertEquals('completed', $this->po->fresh()->status);
-        
+
         // 8. Verify Inventory increases
         $stock = DB::table('product_warehouse')
             ->where('product_id', $this->product->id)

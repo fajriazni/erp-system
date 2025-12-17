@@ -98,7 +98,7 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
 
     public function approve(): void
     {
-        if (!in_array($this->status, ['to_approve', 'rfq_sent'])) {
+        if (! in_array($this->status, ['to_approve', 'rfq_sent'])) {
             throw InvalidPurchaseOrderStateException::cannotApprove($this->status);
         }
 

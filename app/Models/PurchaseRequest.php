@@ -34,7 +34,7 @@ class PurchaseRequest extends Model implements HasWorkflow
     {
         return $this->belongsTo(User::class, 'requester_id');
     }
-    
+
     // public function department(): BelongsTo { ... } // If Department model exists
 
     public function items(): HasMany
@@ -62,7 +62,7 @@ class PurchaseRequest extends Model implements HasWorkflow
         $this->status = 'approved';
         $this->save();
     }
-    
+
     public function markAsPendingApproval(): void
     {
         $this->status = 'submitted'; // or 'approve_pending' if we want distinction

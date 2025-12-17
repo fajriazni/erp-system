@@ -61,9 +61,9 @@ class WorkflowManagementController extends Controller
         $tasks = ApprovalTask::query()
             ->where(function ($q) use ($user) {
                 $q->where('assigned_to_user_id', $user->id)
-                ->orWhereHas('role', function ($roleQuery) use ($user) {
-                    $roleQuery->whereIn('id', $user->roles->pluck('id'));
-                });
+                    ->orWhereHas('role', function ($roleQuery) use ($user) {
+                        $roleQuery->whereIn('id', $user->roles->pluck('id'));
+                    });
             })
             ->where('status', 'pending')
             ->with([
@@ -79,5 +79,4 @@ class WorkflowManagementController extends Controller
             'tasks' => $tasks,
         ]);
     }
-
 }

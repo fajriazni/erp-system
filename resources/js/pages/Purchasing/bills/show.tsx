@@ -12,8 +12,16 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
 import { index, post, show } from '@/routes/purchasing/bills';
+import MatchStatusBadge from './components/MatchStatusBadge';
+
+interface MatchException {
+    type: string;
+    product_id?: number;
+    product_name?: string;
+    message: string;
+}
 
 interface Props {
     bill: {
@@ -23,8 +31,10 @@ interface Props {
         date: string;
         due_date: string;
         status: string;
+        match_status?: string;
+        match_exceptions?: MatchException[];
         vendor: {
-            company_name: string;
+            name: string;
             email: string;
             phone: string;
             address: string;
@@ -38,7 +48,7 @@ interface Props {
             description: string;
             quantity: number;
             unit_price: number;
-            total_price: number;
+            total: number;
         }[];
         total_amount: number;
         notes: string;
@@ -65,15 +75,19 @@ export default function Show({ bill }: Props) {
         return <Badge variant={config.variant} className={status === 'paid' ? 'text-green-600 border-green-600' : ''}>{config.label}</Badge>;
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+    const formatCurrency = (amount: number | string) => {
+        const val = Number(amount);
+        if (isNaN(val)) return '-';
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val);
     };
 
     const formatDate = (date: string) => {
-         // Assuming date is YYYY-MM-DD, we can just return it or format if needed. 
-         // Since it seems to be YYYY-MM-DD from backend, basic display is fine, 
-         // or we can use the same formatter as PO if ISO string is provided.
-         return date; 
+        if (!date) return '-';
+        return new Date(date).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
     };
 
     return (
@@ -116,13 +130,18 @@ export default function Show({ bill }: Props) {
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <CardTitle>Bill Information</CardTitle>
-                                {getStatusBadge(bill.status)}
+                                <div className="flex gap-2">
+                                    {getStatusBadge(bill.status)}
+                                    {bill.status === 'posted' && bill.match_status && (
+                                        <MatchStatusBadge status={bill.match_status} exceptions={bill.match_exceptions} />
+                                    )}
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-2">
                              <div>
                                 <p className="text-sm font-medium text-muted-foreground">Vendor</p>
-                                <p className="mt-1 font-medium">{bill.vendor.company_name}</p>
+                                <p className="mt-1 font-medium">{bill.vendor.name}</p>
                                 <p className="text-sm text-muted-foreground">{bill.vendor.email}</p>
                             </div>
                             <div>
@@ -135,7 +154,7 @@ export default function Show({ bill }: Props) {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Due Date</p>
-                                <p className="mt-1">{bill.due_date || '-'}</p>
+                                <p className="mt-1">{formatDate(bill.due_date)}</p>
                             </div>
                             {bill.notes && (
                                 <div className="sm:col-span-2">
@@ -173,7 +192,7 @@ export default function Show({ bill }: Props) {
                                                 {formatCurrency(item.unit_price)}
                                             </TableCell>
                                             <TableCell className="text-right font-medium">
-                                                {formatCurrency(item.total_price)}
+                                                {formatCurrency(item.total)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -189,9 +208,30 @@ export default function Show({ bill }: Props) {
                     </Card>
                 </div>
 
-                 {/* Right column - Sidebar (Placeholder for now, could act as timeline or extra actions) */}
+                 {/* Right column - Sidebar */}
                 <div className="lg:col-span-1 space-y-6">
-                     {/* Potentially add audit log or related docs here later to match PO layout */}
+                    {/* Match Exceptions Card */}
+                    {bill.match_status === 'exception' && bill.match_exceptions && bill.match_exceptions.length > 0 && (
+                        <Card className="border-red-200 bg-red-50">
+                            <CardHeader>
+                                <CardTitle className="text-red-700 flex items-center gap-2">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    Match Exceptions
+                                </CardTitle>
+                                <CardDescription className="text-red-600">
+                                    Review the following discrepancies
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {bill.match_exceptions.map((exc, idx) => (
+                                    <div key={idx} className="p-3 bg-white rounded border border-red-200">
+                                        <p className="text-sm font-medium text-red-800">{exc.product_name || exc.type}</p>
+                                        <p className="text-sm text-red-600">{exc.message}</p>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </AppLayout>

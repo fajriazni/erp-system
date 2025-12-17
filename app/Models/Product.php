@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
@@ -26,6 +27,11 @@ class Product extends Model
         'cost' => 'decimal:2',
         'stock_control' => 'boolean',
     ];
+
+    public function vendorPricelists(): HasMany
+    {
+        return $this->hasMany(VendorPricelist::class);
+    }
 
     public function uom(): BelongsTo
     {

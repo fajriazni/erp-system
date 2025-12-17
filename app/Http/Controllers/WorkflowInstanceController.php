@@ -17,7 +17,7 @@ class WorkflowInstanceController extends Controller
             'approvalTasks' => function ($q) {
                 $q->where('status', 'pending')
                     ->with(['user', 'role']);
-            }
+            },
         ]);
 
         // Filter by status
@@ -44,7 +44,7 @@ class WorkflowInstanceController extends Controller
                 $q->whereHas('workflow', function ($wq) use ($request) {
                     $wq->where('name', 'like', "%{$request->search}%");
                 })
-                ->orWhere('entity_id', 'like', "%{$request->search}%");
+                    ->orWhere('entity_id', 'like', "%{$request->search}%");
             });
         }
 
@@ -75,7 +75,7 @@ class WorkflowInstanceController extends Controller
             'auditLogs' => function ($q) {
                 $q->with('user')
                     ->orderBy('created_at', 'desc');
-            }
+            },
         ]);
 
         return Inertia::render('Workflow/InstanceDetail', [
@@ -95,7 +95,7 @@ class WorkflowInstanceController extends Controller
         }
 
         // Check permission (admin or workflow owner)
-        if (!auth()->user()->hasRole('Super Admin')) {
+        if (! auth()->user()->hasRole('Super Admin')) {
             return back()->with('error', 'You do not have permission to cancel this workflow');
         }
 
@@ -121,6 +121,7 @@ class WorkflowInstanceController extends Controller
 
         return back()->with('success', 'Workflow instance cancelled successfully');
     }
+
     public function bulkAction(Request $request)
     {
         $request->validate([

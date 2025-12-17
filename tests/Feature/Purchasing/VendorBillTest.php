@@ -17,9 +17,13 @@ class VendorBillTest extends TestCase
     use RefreshDatabase;
 
     public $user;
+
     public $vendor;
+
     public $warehouse;
+
     public $product;
+
     public $uom;
 
     protected function setUp(): void
@@ -71,6 +75,11 @@ class VendorBillTest extends TestCase
         );
 
         // 3. Store Bill
+        // Receive items first to satisfy 3-way matching
+        foreach ($po->items as $item) {
+            $item->update(['quantity_received' => $item->quantity]);
+        }
+
         $response = $this->post(route('purchasing.bills.store'), [
             'purchase_order_id' => $po->id,
             'vendor_id' => $this->vendor->id,
@@ -82,8 +91,8 @@ class VendorBillTest extends TestCase
                     'description' => 'Test Item',
                     'quantity' => 1,
                     'unit_price' => 100,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertRedirect();
@@ -108,8 +117,29 @@ class VendorBillTest extends TestCase
 
         // 2. Post Bill
         $response = $this->post(route('purchasing.bills.post', $bill->id));
-        
+
         $response->assertSessionHasNoErrors();
         $this->assertEquals('posted', $bill->fresh()->status);
+    }
+
+    public function test_create_page_loads_with_po_data()
+    {
+        $po = PurchaseOrder::create([
+            'vendor_id' => $this->vendor->id,
+            'warehouse_id' => $this->warehouse->id,
+            'document_number' => 'PO-BILL-002',
+            'date' => now(),
+            'status' => 'purchase_order',
+            'total' => 100,
+        ]);
+
+        $response = $this->get(route('purchasing.bills.create', ['purchase_order_id' => $po->id]));
+
+        $response->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+            ->component('Purchasing/bills/create')
+            ->has('purchaseOrder')
+            ->where('purchaseOrder.id', $po->id)
+            ->where('purchaseOrder.vendor_id', $po->vendor_id)
+        );
     }
 }

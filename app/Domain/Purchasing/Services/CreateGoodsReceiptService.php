@@ -2,14 +2,20 @@
 
 namespace App\Domain\Purchasing\Services;
 
+use App\Domain\Finance\Services\CreateJournalEntryService;
+use App\Domain\Inventory\Services\CalculateMovingAverageService;
 use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class CreateGoodsReceiptService
 {
+    public function __construct(
+        protected CreateJournalEntryService $createJournalEntryService,
+        protected CalculateMovingAverageService $calculateMovingAverageService
+    ) {}
+
     public function execute(array $data): GoodsReceipt
     {
         return DB::transaction(function () use ($data) {
@@ -30,13 +36,13 @@ class CreateGoodsReceiptService
             foreach ($data['items'] as $itemData) {
                 // Validate Product belongs to PO (Strict check)
                 $poItem = $purchaseOrder->items->where('product_id', $itemData['product_id'])->first();
-                
-                if (!$poItem) {
+
+                if (! $poItem) {
                     throw new InvalidArgumentException("Product ID {$itemData['product_id']} is not in this Purchase Order.");
                 }
 
                 // Check for over-receiving (optional depending on business rule, for now strict warning or just allow but tracked)
-                // We will allow over-receiving but logic elsewhere might flag it. 
+                // We will allow over-receiving but logic elsewhere might flag it.
                 // Tracking is updated when POSTED, not created (Draft).
                 // So here we simply create the GR lines.
 
@@ -55,30 +61,75 @@ class CreateGoodsReceiptService
     public function post(GoodsReceipt $receipt): void
     {
         if ($receipt->status !== 'draft') {
-            throw new InvalidArgumentException("Only draft receipts can be posted.");
+            throw new InvalidArgumentException('Only draft receipts can be posted.');
         }
 
         DB::transaction(function () use ($receipt) {
             // 1. Update Status
             $receipt->update(['status' => 'posted']);
-            
+
             $purchaseOrder = $receipt->purchaseOrder;
             // Ensure relationships are loaded
             $purchaseOrder->load('items');
 
-            // 2. Loop through GR items to update Inventory and PO Item Tracking
-            foreach ($receipt->items as $grItem) {
-                // Update Inventory
-                $this->updateInventory($receipt->warehouse_id, $grItem->product_id, $grItem->quantity_received);
+            // 2. Loop through GR items to update Inventory, PO Item Tracking, and Calculate Total Value
+            $totalReceiptValue = 0;
 
-                // Update PO Item `quantity_received`
+            foreach ($receipt->items as $grItem) {
                 $poItem = $purchaseOrder->items()->where('product_id', $grItem->product_id)->first();
+
                 if ($poItem) {
+                    // Update Product Cost (Moving Average)
+                    // We calculate cost BEFORE adding the new stock to get the correct weighted average
+                    // But the service handles "Current Total Stock" query.
+                    // Since we haven't updated stock yet, "Current Total Stock" is correct (Old Stock).
+                    $product = \App\Models\Product::find($grItem->product_id); // Reload product to get latest cost
+                    $newCost = $this->calculateMovingAverageService->execute(
+                        $product,
+                        $grItem->quantity_received,
+                        $poItem->unit_price
+                    );
+
+                    $product->update(['cost' => $newCost]);
+
+                    // Update Inventory
+                    $this->updateInventory($receipt->warehouse_id, $grItem->product_id, $grItem->quantity_received);
+
+                    // Update PO Item `quantity_received`
                     $poItem->increment('quantity_received', $grItem->quantity_received);
+
+                    // Add to total value
+                    $totalReceiptValue += $grItem->quantity_received * $poItem->unit_price;
                 }
             }
 
-            // 3. Check for PO Completion (Per Item strict check)
+            // 3. Post Journal Entry (Inventory vs Unbilled Payables)
+            $inventoryAccount = \App\Models\ChartOfAccount::where('code', '1400')->first();
+            $clearingAccount = \App\Models\ChartOfAccount::where('code', '2110')->first();
+
+            if ($inventoryAccount && $clearingAccount && $totalReceiptValue > 0) {
+                $lines = [
+                    [
+                        'chart_of_account_id' => $inventoryAccount->id,
+                        'debit' => $totalReceiptValue,
+                        'credit' => 0,
+                    ],
+                    [
+                        'chart_of_account_id' => $clearingAccount->id,
+                        'debit' => 0,
+                        'credit' => $totalReceiptValue,
+                    ],
+                ];
+
+                $this->createJournalEntryService->execute(
+                    $receipt->date->format('Y-m-d'),
+                    $receipt->receipt_number,
+                    "Goods Receipt #{$receipt->receipt_number} - PO #{$purchaseOrder->document_number}",
+                    $lines
+                );
+            }
+
+            // 4. Check for PO Completion (Per Item strict check)
             $this->updatePurchaseOrderStatus($purchaseOrder);
         });
     }
@@ -118,7 +169,7 @@ class CreateGoodsReceiptService
             if ($item->quantity_received > 0) {
                 $anyReceived = true;
             }
-            
+
             // Allow small float tolerance if needed, but strict here
             if ($item->quantity_received < $item->quantity) {
                 $allReceived = false;

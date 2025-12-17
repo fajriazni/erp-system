@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Purchasing;
 
-use App\Domain\Purchasing\Services\ApprovePurchaseOrderService;
 use App\Domain\Purchasing\Services\SubmitPurchaseOrderService;
-use App\Domain\Workflow\Services\WorkflowEngine;
 use App\Models\PurchaseOrder;
 use App\Models\User;
 use App\Models\Workflow;
@@ -17,9 +15,13 @@ class StatusTransitionTest extends TestCase
     use RefreshDatabase;
 
     public $user;
+
     public $vendor;
+
     public $warehouse;
+
     public $product;
+
     public $uom;
 
     protected function setUp(): void
@@ -96,9 +98,8 @@ class StatusTransitionTest extends TestCase
             'subtotal' => 100,
             'product_id' => $this->product->id,
             'uom_id' => $this->uom->id, // Use correct UoM ID
-            'description' => 'Test Item'
+            'description' => 'Test Item',
         ]);
-
 
         // 3. Run Submit Service
         $service = app(SubmitPurchaseOrderService::class);

@@ -1,0 +1,27 @@
+
+   FAIL  Tests\Feature\Purchasing\PurchasingReportsTest
+  ✓ spend analysis calculation                                           0.19s  
+  ⨯ payable aging calculation                                            0.02s  
+  ✓ reports page load                                                    0.06s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\Purchasing\PurchasingReportsTest >…   QueryException   
+  SQLSTATE[HY000]: General error: 1 table vendor_bills has no column named total (Connection: sqlite, SQL: insert into "vendor_bills" ("bill_number", "reference_number", "vendor_id", "date", "due_date", "status", "total_amount", "notes", "purchase_order_id", "total", "amount_paid", "updated_at", "created_at") values (BILL-1977-1901, INV-8901, 1, 2024-05-20 00:00:00, 2024-06-20 00:00:00, posted, 2979.64, Sunt ipsum qui expedita., ?, 1000, 0, 2024-06-01 00:00:00, 2024-06-01 00:00:00))
+
+  at vendor/laravel/framework/src/Illuminate/Database/Connection.php:564
+    560▕             if ($this->pretending()) {
+    561▕                 return true;
+    562▕             }
+    563▕ 
+  ➜ 564▕             $statement = $this->getPdo()->prepare($query);
+    565▕ 
+    566▕             $this->bindValues($statement, $this->prepareBindings($bindings));
+    567▕ 
+    568▕             $this->recordsHaveBeenModified();
+
+      [2m+16 vendor frames [22m
+  17  tests/Feature/Purchasing/PurchasingReportsTest.php:75
+
+
+  Tests:    1 failed, 2 passed (17 assertions)
+  Duration: 0.35s
+

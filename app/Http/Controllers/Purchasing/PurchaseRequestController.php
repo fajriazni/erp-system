@@ -65,12 +65,40 @@ class PurchaseRequestController extends Controller
 
     public function show(PurchaseRequest $request)
     {
-        $request->load(['items.product.uom', 'requester', 'workflowInstances.auditLogs.user']);
-        $vendors = \App\Models\Contact::all(); // Should filter by type if applicable, e.g. where('type', 'vendor')
+        $request->load(['items.product.uom', 'requester']);
+
+        $request->load([
+            'workflowInstances' => function ($query) {
+                $query->latest()->with([
+                    'workflow',
+                    'currentStep',
+                    'approvalTasks' => function ($q) {
+                        $q->with(['user', 'role', 'workflowStep']);
+                    },
+                    'auditLogs.user',
+                ]);
+            },
+        ]);
+
+        $vendors = \App\Models\Contact::all();
+
+        // Get pending approval task for current user
+        $pendingTask = \App\Models\ApprovalTask::where('workflow_instance_id', $request->workflowInstances->first()?->id)
+            ->where('status', 'pending')
+            ->where(function ($query) {
+                $query->where('assigned_to_user_id', auth()->id())
+                    ->orWhereHas('role', function ($q) {
+                        $q->whereIn('id', auth()->user()->roles->pluck('id'));
+                    });
+            })
+            ->with(['workflowStep', 'user', 'role'])
+            ->first();
 
         return Inertia::render('Purchasing/requests/show', [
             'request' => $request,
             'vendors' => $vendors,
+            'workflowInstance' => $request->workflowInstances->first(),
+            'pendingApprovalTask' => $pendingTask,
         ]);
     }
 
@@ -79,9 +107,9 @@ class PurchaseRequestController extends Controller
         if ($request->status !== 'draft') {
             return back()->withErrors(['error' => 'Only draft requests can be deleted.']);
         }
-        
+
         $request->delete();
-        
+
         return redirect()->route('purchasing.requests.index')
             ->with('success', 'Purchase Request deleted.');
     }
@@ -90,6 +118,7 @@ class PurchaseRequestController extends Controller
     {
         try {
             $service->execute($request);
+
             return back()->with('success', 'Purchase Request submitted for approval.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -102,14 +131,15 @@ class PurchaseRequestController extends Controller
         // For now, let's assume valid vendor_id is passed in request, or if not, redirect to a selection page?
         // Let's make it simple: Redirect to PO Create page pre-filled?
         // OR: Modal on Show page to select vendor then POST here.
-        
+
         $vendorId = request('vendor_id');
-        if (!$vendorId) {
+        if (! $vendorId) {
             return back()->withErrors(['error' => 'Vendor is required for conversion.']);
         }
 
         try {
             $po = $service->execute($request, $vendorId);
+
             return redirect()->route('purchasing.orders.show', $po->id)
                 ->with('success', 'Purchase Order created from Request.');
         } catch (\Exception $e) {

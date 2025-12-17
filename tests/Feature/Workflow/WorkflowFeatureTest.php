@@ -1,19 +1,18 @@
 <?php
 
+use App\Domain\Workflow\Services\WorkflowEngine;
+use App\Models\PurchaseOrder;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
-use App\Models\PurchaseOrder;
-use App\Models\ApprovalTask;
-use App\Domain\Workflow\Services\WorkflowEngine;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
     Model::unguard();
     Notification::fake();
-    
+
     // Clear permission cache
     app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -41,8 +40,8 @@ it('can delegate an approval task', function () {
         'config' => [
             'approvers' => [
                 'type' => 'user',
-                'user_ids' => [$this->user->id]
-            ]
+                'user_ids' => [$this->user->id],
+            ],
         ],
     ]);
 
@@ -87,8 +86,8 @@ it('auto approves based on rules', function () {
         'config' => [
             'approvers' => ['type' => 'role', 'role_ids' => [$this->role->id]],
             'auto_approval_rules' => [
-                ['field' => 'total_amount', 'operator' => '<', 'value' => 1000]
-            ]
+                ['field' => 'total_amount', 'operator' => '<', 'value' => 1000],
+            ],
         ],
     ]);
 
@@ -121,8 +120,8 @@ it('does not auto approve if rules not met', function () {
         'config' => [
             'approvers' => ['type' => 'user', 'user_ids' => [$this->user->id]],
             'auto_approval_rules' => [
-                ['field' => 'total_amount', 'operator' => '<', 'value' => 1000]
-            ]
+                ['field' => 'total_amount', 'operator' => '<', 'value' => 1000],
+            ],
         ],
     ]);
 
@@ -155,7 +154,7 @@ it('can bulk cancel workflows', function () {
 
     $po1 = PurchaseOrder::factory()->create();
     $po2 = PurchaseOrder::factory()->create();
-    
+
     $engine = app(WorkflowEngine::class);
     $instance1 = $engine->startWorkflow($workflow, $po1, $this->user->id);
     $instance2 = $engine->startWorkflow($workflow, $po2, $this->user->id);

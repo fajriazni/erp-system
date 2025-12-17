@@ -18,6 +18,15 @@ interface Props {
 }
 
 export default function Index({ bills }: Props) {
+    const formatDate = (date: string) => {
+        if (!date) return '-';
+        return new Date(date).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    };
+
     const columns = [
         {
             label: "Bill #",
@@ -36,19 +45,20 @@ export default function Index({ bills }: Props) {
         },
         {
             label: "Vendor",
-            key: "vendor.company_name",
-            render: (bill: any) => bill.vendor?.company_name || 'N/A'
+            key: "vendor.name",
+            render: (bill: any) => bill.vendor?.name || 'N/A'
         },
         {
             label: "Date",
             key: "date",
             sortable: true,
+            render: (bill: any) => formatDate(bill.date)
         },
         {
             label: "Due Date",
             key: "due_date",
             sortable: true,
-            render: (bill: any) => bill.due_date || '-'
+            render: (bill: any) => formatDate(bill.due_date)
         },
         {
             label: "Status",

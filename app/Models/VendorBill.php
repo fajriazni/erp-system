@@ -17,6 +17,8 @@ class VendorBill extends Model
         'date',
         'due_date',
         'status',
+        'match_status',
+        'match_exceptions',
         'total_amount',
         'notes',
     ];
@@ -25,6 +27,7 @@ class VendorBill extends Model
         'date' => 'date',
         'due_date' => 'date',
         'total_amount' => 'decimal:2',
+        'match_exceptions' => 'array',
     ];
 
     public function purchaseOrder()
@@ -40,5 +43,20 @@ class VendorBill extends Model
     public function items()
     {
         return $this->hasMany(VendorBillItem::class);
+    }
+
+    public function paymentLines()
+    {
+        return $this->hasMany(VendorPaymentLine::class);
+    }
+
+    public function getAmountPaidAttribute()
+    {
+        return $this->paymentLines()->sum('amount');
+    }
+
+    public function getBalanceDueAttribute()
+    {
+        return $this->total_amount - $this->amount_paid;
     }
 }

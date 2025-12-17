@@ -7,7 +7,6 @@ use App\Domain\Purchasing\Services\CreateVendorBillService;
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -19,21 +18,25 @@ class PurchasingHardeningTest extends TestCase
     use RefreshDatabase;
 
     public $user;
+
     protected $warehouse;
+
     protected $vendor;
+
     protected $product;
+
     protected $product2;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->user = User::factory()->create();
         $this->actingAs($this->user);
 
         $this->warehouse = Warehouse::factory()->create();
         $this->vendor = Contact::factory()->create(['type' => 'vendor']);
-        
+
         $uom = Uom::factory()->create();
         $this->product = Product::factory()->create(['uom_id' => $uom->id]);
         $this->product2 = Product::factory()->create(['uom_id' => $uom->id]);
@@ -56,15 +59,15 @@ class PurchasingHardeningTest extends TestCase
             'quantity' => 10,
             'unit_price' => 10,
             'subtotal' => 100,
-            'uom_id' => $this->product->uom_id
+            'uom_id' => $this->product->uom_id,
         ]);
-        
+
         $item2 = $po->items()->create([
             'product_id' => $this->product2->id,
             'quantity' => 10,
             'unit_price' => 10,
             'subtotal' => 100,
-            'uom_id' => $this->product2->uom_id
+            'uom_id' => $this->product2->uom_id,
         ]);
 
         // 2. Receive Partial (Item 1 only, half quantity)
@@ -79,8 +82,8 @@ class PurchasingHardeningTest extends TestCase
                     'product_id' => $this->product->id,
                     'uom_id' => $this->product->uom_id,
                     'quantity' => 5, // Received 5 of 10
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $service->post($gr);
@@ -110,8 +113,8 @@ class PurchasingHardeningTest extends TestCase
                     'product_id' => $this->product2->id,
                     'uom_id' => $this->product2->uom_id,
                     'quantity' => 10, // Full 10
-                ]
-            ]
+                ],
+            ],
         ]);
         $service->post($gr2);
 
@@ -139,7 +142,7 @@ class PurchasingHardeningTest extends TestCase
             'unit_price' => 10,
             'subtotal' => 100,
             'uom_id' => $this->product->uom_id,
-            'quantity_received' => 5 // Only received 5
+            'quantity_received' => 5, // Only received 5
         ]);
 
         // 2. Try to Bill 6 (Fail)
@@ -154,9 +157,9 @@ class PurchasingHardeningTest extends TestCase
                     'product_id' => $this->product->id,
                     'description' => 'Test',
                     'quantity' => 6, // Exceeds received (5)
-                    'unit_price' => 10
-                ]
-            ]
+                    'unit_price' => 10,
+                ],
+            ],
         ]);
     }
 
@@ -178,7 +181,7 @@ class PurchasingHardeningTest extends TestCase
             'subtotal' => 100,
             'uom_id' => $this->product->uom_id,
             'quantity_received' => 5, // Received 5
-            'quantity_billed' => 0
+            'quantity_billed' => 0,
         ]);
 
         // 2. Bill 5 (Success)
@@ -193,9 +196,9 @@ class PurchasingHardeningTest extends TestCase
                     'product_id' => $this->product->id,
                     'description' => 'Test',
                     'quantity' => 5, // Matches available
-                    'unit_price' => 10
-                ]
-            ]
+                    'unit_price' => 10,
+                ],
+            ],
         ]);
 
         $item->refresh();

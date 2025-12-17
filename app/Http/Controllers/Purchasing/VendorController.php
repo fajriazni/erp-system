@@ -59,6 +59,13 @@ class VendorController extends Controller
         return redirect()->route('purchasing.vendors.index')->with('success', 'Vendor created successfully.');
     }
 
+    public function show(Contact $vendor)
+    {
+        return Inertia::render('Purchasing/vendors/show', [
+            'vendor' => $vendor,
+        ]);
+    }
+
     public function edit(Contact $vendor)
     {
         return Inertia::render('Purchasing/vendors/form', [

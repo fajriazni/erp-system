@@ -6,21 +6,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { index, post } from '@/routes/purchasing/receipts';
+import { create as createBill } from '@/routes/purchasing/bills';
 import { show as showPo } from '@/routes/purchasing/orders';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useState } from 'react';
+import LandedCostPanel from './components/LandedCostPanel';
+import QcInspectionPanel from './components/QcInspectionPanel';
 
 interface Props {
     receipt: any;
+    qc_summary: any;
 }
 
-export default function GoodsReceiptShow({ receipt }: Props) {
-    const handlePost = () => {
-        if (!confirm('Are you sure you want to post this receipt? This will update inventory levels and cannot be undone.')) {
-            return;
-        }
+export default function GoodsReceiptShow({ receipt, qc_summary }: Props) {
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [processing, setProcessing] = useState(false);
 
+    const handleConfirmPost = () => {
+        setProcessing(true);
         router.post(post.url(receipt.id), {}, {
-            onSuccess: () => toast.success('Receipt posted successfully.'),
-            onError: () => toast.error('Failed to post receipt.'),
+            onSuccess: () => {
+                toast.success('Receipt posted successfully.');
+                setConfirmOpen(false);
+                setProcessing(false);
+            },
+            onError: () => {
+                toast.error('Failed to post receipt.');
+                setProcessing(false);
+            },
         });
     };
 
@@ -29,6 +42,8 @@ export default function GoodsReceiptShow({ receipt }: Props) {
         posted: "bg-green-100 text-green-800",
         cancelled: "bg-red-100 text-red-800",
     };
+
+    const isPosted = receipt.status === 'posted';
 
     return (
         <AppLayout breadcrumbs={[
@@ -47,8 +62,15 @@ export default function GoodsReceiptShow({ receipt }: Props) {
                     </Button>
                     <div className="flex gap-2">
                          {receipt.status === 'draft' && (
-                            <Button onClick={handlePost}>
+                            <Button onClick={() => setConfirmOpen(true)}>
                                 <CheckCircle className="mr-2 h-4 w-4" /> Post Receipt
+                            </Button>
+                        )}
+                         {receipt.status === 'posted' && (!receipt.purchase_order.vendor_bills || receipt.purchase_order.vendor_bills.length === 0) && (
+                            <Button asChild>
+                                <Link href={createBill.url({ query: { purchase_order_id: receipt.purchase_order_id } })}>
+                                    <CheckCircle className="mr-2 h-4 w-4" /> Create Bill
+                                </Link>
                             </Button>
                         )}
                     </div>
@@ -107,6 +129,14 @@ export default function GoodsReceiptShow({ receipt }: Props) {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* QC Inspection Panel */}
+                        <QcInspectionPanel 
+                            receiptId={receipt.id}
+                            items={receipt.items}
+                            isPosted={isPosted}
+                        />
+
                          {receipt.notes && (
                             <Card>
                                 <CardHeader>
@@ -161,8 +191,34 @@ export default function GoodsReceiptShow({ receipt }: Props) {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Landed Cost Panel */}
+                        <LandedCostPanel 
+                            receiptId={receipt.id} 
+                            landedCosts={receipt.landed_costs || []}
+                            isPosted={isPosted}
+                        />
                     </div>
                 </div>
+
+                 <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Post Goods Receipt</DialogTitle>
+                            <DialogDescription>
+                                Are you sure you want to post this receipt? This will update inventory levels and cannot be undone.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={processing}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleConfirmPost} disabled={processing}>
+                                {processing ? 'Posting...' : 'Confirm Post'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </AppLayout>
     );

@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\ApprovalTask;
-use App\Models\User;
 
 class ApprovalTaskDelegation extends Model
 {

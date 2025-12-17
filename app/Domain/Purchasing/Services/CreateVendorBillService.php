@@ -13,7 +13,7 @@ class CreateVendorBillService
         return DB::transaction(function () use ($data) {
             // Generate Bill Number
             $count = VendorBill::count() + 1;
-            $billNumber = 'BILL-' . date('Y') . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
+            $billNumber = 'BILL-'.date('Y').'-'.str_pad($count, 3, '0', STR_PAD_LEFT);
 
             $bill = VendorBill::create([
                 'purchase_order_id' => $data['purchase_order_id'] ?? null,
@@ -38,7 +38,7 @@ class CreateVendorBillService
 
                     if ($poItem) {
                         $availableToBill = $poItem->quantity_received - $poItem->quantity_billed;
-                        
+
                         // Strict check: Cannot bill more than received (and not yet billed)
                         if ($item['quantity'] > $availableToBill) {
                             throw new \InvalidArgumentException(

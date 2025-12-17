@@ -101,6 +101,7 @@ class ApprovalTaskController extends Controller
             'message' => 'Task delegated successfully',
         ]);
     }
+
     /**
      * Get users for delegation
      */

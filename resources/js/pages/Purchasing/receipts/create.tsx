@@ -53,11 +53,11 @@ export default function GoodsReceiptCreate({ purchase_orders, initial_po }: Prop
                 warehouse_id: initial_po.warehouse_id,
                 items: initial_po.items.map((item: any) => ({
                     product_id: item.product_id,
-                    uom_id: item.uom_id,
+                    uom_id: item.uom_id || 1, // Default to Unit (ID 1) if missing
                     quantity: Number(item.quantity), // Default to full receive
                     max_quantity: Number(item.quantity),
-                    product_name: item.product.name,
-                    uom_name: item.uom.name,
+                    product_name: item.product?.name || 'Unknown Item',
+                    uom_name: item.uom?.name || 'Unit',
                     notes: '',
                 }))
             }));
@@ -90,7 +90,10 @@ export default function GoodsReceiptCreate({ purchase_orders, initial_po }: Prop
 
         post(store.url(), {
             onSuccess: () => toast.success('Goods Receipt created successfully.'),
-            onError: () => toast.error('Please check the form for errors.'),
+            onError: (err) => {
+                console.error('Form Errors:', err);
+                toast.error('Please check the form for errors.');
+            },
         });
     };
 

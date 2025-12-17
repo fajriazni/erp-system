@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { edit, destroy, submit, approve, cancel } from '@/routes/purchasing/orders';
 import { create } from '@/routes/purchasing/bills';
+import { create as createReceipt } from '@/routes/purchasing/receipts';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -234,6 +235,15 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
 
                         )}
 
+
+                        {/* Create Goods Receipt Button */}
+                        {['purchase_order', 'partial_received'].includes(order.status) && (
+                             <Button variant="default" size="sm" asChild>
+                                <Link href={createReceipt.url({ query: { po_id: order.id } })}>
+                                    Receive Goods
+                                </Link>
+                            </Button>
+                        )}
 
                         {/* Create Bill Button */}
                         {['purchase_order', 'partial_received', 'completed'].includes(order.status) && (

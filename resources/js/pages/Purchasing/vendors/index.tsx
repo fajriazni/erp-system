@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
 import { useState } from 'react';
-import { index, create, edit, destroy } from '@/routes/purchasing/vendors';
+import { index, create, edit, destroy, show } from '@/routes/purchasing/vendors';
 
 export default function VendorIndex({ vendors }: { vendors: any }) {
     const { flash } = usePage().props as any;
@@ -40,6 +40,11 @@ export default function VendorIndex({ vendors }: { vendors: any }) {
             key: 'name',
             sortable: true,
             className: 'font-medium',
+            render: (vendor: any) => (
+                <Link href={show.url(vendor.id)} className="hover:underline text-primary">
+                    {vendor.name}
+                </Link>
+            ),
         },
         {
             label: 'Type',

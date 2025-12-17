@@ -11,6 +11,9 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import axios from 'axios';
+import WorkflowTimeline from '@/components/WorkflowTimeline';
 
 // Manual routes placeholders
 const indexUrl = '/purchasing/requests';
@@ -50,10 +53,15 @@ interface Vendor {
     name: string;
 }
 
-export default function PurchaseRequestShow({ request, vendors }: { request: PurchaseRequest; vendors: Vendor[] }) {
+export default function PurchaseRequestShow({ request, vendors, workflowInstance, pendingApprovalTask }: { request: PurchaseRequest; vendors: Vendor[]; workflowInstance: any; pendingApprovalTask: any }) {
     const [convertDialogOpen, setConvertDialogOpen] = useState(false);
     const [selectedVendorId, setSelectedVendorId] = useState<string>("");
     const [processing, setProcessing] = useState(false);
+
+    // Workflow states
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
 
     const handleDelete = () => {
         router.delete(destroyUrl(request.id), {
@@ -87,6 +95,42 @@ export default function PurchaseRequestShow({ request, vendors }: { request: Pur
                 setProcessing(false);
             }
         });
+    };
+
+    const handleApprove = async () => {
+        setProcessing(true);
+        try {
+            await axios.post(`/api/approval-tasks/${pendingApprovalTask.id}/approve`, {});
+            toast.success('Approval task approved successfully');
+            setApproveDialogOpen(false);
+            router.reload();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to approve task');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectReason.trim()) {
+            toast.error('Rejection reason is required');
+            return;
+        }
+
+        setProcessing(true);
+        try {
+            await axios.post(`/api/approval-tasks/${pendingApprovalTask.id}/reject`, {
+                reason: rejectReason
+            });
+            toast.success('Approval task rejected successfully');
+            setRejectDialogOpen(false);
+            setRejectReason('');
+            router.reload();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to reject task');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const getStatusBadge = (status: string) => {
@@ -143,6 +187,30 @@ export default function PurchaseRequestShow({ request, vendors }: { request: Pur
                             </>
                         )}
                         
+                        {/* Approval Task: Approve/Reject */}
+                        {pendingApprovalTask && (
+                            <>
+                                <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    onClick={() => setApproveDialogOpen(true)}
+                                    disabled={processing}
+                                >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Approve
+                                </Button>
+                                <Button 
+                                    size="sm" 
+                                    variant="destructive"
+                                    onClick={() => setRejectDialogOpen(true)}
+                                    disabled={processing}
+                                >
+                                    <XCircle className="mr-2 h-4 w-4" />
+                                    Reject
+                                </Button>
+                            </>
+                        )}
+
                         {request.status === 'approved' && (
                             <Button size="sm" onClick={() => setConvertDialogOpen(true)}>
                                 <ShoppingCart className="mr-2 h-4 w-4" />
@@ -215,14 +283,7 @@ export default function PurchaseRequestShow({ request, vendors }: { request: Pur
                 </div>
 
                 <div className="lg:col-span-1">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>History</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Audit log will appear here.</p>
-                        </CardContent>
-                     </Card>
+                    <WorkflowTimeline workflowInstance={workflowInstance} />
                 </div>
             </div>
 
@@ -261,6 +322,58 @@ export default function PurchaseRequestShow({ request, vendors }: { request: Pur
                         </Button>
                         <Button onClick={handleConvert} disabled={processing || !selectedVendorId}>
                             {processing ? 'Converting...' : 'Create Purchase Order'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Approve Purchase Request</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to approve this purchase request? This will move the workflow to the next step.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setApproveDialogOpen(false)} disabled={processing}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleApprove} disabled={processing}>
+                            {processing ? 'Approving...' : 'Approve'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reject Purchase Request</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for rejecting this purchase request. This will be recorded in the audit log.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="rejectReason">Rejection Reason *</Label>
+                            <Textarea
+                                id="rejectReason"
+                                placeholder="Enter your reason for rejection..."
+                                value={rejectReason}
+                                onChange={(e) => setRejectReason(e.target.value)}
+                                rows={4}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setRejectDialogOpen(false)} disabled={processing}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleReject} disabled={processing || !rejectReason.trim()}>
+                            {processing ? 'Rejecting...' : 'Reject'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

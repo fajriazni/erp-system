@@ -31,6 +31,7 @@ export default function PurchaseRequestCreate({ products }: Props) {
         required_date: string;
         notes: string;
         items: RequestItem[];
+        budget?: string;
     }>({
         date: new Date().toISOString().split('T')[0],
         required_date: '',
@@ -105,6 +106,12 @@ export default function PurchaseRequestCreate({ products }: Props) {
                 </div>
 
                 <form onSubmit={submit} className="space-y-6">
+                    {errors.budget && (
+                        <div className="bg-destructive/15 text-destructive p-3 rounded-md border border-destructive/20 mb-4">
+                            <p className="font-medium text-sm">Budget Validation Failed</p>
+                            <p className="text-sm">{errors.budget}</p>
+                        </div>
+                    )}
                     <Card>
                         <CardHeader>
                             <CardTitle>Create New Purchase Request</CardTitle>

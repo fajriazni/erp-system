@@ -12,7 +12,9 @@ import {
 import { ReactNode } from "react"
 
 interface DeleteConfirmDialogProps {
-  trigger: ReactNode
+  trigger?: ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onConfirm: () => void
   title?: string
   description?: string
@@ -20,15 +22,19 @@ interface DeleteConfirmDialogProps {
 
 export function DeleteConfirmDialog({
   trigger,
+  open,
+  onOpenChange,
   onConfirm,
   title = "Are you absolutely sure?",
   description = "This action cannot be undone. This will permanently delete this record from the database."
 }: DeleteConfirmDialogProps) {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        {trigger}
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {trigger && (
+        <AlertDialogTrigger asChild>
+          {trigger}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

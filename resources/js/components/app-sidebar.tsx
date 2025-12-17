@@ -40,7 +40,8 @@ import {
     Scale,
     Tags,
     GitBranch,
-    CheckCircle2
+    CheckCircle2,
+    Undo2
 } from "lucide-react"
 import { Link, usePage } from "@inertiajs/react"
 import { ModuleSwitcher, modules } from "@/components/module-switcher"
@@ -92,9 +93,15 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
                 { title: "Dashboard", url: "/purchasing", icon: LayoutDashboard },
                 // Placeholder for Purchase Request
                 { title: "Purchase Requests", url: "/purchasing/requests", icon: FileText },
+                { title: "Purchase RFQs", url: "/purchasing/rfqs", icon: Clipboard },
                 { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart },
                 { title: "Goods Receipts", url: "/purchasing/receipts", icon: Box },
                 { title: "Vendor Bills", url: "/purchasing/bills", icon: Receipt },
+                { title: "Vendor Payments", url: "/purchasing/payments", icon: Wallet },
+                { title: "Purchase Returns", url: "/purchasing/returns", icon: Undo2 },
+                { title: "Price Lists", url: "/purchasing/pricelists", icon: Tags },
+                { title: "Approval Rules", url: "/admin/approval-rules", icon: CheckCircle2 },
+                { title: "Reports", url: "/purchasing/reports", icon: FileSpreadsheet },
             ]
         },
         {
@@ -102,7 +109,6 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             items: [
                 { title: "Vendors", url: "/purchasing/vendors", icon: Users },
                 { title: "Products", url: "/master/products", icon: Package }, // Linked from Master
-                { title: "Price Lists", url: "/purchasing/pricelist", icon: Tags }, // Placeholder
             ]
         }
     ],

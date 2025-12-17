@@ -52,8 +52,12 @@ class ProductSeeder extends Seeder
             ],
         ];
 
+        $uom = \App\Models\Uom::where('symbol', 'pcs')->first();
+        $uomId = $uom ? $uom->id : 1; // Fallback to 1 if not found, though UOM seeder should run first
+
         foreach ($products as $product) {
-            Product::firstOrCreate(['code' => $product['code']], $product);
+            $product['uom_id'] = $uomId;
+            Product::updateOrCreate(['code' => $product['code']], $product);
         }
     }
 }

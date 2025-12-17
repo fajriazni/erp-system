@@ -4,7 +4,6 @@ namespace App\Domain\Workflow\Services;
 
 use App\Models\ApprovalTask;
 use Illuminate\Support\Facades\DB;
-use App\Domain\Workflow\Services\DelegationService;
 
 class ApprovalService
 {
@@ -87,13 +86,13 @@ class ApprovalService
     {
         $fromUser = \App\Models\User::findOrFail($delegatedBy);
         $toUser = \App\Models\User::findOrFail($delegateToUserId);
-        
+
         // Use DelegationService to handle the delegation
-        // We instantiate it here or we should inject it. 
-        // For now, let's instantiate or resolve it to avoid constructor breaking changes if possible, 
+        // We instantiate it here or we should inject it.
+        // For now, let's instantiate or resolve it to avoid constructor breaking changes if possible,
         // but cleaner is injection. Let's assume we can resolve it.
         $delegationService = app(DelegationService::class);
-        
+
         $delegationService->delegate($task, $fromUser, $toUser, $reason);
     }
 

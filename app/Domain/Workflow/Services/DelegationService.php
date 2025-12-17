@@ -5,8 +5,8 @@ namespace App\Domain\Workflow\Services;
 use App\Models\ApprovalTask;
 use App\Models\ApprovalTaskDelegation;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 class DelegationService
 {
@@ -17,7 +17,7 @@ class DelegationService
     {
         // 1. Validation
         if ($task->status !== 'pending') {
-            throw new Exception("Cannot delegate a task that is not pending.");
+            throw new Exception('Cannot delegate a task that is not pending.');
         }
 
         // 2. Create Delegation Record
@@ -60,9 +60,9 @@ class DelegationService
     {
         DB::transaction(function () use ($delegation, $performedBy) {
             $task = $delegation->task;
-            
+
             if ($task->status !== 'pending') {
-                throw new Exception("Cannot revoke delegation for a completed task.");
+                throw new Exception('Cannot revoke delegation for a completed task.');
             }
 
             // Revert assignment

@@ -7,6 +7,9 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { Toaster } from "@/components/ui/sonner"
+import { useEffect } from "react"
+import { usePage } from "@inertiajs/react"
+import { toast } from "sonner"
 
 export default function AppLayout({
   breadcrumbs,
@@ -15,6 +18,17 @@ export default function AppLayout({
   breadcrumbs?: { title: string; href?: string }[]
   children: React.ReactNode
 }) {
+  const { flash } = usePage().props as any;
+
+  useEffect(() => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+  }, [flash]);
+
   return (
     <SidebarProvider>
       <Toaster />

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { FormEvent, useEffect } from 'react';
 import { store, update, index } from '@/routes/purchasing/orders';
+import axios from 'axios';
 
 interface PurchaseOrderItem {
     product_id: number;
@@ -62,15 +63,36 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, order
         const newItems = [...data.items];
         newItems[index] = { ...newItems[index], [field]: value };
         
-        // Auto-fill price when product is selected
-        if (field === 'product_id') {
-            const product = products.find(p => p.id === Number(value));
-            if (product) {
-                newItems[index].unit_price = Number(product.cost || 0);
+        setData('items', newItems);
+
+        // Auto-fetch price from backend
+        if ((field === 'product_id' || field === 'quantity') && data.vendor_id) {
+            const productId = field === 'product_id' ? Number(value) : newItems[index].product_id;
+            const quantity = field === 'quantity' ? Number(value) : newItems[index].quantity;
+
+            if (productId) {
+                axios.get('/purchasing/pricelists/get-price', {
+                    params: {
+                        vendor_id: data.vendor_id,
+                        product_id: productId,
+                        quantity: quantity
+                    }
+                })
+                .then(response => {
+                    setData(currentData => {
+                        const updatedItems = [...currentData.items];
+                        // Verify the item is still the same product (prevent race conditions)
+                        if (updatedItems[index] && updatedItems[index].product_id === productId) {
+                            updatedItems[index].unit_price = response.data.price;
+                        }
+                        return { ...currentData, items: updatedItems };
+                    });
+                })
+                .catch(error => {
+                    console.error('Failed to fetch price:', error);
+                });
             }
         }
-        
-        setData('items', newItems);
     };
 
     const calculateSubtotal = (item: PurchaseOrderItem) => {

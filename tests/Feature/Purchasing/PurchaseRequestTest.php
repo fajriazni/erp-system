@@ -36,8 +36,8 @@ class PurchaseRequestTest extends TestCase
                     'product_id' => $product->id,
                     'quantity' => 10,
                     'estimated_unit_price' => 100,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertRedirect();
@@ -56,17 +56,17 @@ class PurchaseRequestTest extends TestCase
     {
         // Seed Workflow
         Workflow::create([
-             'name' => 'PR Workflow',
-             'module' => 'purchasing',
-             'entity_type' => PurchaseRequest::class,
-             'is_active' => true,
-             'definition' => json_encode(['steps' => []]), // Minimal dummy definition
-             'created_by' => $this->user->id,
+            'name' => 'PR Workflow',
+            'module' => 'purchasing',
+            'entity_type' => PurchaseRequest::class,
+            'is_active' => true,
+            'definition' => json_encode(['steps' => []]), // Minimal dummy definition
+            'created_by' => $this->user->id,
         ]);
 
         $request = PurchaseRequest::factory()->create([
-             'status' => 'draft',
-             'requester_id' => $this->user->id
+            'status' => 'draft',
+            'requester_id' => $this->user->id,
         ]);
 
         $response = $this->post(route('purchasing.requests.submit', $request->id));
@@ -85,9 +85,9 @@ class PurchaseRequestTest extends TestCase
 
         $request = PurchaseRequest::factory()->create([
             'status' => 'approved',
-            'requester_id' => $this->user->id
+            'requester_id' => $this->user->id,
         ]);
-        
+
         $request->items()->create([
             'product_id' => $product->id,
             'quantity' => 5,

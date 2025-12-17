@@ -5,9 +5,7 @@ namespace App\Http\Controllers\Purchasing;
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseOrder;
 use App\Models\VendorBill;
-use App\Models\VendorBillItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class VendorBillController extends Controller
@@ -43,15 +41,23 @@ class VendorBillController extends Controller
 
     public function create(Request $request)
     {
-        $poId = $request->query('po_id');
+        $poId = $request->query('purchase_order_id');
         $purchaseOrder = null;
 
         if ($poId) {
             $purchaseOrder = PurchaseOrder::with(['items.product', 'vendor'])->find($poId);
         }
 
+        $vendorsQuery = \App\Models\Contact::whereIn('type', ['vendor', 'both']);
+
+        if ($purchaseOrder) {
+            $vendorsQuery->orWhere('id', $purchaseOrder->vendor_id);
+        }
+
         return Inertia::render('Purchasing/bills/create', [
             'purchaseOrder' => $purchaseOrder,
+            'vendors' => $vendorsQuery->get(),
+            'products' => \App\Models\Product::select('id', 'name', 'code')->get(),
         ]);
     }
 
@@ -71,10 +77,14 @@ class VendorBillController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $bill = $this->createVendorBillService->execute($validated);
+        try {
+            $bill = $this->createVendorBillService->execute($validated);
 
-        return redirect()->route('purchasing.bills.show', $bill->id)
-            ->with('success', 'Vendor bill created successfully.');
+            return redirect()->route('purchasing.bills.show', $bill->id)
+                ->with('success', 'Vendor bill created successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function show(VendorBill $bill)
@@ -90,6 +100,7 @@ class VendorBillController extends Controller
     {
         try {
             $this->postVendorBillService->execute($bill);
+
             return back()->with('success', 'Vendor bill posted successfully.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
