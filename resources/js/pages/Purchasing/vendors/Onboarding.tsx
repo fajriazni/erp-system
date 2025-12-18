@@ -203,7 +203,7 @@ export default function Onboarding({ onboarding, stats }: Props) {
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <Button size="sm" variant="outline" asChild>
-                                                        <Link href={`/purchasing/vendors/${record.vendor.id}`}>
+                                                        <Link href={`/purchasing/vendors/onboarding/${record.vendor.id}`}>
                                                             Review
                                                         </Link>
                                                     </Button>

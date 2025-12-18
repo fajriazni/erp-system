@@ -195,8 +195,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('requests.convert');
         Route::resource('requests', \App\Http\Controllers\Purchasing\PurchaseRequestController::class);
 
-        // Vendor specific routes - MUST come before resource route
-        Route::get('vendors/onboarding', [\App\Http\Controllers\Purchasing\VendorController::class, 'onboarding'])->name('vendors.onboarding');
+        // Vendor Onboarding Workflow - MUST come before resource route  
+        Route::prefix('vendors/onboarding')->name('vendors.onboarding.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'index'])->name('index');
+            Route::get('/{vendor}', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'show'])->name('show');
+            Route::post('/{onboarding}/checklist', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'updateChecklist'])->name('checklist.update');
+            Route::post('/{onboarding}/submit', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'submitForReview'])->name('submit');
+            Route::post('/{onboarding}/approve', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'approve'])->name('approve');
+            Route::post('/{onboarding}/reject', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'reject'])->name('reject');
+        });
+        
+        // Other vendor routes
         Route::get('vendors/audits', [\App\Http\Controllers\Purchasing\VendorController::class, 'audits'])->name('vendors.audits');
         Route::get('vendors/scorecards', [\App\Http\Controllers\Purchasing\VendorController::class, 'scorecards'])->name('vendors.scorecards');
 

@@ -44,22 +44,32 @@ class VendorController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\VendorRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'tax_id' => 'nullable|string|max:100',
-            'payment_term_id' => 'nullable|exists:payment_terms,id',
-        ]);
+        $vendor = \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            // Create vendor with pending_onboarding status
+            $vendor = Contact::create(array_merge(
+                $request->validated(),
+                [
+                    'type' => $request->type ?? 'vendor',
+                    'status' => 'pending_onboarding', // Default status for new vendors
+                ]
+            ));
 
-        $validated['type'] = 'vendor';
+            // Auto-create onboarding record
+            \App\Models\VendorOnboarding::create([
+                'vendor_id' => $vendor->id,
+                'status' => \App\Models\VendorOnboarding::STATUS_PENDING,
+                'checklist' => \App\Models\VendorOnboarding::getDefaultChecklist(),
+                'documents' => [],
+                'notes' => 'Vendor created. Awaiting document upload and onboarding completion.',
+            ]);
 
-        Contact::create($validated);
+            return $vendor;
+        });
 
-        return redirect()->route('purchasing.vendors.index')->with('success', 'Vendor created successfully.');
+        return redirect()->route('purchasing.vendors.onboarding.show', $vendor)
+            ->with('success', 'Vendor created successfully. Please complete the onboarding process.');
     }
 
     public function show(Contact $vendor)
@@ -109,20 +119,12 @@ class VendorController extends Controller
         ]);
     }
 
-    public function update(Request $request, Contact $vendor)
+    public function update(\App\Http\Requests\VendorRequest $request, Contact $vendor)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string',
-            'tax_id' => 'nullable|string|max:100',
-            'payment_term_id' => 'nullable|exists:payment_terms,id',
-        ]);
+        $vendor->update($request->validated());
 
-        $vendor->update($validated);
-
-        return redirect()->route('purchasing.vendors.index')->with('success', 'Vendor updated successfully.');
+        return redirect()->route('purchasing.vendors.show', $vendor)
+            ->with('success', 'Vendor updated successfully.');
     }
 
     public function scorecards()
