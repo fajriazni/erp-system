@@ -156,7 +156,7 @@ export default function UserGuide() {
                                         <li>Navigate to <code className="bg-muted px-2 py-0.5 rounded">/purchasing/vendors</code></li>
                                         <li>View all active vendors with their performance ratings</li>
                                         <li>Use the search bar to filter by name, email, or phone</li>
-                                        <li>Click "View Details" to see complete vendor profile</li>
+                                        <li>Click "View" to see complete vendor profile</li>
                                         <li>Check rating stars (0-5) for quick performance assessment</li>
                                         <li>Green badge (≥90%) indicates excellent on-time delivery</li>
                                     </ol>
@@ -285,45 +285,45 @@ export default function UserGuide() {
                                 <CardDescription>Structured process to qualify new suppliers</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                <div className="space-y-4">
+                                <div className="space-y-4 border rounded-lg p-4">
                                     <h3 className="font-semibold">Onboarding Stages</h3>
                                     
                                     {[
                                         {
-                                            stage: "1. Inquiry",
+                                            stage: "Inquiry",
                                             description: "Initial contact from prospective vendor",
                                             tasks: ["Receive inquiry", "Initial screening", "Check basic requirements"]
                                         },
                                         {
-                                            stage: "2. Documents",
+                                            stage: "Documents",
                                             description: "Vendor submits required documentation",
                                             tasks: ["NPWP (Tax ID)", "SIUP (Business License)", "Company Profile", "Financial Statements", "Product Catalog"]
                                         },
                                         {
-                                            stage: "3. Review",
+                                            stage: "Review",
                                             description: "Purchasing team reviews submitted documents",
                                             tasks: ["Verify document authenticity", "Assess capabilities", "Check references", "Site visit (if applicable)"]
                                         },
                                         {
-                                            stage: "4. Approval",
+                                            stage: "Approval",
                                             description: "Management approval required",
                                             tasks: ["Present vendor profile", "Risk assessment", "Pricing negotiation", "Contract terms"]
                                         },
                                         {
-                                            stage: "5. Completed",
+                                            stage: "Completed",
                                             description: "Vendor is active in the system",
                                             tasks: ["Create vendor record", "Set payment terms", "Assign category", "Begin transactions"]
                                         },
                                     ].map((item, idx) => (
-                                        <div key={idx} className="border rounded-lg p-4 space-y-2">
+                                        <div key={idx}>
                                             <div className="flex items-center gap-2">
                                                 <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                                                     {idx + 1}
                                                 </div>
                                                 <h4 className="font-semibold">{item.stage}</h4>
                                             </div>
-                                            <p className="text-sm text-muted-foreground">{item.description}</p>
-                                            <div className="pl-10 space-y-1">
+                                            <p className="pl-10 text-sm text-muted-foreground">{item.description}</p>
+                                            <div className="pl-14 space-y-1">
                                                 {item.tasks.map((task, taskIdx) => (
                                                     <div key={taskIdx} className="flex items-center gap-2 text-sm text-muted-foreground">
                                                         <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" />

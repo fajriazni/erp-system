@@ -70,7 +70,7 @@ export default function SalesInvoicesIndex({ invoices }: { invoices: any }) {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => router.visit(`/sales/invoices/${row.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View Details
+                            View
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

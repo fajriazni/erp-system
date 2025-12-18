@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Purchasing;
 
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -18,22 +17,52 @@ class VendorController extends Controller
                 $query->where('type', 'vendor')
                     ->orWhere('type', 'both');
             })
+            ->with('onboarding')
             ->allowedFilters([
                 'name',
                 'email',
+                'category',
+                'industry',
+                'status',
                 AllowedFilter::callback('global', function ($query, $value) {
                     $query->where('name', 'like', "%{$value}%")
                         ->orWhere('email', 'like', "%{$value}%")
                         ->orWhere('phone', 'like', "%{$value}%");
                 }),
+                AllowedFilter::callback('onboarding_status', function ($query, $value) {
+                    $query->whereHas('onboarding', function ($q) use ($value) {
+                        $q->where('status', $value);
+                    });
+                }),
             ])
             ->allowedSorts(['name', 'email', 'created_at'])
             ->defaultSort('name')
-            ->paginate(10)
+            ->paginate(request()->input('per_page', 10))
             ->withQueryString();
+
+        // Get unique values for filters
+        $filterOptions = [
+            'categories' => Contact::where(function ($query) {
+                $query->where('type', 'vendor')->orWhere('type', 'both');
+            })->whereNotNull('category')->distinct()->pluck('category')->filter()->values(),
+            'industries' => Contact::where(function ($query) {
+                $query->where('type', 'vendor')->orWhere('type', 'both');
+            })->whereNotNull('industry')->distinct()->pluck('industry')->filter()->values(),
+            'statuses' => Contact::where(function ($query) {
+                $query->where('type', 'vendor')->orWhere('type', 'both');
+            })->whereNotNull('status')->distinct()->pluck('status')->filter()->values(),
+            'onboardingStatuses' => [
+                ['value' => 'pending', 'label' => 'Pending'],
+                ['value' => 'in_review', 'label' => 'In Review'],
+                ['value' => 'approved', 'label' => 'Approved'],
+                ['value' => 'rejected', 'label' => 'Rejected'],
+            ],
+        ];
 
         return Inertia::render('Purchasing/vendors/index', [
             'vendors' => $vendors,
+            'filterOptions' => $filterOptions,
+            'filters' => request()->only(['filter']),
         ]);
     }
 

@@ -73,7 +73,7 @@ export default function JournalEntriesIndex({ entries }: { entries: any }) {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => router.visit(`/accounting/journal-entries/${row.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View Details
+                            View
                         </DropdownMenuItem>
                         {row.status === 'draft' && (
                             <DropdownMenuItem onClick={() => router.visit(`/accounting/journal-entries/${row.id}/edit`)}>

@@ -194,7 +194,7 @@ export default function OnboardingDetail({ vendor, onboarding }: Props) {
 
                 {/* Status & Progress */}
                 <Card>
-                    <CardContent className="pt-6">
+                    <CardContent>
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-3">

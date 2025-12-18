@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InputError from '@/components/input-error';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, X, FileText, Upload, File } from 'lucide-react';
+import { PageHeader } from '@/components/ui/page-header';
 import { FormEvent, useState } from 'react';
 import { store, update, index } from '@/routes/purchasing/vendors';
 import {
@@ -159,61 +160,56 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
             
             <div className="space-y-6">
                 {/* Header Section */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            {isEditing ? `Edit ${vendor.name}` : 'Create New Vendor'}
-                        </h1>
-                        <p className="text-muted-foreground mt-2">
-                            {isEditing ? 'Update vendor information and settings' : 'Add a new vendor or supplier to your system'}
-                        </p>
-                    </div>
+                <PageHeader
+                    title={isEditing ? `Edit ${vendor.name}` : 'Create New Vendor'}
+                    description={isEditing ? 'Update vendor information and settings' : 'Add a new vendor or supplier to your system'}
+                >
                     <Button variant="outline" asChild>
                         <Link href={index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                         </Link>
                     </Button>
-                </div>
+                </PageHeader>
 
                 {/* Form Card */}
                 <form onSubmit={submit}>
                     <Card>
-                        <CardContent className="p-6">
+                        <CardContent className="-mt-2">
                             <Tabs defaultValue="basic" className="w-full">
                                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                                     <TabsTrigger 
                                         value="basic" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Basic Information
                                     </TabsTrigger>
                                     <TabsTrigger 
                                         value="business" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Business Details
                                     </TabsTrigger>
                                     <TabsTrigger 
                                         value="banking" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Banking
                                     </TabsTrigger>
                                     <TabsTrigger 
                                         value="contacts" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Contact Persons
                                     </TabsTrigger>
                                     <TabsTrigger 
                                         value="documents" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Documents
                                     </TabsTrigger>
                                     <TabsTrigger 
                                         value="payment" 
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                                        className="rounded-none p-4 border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
                                     >
                                         Payment Terms
                                     </TabsTrigger>

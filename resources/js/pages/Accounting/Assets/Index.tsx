@@ -89,7 +89,7 @@ export default function AssetsIndex({ assets }: { assets: any }) {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => router.visit(`/accounting/assets/${row.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View Details
+                            View
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
