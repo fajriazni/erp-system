@@ -10,8 +10,10 @@ class ChartOfAccount extends Model
     use HasFactory;
 
     protected $fillable = [
+        'parent_id',
         'code',
         'name',
+        'description',
         'type',
         'is_active',
     ];
@@ -19,4 +21,14 @@ class ChartOfAccount extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'parent_id');
+    }
+
+    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ChartOfAccount::class, 'parent_id');
+    }
 }

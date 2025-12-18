@@ -14,6 +14,8 @@ class JournalEntry extends Model
         'date',
         'description',
         'status',
+        'currency_code',
+        'exchange_rate',
     ];
 
     protected $casts = [

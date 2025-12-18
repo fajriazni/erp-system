@@ -14,7 +14,10 @@ import {
   Store,
   Truck,
   Headset,
-  GitBranch
+  GitBranch,
+  Wallet,
+  PieChart,
+  Shield
 } from "lucide-react"
 
 import {
@@ -75,9 +78,16 @@ export const modules: Module[] = [
   {
     name: "Accounting",
     logo: Calculator,
-    plan: "Finance & Reports",
+    plan: "GL & Taxes",
     url: "/accounting",
     prefix: "/accounting"
+  },
+  {
+    name: "Finance",
+    logo: Wallet,
+    plan: "Cash, AR & AP",
+    url: "/finance", // Note: This route prefix needs to be supported in sidebar logic
+    prefix: "/finance"
   },
   {
     name: "HRM & Payroll",
@@ -134,6 +144,20 @@ export const modules: Module[] = [
     plan: "Support Tickets",
     url: "/helpdesk",
     prefix: "/helpdesk"
+  },
+  {
+    name: "Business Intelligence",
+    logo: PieChart,
+    plan: "Analytics & KPI",
+    url: "/bi",
+    prefix: "/bi"
+  },
+  {
+    name: "System Admin",
+    logo: Shield,
+    plan: "Config & Security",
+    url: "/admin",
+    prefix: "/admin"
   },
 ]
 

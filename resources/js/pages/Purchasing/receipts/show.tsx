@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { index, post } from '@/routes/purchasing/receipts';
-import { create as createBill } from '@/routes/purchasing/bills';
+import { create as createBill } from '@/routes/accounting/bills';
 import { show as showPo } from '@/routes/purchasing/orders';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState } from 'react';

@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { edit, destroy, submit, approve, cancel } from '@/routes/purchasing/orders';
-import { create } from '@/routes/purchasing/bills';
+import { create } from '@/routes/accounting/bills';
 import { create as createReceipt } from '@/routes/purchasing/receipts';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
