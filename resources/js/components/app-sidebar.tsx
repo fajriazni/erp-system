@@ -91,7 +91,6 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             group: 'Procurement',
             items: [
                 { title: "Dashboard", url: "/purchasing", icon: LayoutDashboard },
-                // Placeholder for Purchase Request
                 { title: "Purchase Requests", url: "/purchasing/requests", icon: FileText },
                 { title: "Purchase RFQs", url: "/purchasing/rfqs", icon: Clipboard },
                 { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart },
@@ -100,7 +99,6 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
                 { title: "Vendor Payments", url: "/purchasing/payments", icon: Wallet },
                 { title: "Purchase Returns", url: "/purchasing/returns", icon: Undo2 },
                 { title: "Price Lists", url: "/purchasing/pricelists", icon: Tags },
-                { title: "Approval Rules", url: "/admin/approval-rules", icon: CheckCircle2 },
                 { title: "Reports", url: "/purchasing/reports", icon: FileSpreadsheet },
             ]
         },
@@ -108,6 +106,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             group: 'Master Data',
             items: [
                 { title: "Vendors", url: "/purchasing/vendors", icon: Users },
+                { title: "Payment Terms", url: "/purchasing/payment-terms", icon: CreditCard },
                 { title: "Products", url: "/master/products", icon: Package }, // Linked from Master
             ]
         }

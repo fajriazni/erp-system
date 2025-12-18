@@ -55,19 +55,17 @@ const MetricCard = ({
     colorClass?: string;
     trend?: 'up' | 'down';
 }) => (
-    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/30">
+    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted/30">
         <div className="p-2 rounded-full bg-background">
             <Icon className="h-5 w-5 text-muted-foreground" />
         </div>
-        <div className="flex-1">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <div className="flex items-center gap-2">
-                <p className={`text-2xl font-bold ${colorClass}`}>
-                    {value !== null ? `${value.toFixed(1)}${suffix}` : 'N/A'}
-                </p>
-                {trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                {trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
-            </div>
+        <p className="text-xs text-muted-foreground text-center">{label}</p>
+        <div className="flex items-center gap-2">
+            <p className={`text-2xl font-bold ${colorClass}`}>
+                {value !== null ? `${Number(value).toFixed(1)}${suffix}` : 'N/A'}
+            </p>
+            {trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
+            {trend === 'down' && <TrendingDown className="h-4 w-4 text-red-500" />}
         </div>
     </div>
 );
@@ -99,8 +97,8 @@ export default function VendorScorecard({ vendor }: Props) {
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-base">Vendor Performance</CardTitle>
-                        <CardDescription>Scorecard for {vendor.name}</CardDescription>
+                        <CardTitle className="text-base">Quality Scorecard</CardTitle>
+                        <CardDescription>Performance metrics for {vendor.name}</CardDescription>
                     </div>
                     {vendor.rating_score !== null && (
                         <Badge className={getRatingColor(vendor.rating_score)}>
@@ -121,28 +119,28 @@ export default function VendorScorecard({ vendor }: Props) {
                         {/* Star Rating */}
                         {vendor.rating_score !== null && (
                             <div className="flex items-center justify-center gap-3 py-4 border-b">
-                                <StarRating rating={vendor.rating_score} />
-                                <span className="text-2xl font-bold">{vendor.rating_score.toFixed(2)}</span>
+                                <StarRating rating={Number(vendor.rating_score)} />
+                                <span className="text-2xl font-bold">{Number(vendor.rating_score).toFixed(2)}</span>
                             </div>
                         )}
 
                         {/* Metrics Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-2">
                             <MetricCard 
                                 icon={Clock}
-                                label="On-Time Delivery"
+                                label="On-Time"
                                 value={vendor.on_time_rate}
                                 colorClass={vendor.on_time_rate && vendor.on_time_rate >= 80 ? 'text-green-600' : 'text-orange-600'}
                             />
                             <MetricCard 
                                 icon={Package}
-                                label="Quality Rate"
+                                label="Quality"
                                 value={vendor.quality_rate}
                                 colorClass={vendor.quality_rate && vendor.quality_rate >= 90 ? 'text-green-600' : 'text-orange-600'}
                             />
                             <MetricCard 
                                 icon={RotateCcw}
-                                label="Return Rate"
+                                label="Returns"
                                 value={vendor.return_rate}
                                 colorClass={vendor.return_rate && vendor.return_rate <= 5 ? 'text-green-600' : 'text-red-600'}
                             />

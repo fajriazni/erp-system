@@ -10,12 +10,20 @@ import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { FormEvent } from 'react';
 import { store, update, index } from '@/routes/purchasing/vendors';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
     vendor?: any;
+    paymentTerms?: any[];
 }
 
-export default function VendorForm({ vendor }: Props) {
+export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
     const isEditing = !!vendor;
     
     const { data, setData, post, put, processing, errors } = useForm<{
@@ -24,12 +32,14 @@ export default function VendorForm({ vendor }: Props) {
         phone: string;
         address: string;
         tax_id: string;
+        payment_term_id: string;
     }>({
         name: vendor?.name || '',
         email: vendor?.email || '',
         phone: vendor?.phone || '',
         address: vendor?.address || '',
         tax_id: vendor?.tax_id || '',
+        payment_term_id: vendor?.payment_term_id ? String(vendor.payment_term_id) : '',
     });
 
     const submit = (e: FormEvent) => {
@@ -56,7 +66,7 @@ export default function VendorForm({ vendor }: Props) {
             <Head title={isEditing ? `Edit ${vendor.name}` : "New Vendor"} />
             
             <div className="max-w-4xl">
-                <div className="mb-6">
+                <div>
                     <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                         <Link href={index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Vendors
@@ -119,6 +129,31 @@ export default function VendorForm({ vendor }: Props) {
                                         placeholder="Tax identification number"
                                     />
                                     <InputError message={errors.tax_id} />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_term_id">Default Payment Term</Label>
+                                    <Select
+                                        value={data.payment_term_id}
+                                        onValueChange={(val) => setData('payment_term_id', val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select payment term" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {paymentTerms?.map((term) => (
+                                                <SelectItem key={term.id} value={String(term.id)}>
+                                                    {term.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                     <p className="text-xs text-muted-foreground">
+                                        This will be the default for new Purchase Orders.
+                                    </p>
+                                    <InputError message={errors.payment_term_id} />
                                 </div>
                             </div>
 

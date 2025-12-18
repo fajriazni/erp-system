@@ -13,7 +13,7 @@ class PurchaseRfqFactory extends Factory
     public function definition(): array
     {
         return [
-            'document_number' => 'RFQ-' . now()->format('Y') . '-' . $this->faker->unique()->numerify('####'),
+            'document_number' => 'RFQ-'.now()->format('Y').'-'.$this->faker->unique()->numerify('####'),
             'title' => $this->faker->sentence,
             'deadline' => now()->addDays(7),
             'status' => 'open',

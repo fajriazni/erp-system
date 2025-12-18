@@ -44,11 +44,11 @@ class PurchaseRfq extends Model
         return $this->belongsToMany(Contact::class, 'rfq_vendors', 'purchase_rfq_id', 'vendor_id')
             ->withTimestamps();
     }
-    
+
     // Legacy support if needed, or alias
     public function invitedVendors()
     {
-         return $this->vendors();
+        return $this->vendors();
     }
 
     public function quotations()

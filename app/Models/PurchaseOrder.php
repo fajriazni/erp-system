@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasWorkflow
 {
-    use HasFactory;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory;
 
     protected $fillable = [
         'vendor_id',
@@ -22,14 +22,27 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
         'date',
         'status',
         'total',
+        'subtotal',
+        'tax_rate',
+        'tax_amount',
+        'withholding_tax_rate',
+        'withholding_tax_amount',
+        'tax_inclusive',
         'notes',
         'cancellation_reason',
         'purchase_request_id',
+        'payment_term_id',
     ];
 
     protected $casts = [
         'date' => 'date',
         'total' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_rate' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'withholding_tax_rate' => 'decimal:2',
+        'withholding_tax_amount' => 'decimal:2',
+        'tax_inclusive' => 'boolean',
     ];
 
     // Relationships
@@ -63,16 +76,9 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
         return $this->hasMany(VendorBill::class);
     }
 
-    public function workflowInstances()
+    public function getTotalAmountAttribute(): float
     {
-        return $this->morphMany(\App\Models\WorkflowInstance::class, 'entity');
-    }
-
-    public function activeWorkflowInstance()
-    {
-        return $this->morphOne(\App\Models\WorkflowInstance::class, 'entity')
-            ->where('status', 'pending')
-            ->latest();
+        return (float) $this->total;
     }
 
     // Domain methods
@@ -210,5 +216,10 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
         // Optionally append reason to notes or keep separate
         // For now just revert status
         $this->save();
+    }
+
+    public function paymentTerm()
+    {
+        return $this->belongsTo(\App\Models\PaymentTerm::class);
     }
 }

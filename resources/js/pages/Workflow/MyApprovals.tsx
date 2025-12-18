@@ -204,14 +204,14 @@ export default function MyApprovals() {
                                                     {new Date(task.created_at).toLocaleDateString()}
                                                 </span>
                                             </div>
-                                            {task.workflow_instance.entity?.total_amount && (
+                                            {(task.workflow_instance.entity?.total || task.workflow_instance.entity?.total_amount) && (
                                                 <div className="flex justify-between">
                                                     <span className="text-muted-foreground">Amount:</span>
                                                     <span className="font-medium">
                                                         {new Intl.NumberFormat('id-ID', {
                                                             style: 'currency',
                                                             currency: 'IDR'
-                                                        }).format(task.workflow_instance.entity.total_amount)}
+                                                        }).format(task.workflow_instance.entity.total || task.workflow_instance.entity.total_amount)}
                                                     </span>
                                                 </div>
                                             )}
@@ -224,19 +224,9 @@ export default function MyApprovals() {
                                                 </div>
                                             )}
                                         </div>
-
-                                        <Button 
-                                            variant="outline" 
-                                            className="w-full text-xs h-8" 
-                                            asChild
-                                        >
-                                            <Link href={getEntityUrl(task.workflow_instance.entity_type, task.workflow_instance.entity)}>
-                                               View Details
-                                            </Link>
-                                        </Button>
                                     </div>
                                 </CardContent>
-                                <div className="p-6 pt-0 mt-auto">
+                                <div className="px-4 mt-auto">
                                     <div className="flex justify-end gap-2 pt-4 border-t">
                                         <Button
                                             size="sm"

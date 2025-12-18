@@ -36,7 +36,7 @@ class CreateRfqService
                 ]);
             }
 
-            if (!empty($data['vendor_ids'])) {
+            if (! empty($data['vendor_ids'])) {
                 $rfq->vendors()->sync($data['vendor_ids']);
             }
 

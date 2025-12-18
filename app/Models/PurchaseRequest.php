@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseRequest extends Model implements HasWorkflow
 {
-    use HasFactory, SoftDeletes;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'document_number',
@@ -42,9 +42,9 @@ class PurchaseRequest extends Model implements HasWorkflow
         return $this->hasMany(PurchaseRequestItem::class);
     }
 
-    public function workflowInstances()
+    public function getTotalAmountAttribute(): float
     {
-        return $this->morphMany(\App\Models\WorkflowInstance::class, 'entity');
+        return $this->items->sum('estimated_total');
     }
 
     // Domain Methods

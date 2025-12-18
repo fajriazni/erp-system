@@ -53,7 +53,7 @@ export default function GoodsReceiptShow({ receipt, qc_summary }: Props) {
         ]}>
             <Head title={`Receipt ${receipt.receipt_number}`} />
             
-            <div className="max-w-6xl">
+            <div>
                 <div className="flex items-center justify-between mb-6">
                     <Button variant="ghost" asChild className="pl-0 hover:pl-2 transition-all">
                         <Link href={index.url()}>
@@ -97,24 +97,32 @@ export default function GoodsReceiptShow({ receipt, qc_summary }: Props) {
                                             <tr className="bg-muted/50">
                                                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Product</th>
                                                 <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Qty Received</th>
+                                                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Remaining (PO)</th>
                                                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Notes</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border">
-                                            {receipt.items.map((item: any) => (
-                                                <tr key={item.id}>
-                                                    <td className="px-4 py-3 text-sm">
-                                                        <div className="font-medium">{item.product.name}</div>
-                                                        <div className="text-muted-foreground text-xs">{item.product.code}</div>
-                                                    </td>
-                                                    <td className="px-4 py-3 text-sm text-right">
-                                                        {Number(item.quantity_received).toFixed(2)} {item.uom.name}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                                                        {item.notes || '-'}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {receipt.items.map((item: any) => {
+                                                const poItem = receipt.purchase_order?.items?.find((pi: any) => pi.product_id === item.product_id);
+                                                const remaining = poItem ? poItem.quantity - poItem.quantity_received : 0;
+                                                return (
+                                                    <tr key={item.id}>
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <div className="font-medium">{item.product.name}</div>
+                                                            <div className="text-muted-foreground text-xs">{item.product.code}</div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-right">
+                                                            {Number(item.quantity_received).toFixed(2)} {item.uom.name}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-right text-muted-foreground">
+                                                            {remaining > 0 ? Number(remaining).toFixed(2) : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                                                            {item.notes || '-'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                         {receipt.status === 'posted' && (
                                             <tfoot>

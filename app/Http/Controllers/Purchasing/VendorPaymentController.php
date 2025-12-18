@@ -30,8 +30,19 @@ class VendorPaymentController extends Controller
 
     public function create()
     {
+        $history = [];
+        if (request()->query('vendor_id')) {
+            $history = VendorPayment::where('vendor_id', request()->query('vendor_id'))
+                ->with('lines.bill:id,bill_number')
+                ->latest()
+                ->take(5)
+                ->get();
+        }
+
         return Inertia::render('Purchasing/payments/create', [
             'vendors' => Contact::whereIn('type', ['vendor', 'both'])->get(),
+            'vendor_id' => request()->query('vendor_id'),
+            'paymentHistory' => $history,
         ]);
     }
 
@@ -65,7 +76,7 @@ class VendorPaymentController extends Controller
 
     public function show(VendorPayment $payment)
     {
-        $payment->load(['vendor', 'lines.bill']);
+        $payment->load(['vendor', 'lines.bill:id,bill_number,date,total_amount']);
 
         return Inertia::render('Purchasing/payments/show', [
             'payment' => $payment,
@@ -121,5 +132,14 @@ class VendorPaymentController extends Controller
             ->values();
 
         return response()->json($bills);
+    }
+
+    public function print(VendorPayment $payment)
+    {
+        $payment->load(['vendor', 'lines.bill:id,bill_number,date,total_amount']);
+
+        return view('purchasing.payments.print', [
+            'payment' => $payment,
+        ]);
     }
 }

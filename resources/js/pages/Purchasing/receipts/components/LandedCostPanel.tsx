@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Plus, X, Truck, Shield, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { store, destroy } from '@/routes/purchasing/receipts/landed-costs';
 
 interface LandedCost {
     id: number;
@@ -63,7 +64,7 @@ export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Pr
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        router.post(route('purchasing.receipts.landed-costs.store', receiptId), formData, {
+        router.post(store.url(receiptId), formData, {
             onSuccess: () => {
                 setIsOpen(false);
                 setFormData({ cost_type: 'freight', description: '', amount: '', allocation_method: 'by_value' });
@@ -73,7 +74,7 @@ export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Pr
 
     const handleDelete = (costId: number) => {
         if (confirm('Are you sure you want to remove this cost?')) {
-            router.delete(route('purchasing.receipts.landed-costs.destroy', [receiptId, costId]));
+            router.delete(destroy.url({ receipt: receiptId, landedCost: costId }));
         }
     };
 

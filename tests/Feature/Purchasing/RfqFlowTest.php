@@ -4,7 +4,6 @@ namespace Tests\Feature\Purchasing;
 
 use App\Models\Contact;
 use App\Models\Product;
-use App\Models\PurchaseOrder;
 use App\Models\PurchaseRfq;
 use App\Models\Uom;
 use App\Models\User;
@@ -18,18 +17,20 @@ class RfqFlowTest extends TestCase
 
     // protected User $user; // already in parent
     protected Contact $vendor;
+
     protected Product $product;
+
     protected Uom $uom;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->user = User::factory()->create();
         $this->uom = Uom::factory()->create(['name' => 'Pieces', 'symbol' => 'Pcs']);
         $this->vendor = Contact::factory()->create(['type' => 'vendor', 'name' => 'Acme Supplies']);
         $this->product = Product::factory()->create(['name' => 'Test Widget', 'uom_id' => $this->uom->id]);
-        
+
         // Ensure validation of warehouse_id foreign key passes in Award service
         \App\Models\Warehouse::factory()->create(['id' => 1, 'name' => 'Main Warehouse']);
     }
@@ -47,8 +48,8 @@ class RfqFlowTest extends TestCase
                     'uom_id' => $this->uom->id,
                     'target_price' => 100,
                     'notes' => 'Sample',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertRedirect(route('purchasing.rfqs.index'));
@@ -69,13 +70,13 @@ class RfqFlowTest extends TestCase
     public function test_can_invite_vendors()
     {
         $rfq = PurchaseRfq::factory()->create(['user_id' => $this->user->id]);
-        
+
         $response = $this->actingAs($this->user)->post(route('purchasing.rfqs.invite', $rfq), [
             'vendor_ids' => [$this->vendor->id],
         ]);
 
         $response->assertSessionHasNoErrors();
-        
+
         $this->assertDatabaseHas('rfq_vendors', [
             'purchase_rfq_id' => $rfq->id,
             'vendor_id' => $this->vendor->id,
@@ -86,7 +87,7 @@ class RfqFlowTest extends TestCase
     public function test_can_record_vendor_bid()
     {
         $rfq = PurchaseRfq::factory()->create(['user_id' => $this->user->id]);
-        
+
         $response = $this->actingAs($this->user)->post(route('purchasing.rfqs.bid', $rfq), [
             'vendor_id' => $this->vendor->id,
             'reference_number' => 'Q-123',
@@ -100,8 +101,8 @@ class RfqFlowTest extends TestCase
                     'quantity' => 10,
                     'unit_price' => 15000,
                     'notes' => 'Included tax',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHasNoErrors();
@@ -130,7 +131,7 @@ class RfqFlowTest extends TestCase
             'total_amount' => 100000,
             'status' => 'submitted',
         ]);
-        
+
         $quotation->lines()->create([
             'product_id' => $this->product->id,
             'quantity' => 10,

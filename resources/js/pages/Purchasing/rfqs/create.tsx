@@ -13,14 +13,18 @@ import { index, store } from '@/routes/purchasing/rfqs';
 interface Props {
     products: { id: number; name: string; code: string; uom_id?: number | null }[];
     uoms: { id: number; name: string; symbol: string }[];
+    initialData?: {
+        title: string;
+        items: { product_id: string; quantity: number | string; uom_id: string; target_price: number | string; notes: string }[];
+    };
 }
 
-export default function Create({ products, uoms }: Props) {
+export default function Create({ products, uoms, initialData }: Props) {
     const { data, setData, post, processing, errors } = useForm({
-        title: '',
+        title: initialData?.title || '',
         deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default 7 days
         notes: '',
-        items: [] as { product_id: string; quantity: number | string; uom_id: string; target_price: number | string; notes: string }[],
+        items: initialData?.items || [] as { product_id: string; quantity: number | string; uom_id: string; target_price: number | string; notes: string }[],
     });
 
     const addItem = () => {
@@ -61,7 +65,7 @@ export default function Create({ products, uoms }: Props) {
             { title: 'Create RFQ' }
         ]}>
             <Head title="Create RFQ" />
-            <div className="container mx-auto max-w-4xl">
+            <div className="container max-w-5xl">
                 <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                     <Link href={index.url()}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to List

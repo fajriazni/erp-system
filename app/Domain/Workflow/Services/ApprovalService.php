@@ -143,7 +143,19 @@ class ApprovalService
     {
         return ApprovalTask::where('assigned_to_user_id', $userId)
             ->where('status', 'pending')
-            ->with(['workflowInstance.entity', 'workflowStep', 'workflowInstance.workflow'])
+            ->with([
+                'workflowInstance' => function ($query) {
+                    $query->with([
+                        'entity' => function ($morphTo) {
+                            $morphTo->morphWith([
+                                \App\Models\PurchaseOrder::class => ['vendor'],
+                            ]);
+                        },
+                        'workflow',
+                    ]);
+                },
+                'workflowStep',
+            ])
             ->orderBy('due_at')
             ->orderBy('created_at')
             ->get();
@@ -156,7 +168,19 @@ class ApprovalService
     {
         return ApprovalTask::where('assigned_to_role_id', $roleId)
             ->where('status', 'pending')
-            ->with(['workflowInstance.entity', 'workflowStep', 'workflowInstance.workflow'])
+            ->with([
+                'workflowInstance' => function ($query) {
+                    $query->with([
+                        'entity' => function ($morphTo) {
+                            $morphTo->morphWith([
+                                \App\Models\PurchaseOrder::class => ['vendor'],
+                            ]);
+                        },
+                        'workflow',
+                    ]);
+                },
+                'workflowStep',
+            ])
             ->orderBy('due_at')
             ->orderBy('created_at')
             ->get();

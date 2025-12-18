@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, XCircle, Activity, Plus, Edit, Trash2 } from 'lucide-react';
 import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Workflow {
     id: number;
@@ -19,7 +20,7 @@ interface Workflow {
     };
 }
 
-export default function WorkflowManagement({ workflows = [] }: { workflows: Workflow[] }) {
+export default function WorkflowManagement({ workflows = [], filters = { module: '' } }: { workflows: Workflow[], filters: { module: string } }) {
     const handleDelete = (id: number) => {
         router.delete(`/workflows/${id}`, {
             onSuccess: () => {
@@ -28,6 +29,13 @@ export default function WorkflowManagement({ workflows = [] }: { workflows: Work
             onError: () => {
                 toast.error('Failed to delete workflow');
             }
+        });
+    };
+
+    const handleFilterChange = (value: string) => {
+        router.get('/workflows/management', { module: value === 'all' ? '' : value }, {
+            preserveState: true,
+            replace: true,
         });
     };
 
@@ -44,12 +52,28 @@ export default function WorkflowManagement({ workflows = [] }: { workflows: Work
                             Configure and manage approval workflows for your business processes
                         </p>
                     </div>
-                    <Link href="/workflows/create">
-                        <Button size="default">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Workflow
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Select
+                            value={filters.module || 'all'}
+                            onValueChange={handleFilterChange}
+                        >
+                            <SelectTrigger className="w-[180px] bg-background">
+                                <SelectValue placeholder="Filter by Module" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Modules</SelectItem>
+                                <SelectItem value="purchasing">Purchasing</SelectItem>
+                                <SelectItem value="finance">Finance</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Link href="/workflows/create">
+                            <Button size="default">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Workflow
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Content */}

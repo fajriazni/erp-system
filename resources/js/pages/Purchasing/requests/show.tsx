@@ -153,7 +153,7 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
         ]}>
             <Head title={request.document_number} />
 
-            <div className="mb-6">
+            <div>
                 <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                     <Link href={indexUrl}>
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
@@ -212,10 +212,18 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                         )}
 
                         {request.status === 'approved' && (
-                            <Button size="sm" onClick={() => setConvertDialogOpen(true)}>
-                                <ShoppingCart className="mr-2 h-4 w-4" />
-                                Convert to PO
-                            </Button>
+                            <>
+                                <Button variant="secondary" size="sm" asChild>
+                                    <Link href={`/purchasing/rfqs/create?pr_id=${request.id}`}>
+                                        <Send className="mr-2 h-4 w-4" />
+                                        Create RFQ
+                                    </Link>
+                                </Button>
+                                <Button size="sm" onClick={() => setConvertDialogOpen(true)}>
+                                    <ShoppingCart className="mr-2 h-4 w-4" />
+                                    Convert to PO
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>

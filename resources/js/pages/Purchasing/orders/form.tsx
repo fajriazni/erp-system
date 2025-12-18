@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
 import { toast } from 'sonner';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
@@ -23,28 +24,37 @@ interface Props {
     vendors: any[];
     warehouses: any[];
     products: any[];
+    paymentTerms?: any[];
     order?: any;
 }
 
-export default function PurchaseOrderForm({ vendors, warehouses, products, order }: Props) {
+export default function PurchaseOrderForm({ vendors, warehouses, products, paymentTerms = [], order }: Props) {
     const isEditing = !!order;
     
     const { data, setData, post, put, processing, errors } = useForm<{
         vendor_id: number | '';
         warehouse_id: number | '';
         date: string;
+        payment_term_id: string;
         notes: string;
         items: PurchaseOrderItem[];
+        tax_rate: number;
+        withholding_tax_rate: number;
+        tax_inclusive: boolean;
     }>({
         vendor_id: order?.vendor_id || '',
         warehouse_id: order?.warehouse_id || '',
         date: order?.date || new Date().toISOString().split('T')[0],
+        payment_term_id: order?.payment_term_id ? String(order.payment_term_id) : '',
         notes: order?.notes || '',
         items: order?.items?.map((item: any) => ({
             product_id: item.product_id,
             quantity: item.quantity,
             unit_price: item.unit_price,
         })) || [{ product_id: 0, quantity: 1, unit_price: 0 }],
+        tax_rate: order?.tax_rate ?? 11,
+        withholding_tax_rate: order?.withholding_tax_rate ?? 0,
+        tax_inclusive: order?.tax_inclusive ?? false,
     });
 
     const addItem = () => {
@@ -103,6 +113,34 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, order
         return data.items.reduce((sum, item) => sum + calculateSubtotal(item), 0);
     };
 
+    const calculateTax = () => {
+        const subtotal = calculateTotal();
+        let baseAmount = subtotal;
+        
+        if (data.tax_inclusive && data.tax_rate > 0) {
+            baseAmount = subtotal / (1 + (data.tax_rate / 100));
+        }
+        
+        const taxAmount = baseAmount * (data.tax_rate / 100);
+        const withholdingAmount = baseAmount * (data.withholding_tax_rate / 100);
+        const total = data.tax_inclusive ? subtotal : (baseAmount + taxAmount);
+        const netPayable = total - withholdingAmount;
+        
+        return {
+            subtotal: baseAmount,
+            taxAmount,
+            withholdingAmount,
+            total,
+            netPayable
+        };
+    };
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+    };
+
+    const taxCalc = calculateTax();
+
     const submit = (e: FormEvent) => {
         e.preventDefault();
         
@@ -132,8 +170,8 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, order
         ]}>
             <Head title={isEditing ? `Edit ${order.document_number}` : "New Purchase Order"} />
             
-            <div className="max-w-6xl">
-                <div className="mb-6">
+            <div>
+                <div>
                     <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                         <Link href={index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Purchase Orders
@@ -203,6 +241,31 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, order
                                         onChange={(e) => setData('date', e.target.value)}
                                     />
                                     <InputError message={errors.date} />
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="payment_term_id">Payment Terms</Label>
+                                    <Select 
+                                        value={data.payment_term_id} 
+                                        onValueChange={(value) => setData('payment_term_id', value)}
+                                    >
+                                        <SelectTrigger id="payment_term_id">
+                                            <SelectValue placeholder="Select payment terms" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {paymentTerms?.map((term) => (
+                                                <SelectItem key={term.id} value={String(term.id)}>
+                                                    {term.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Defines the billing schedule (e.g. Net 30, Termin, etc.)
+                                    </p>
+                                    <InputError message={errors.payment_term_id} />
                                 </div>
                             </div>
 
@@ -311,15 +374,85 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, order
                                     </div>
                                 ))}
 
-                                {/* Total */}
+                                {/* Total with Tax Breakdown */}
                                 <div className="flex justify-end pt-4 border-t">
-                                    <div className="w-64 space-y-2">
-                                        <div className="flex justify-between items-center text-lg font-semibold">
-                                            <span>Total:</span>
-                                            <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(calculateTotal())}</span>
+                                    <div className="w-80 space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Subtotal:</span>
+                                            <span className="font-mono">{formatCurrency(taxCalc.subtotal)}</span>
                                         </div>
+                                        {data.tax_rate > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-muted-foreground">PPN {data.tax_rate}%:</span>
+                                                <span className="font-mono text-green-600">+{formatCurrency(taxCalc.taxAmount)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center text-lg font-bold border-t pt-2">
+                                            <span>Total:</span>
+                                            <span className="font-mono">{formatCurrency(taxCalc.total)}</span>
+                                        </div>
+                                        {data.withholding_tax_rate > 0 && (
+                                            <>
+                                                <div className="flex justify-between text-sm text-red-600">
+                                                    <span>PPh 23 {data.withholding_tax_rate}%:</span>
+                                                    <span className="font-mono">-{formatCurrency(taxCalc.withholdingAmount)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center font-semibold text-primary border-t pt-2">
+                                                    <span>Net Payable:</span>
+                                                    <span className="font-mono">{formatCurrency(taxCalc.netPayable)}</span>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Tax Configuration */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Tax Configuration</CardTitle>
+                            <CardDescription>Configure tax rates for this purchase order</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tax_rate">PPN Rate (%)</Label>
+                                    <Input
+                                        id="tax_rate"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value={data.tax_rate}
+                                        onChange={(e) => setData('tax_rate', parseFloat(e.target.value) || 0)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Value Added Tax (typically 11%)</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="withholding_tax_rate">PPh 23 Rate (%)</Label>
+                                    <Input
+                                        id="withholding_tax_rate"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value={data.withholding_tax_rate}
+                                        onChange={(e) => setData('withholding_tax_rate', parseFloat(e.target.value) || 0)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">Withholding tax (typically 2%)</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="tax_inclusive"
+                                    checked={data.tax_inclusive}
+                                    onCheckedChange={(checked) => setData('tax_inclusive', checked as boolean)}
+                                />
+                                <Label htmlFor="tax_inclusive" className="font-normal cursor-pointer">
+                                    Tax Inclusive (item prices already include tax)
+                                </Label>
                             </div>
                         </CardContent>
                     </Card>

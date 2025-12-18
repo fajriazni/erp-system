@@ -122,7 +122,7 @@ class CreateGoodsReceiptService
                 ];
 
                 $this->createJournalEntryService->execute(
-                    $receipt->date->format('Y-m-d'),
+                    \Carbon\Carbon::parse($receipt->date)->format('Y-m-d'),
                     $receipt->receipt_number,
                     "Goods Receipt #{$receipt->receipt_number} - PO #{$purchaseOrder->document_number}",
                     $lines
@@ -131,6 +131,9 @@ class CreateGoodsReceiptService
 
             // 4. Check for PO Completion (Per Item strict check)
             $this->updatePurchaseOrderStatus($purchaseOrder);
+
+            // 5. Record Vendor Delivery Performance
+            app(VendorScorecardService::class)->recordDeliveryPerformance($purchaseOrder, $receipt);
         });
     }
 

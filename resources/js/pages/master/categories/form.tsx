@@ -48,7 +48,7 @@ export default function CategoryForm({ category }: Props) {
             { title: isEditing ? 'Edit Category' : 'Create Category', href: '#' }
         ]}>
             <div className="max-w-xl">
-                <div className="mb-6">
+                <div>
                     <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                         <Link href={index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Categories

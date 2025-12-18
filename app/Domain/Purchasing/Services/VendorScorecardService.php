@@ -44,7 +44,7 @@ class VendorScorecardService
      */
     public function recordQualityPerformance(GoodsReceipt $gr, int $passedQty, int $failedQty): void
     {
-        $vendor = $gr->vendor;
+        $vendor = $gr->purchaseOrder?->vendor;
         if (! $vendor) {
             return;
         }
@@ -106,7 +106,9 @@ class VendorScorecardService
             ->avg('value') ?? null;
 
         // Calculate return rate (returns as % of total received)
-        $totalReceived = GoodsReceipt::where('vendor_id', $vendor->id)
+        $totalReceived = GoodsReceipt::whereHas('purchaseOrder', function ($query) use ($vendor) {
+            $query->where('vendor_id', $vendor->id);
+        })
             ->with('items')
             ->get()
             ->flatMap->items

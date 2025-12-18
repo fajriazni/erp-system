@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\DB;
 class CreatePurchaseRequestService
 {
     public function __construct(
-        protected \App\Domain\Approval\Services\ApprovalMatrixService $approvalService,
+        protected \App\Domain\Workflow\Services\WorkflowEngine $workflowEngine,
+        protected \App\Domain\Workflow\Services\WorkflowInstanceService $workflowService,
         protected \App\Domain\Finance\Services\BudgetCheckService $budgetService
     ) {}
 
@@ -21,7 +22,7 @@ class CreatePurchaseRequestService
             // 1. Calculate Total Amount First (Needed for Budget Check)
             $totalAmount = 0;
             $items = [];
-            
+
             foreach ($data['items'] as $itemData) {
                 $product = Product::find($itemData['product_id']);
                 $uomId = $itemData['uom_id'] ?? $product->uom_id;
@@ -32,7 +33,7 @@ class CreatePurchaseRequestService
 
                 $estimatedTotal = $itemData['quantity'] * ($itemData['estimated_unit_price'] ?? 0);
                 $totalAmount += $estimatedTotal;
-                
+
                 $items[] = [
                     'product_id' => $itemData['product_id'],
                     'product_name' => $product->name,
@@ -49,10 +50,10 @@ class CreatePurchaseRequestService
 
                 if ($checkResult->status === 'blocked') {
                     throw \Illuminate\Validation\ValidationException::withMessages([
-                        'budget' => [$checkResult->message]
+                        'budget' => [$checkResult->message],
                     ]);
                 }
-                
+
                 // Note: Warnings are not blocking, we proceed.
             }
 
@@ -86,14 +87,20 @@ class CreatePurchaseRequestService
                 $this->budgetService->createEncumbrance($checkResult->budget, $pr, $totalAmount);
             }
 
-            // 6. Check for approval
-            if ($this->approvalService->requiresApproval('purchase_request', $totalAmount)) {
-                $this->approvalService->submitForApproval($pr, $totalAmount);
-                
-                if ($pr->refresh()->status === 'draft') {
-                    $pr->update(['status' => 'pending_approval']);
-                }
+            // 6. Initiate Workflow
+            $workflow = $this->workflowService->findWorkflowForEntity('purchasing', get_class($pr));
+
+            if ($workflow) {
+                // Determine if approval is actually needed based on value?
+                // Workflow engine handles conditions per step.
+                // We just start it.
+                $this->workflowEngine->startWorkflow($workflow, $pr, $requesterId);
+
+                // Set status to pending_approval if workflow started
+                $pr->markAsPendingApproval();
+
             } else {
+                // Fallback: Auto-approve if no workflow defined
                 $pr->update(['status' => 'approved']);
             }
 

@@ -37,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('orders/{order}/submit', [PurchaseOrderController::class, 'submit'])->name('orders.submit');
         Route::post('orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('orders.approve');
         Route::post('orders/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::get('orders/{order}/print', [PurchaseOrderController::class, 'print'])->name('orders.print');
 
         // Purchase Requests
         // Purchase Requests
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('requests', \App\Http\Controllers\Purchasing\PurchaseRequestController::class);
 
         Route::resource('vendors', \App\Http\Controllers\Purchasing\VendorController::class);
+        Route::resource('payment-terms', \App\Http\Controllers\Finance\PaymentTermController::class);
 
         Route::resource('receipts', GoodsReceiptController::class);
         Route::post('receipts/{receipt}/post', [GoodsReceiptController::class, 'post'])->name('receipts.post');
@@ -58,9 +60,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('receipts/{receipt}/qc/{item}/inspect', [GoodsReceiptController::class, 'recordQcInspection'])->name('receipts.qc.inspect');
 
         Route::resource('bills', VendorBillController::class);
+        Route::get('bills/{bill}/print', [VendorBillController::class, 'print'])->name('bills.print');
         Route::post('bills/{bill}/post', [VendorBillController::class, 'post'])->name('bills.post');
 
         Route::resource('payments', \App\Http\Controllers\Purchasing\VendorPaymentController::class);
+        Route::get('payments/{payment}/print', [\App\Http\Controllers\Purchasing\VendorPaymentController::class, 'print'])->name('payments.print');
         Route::get('payments/vendor/{vendor}/bills', [\App\Http\Controllers\Purchasing\VendorPaymentController::class, 'getUnpaidBills'])
             ->name('payments.get-unpaid-bills');
 
@@ -89,11 +93,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('finance')->name('finance.')->group(function () {
         Route::resource('budgets', \App\Http\Controllers\Finance\BudgetController::class);
         Route::post('budgets/check', [\App\Http\Controllers\Finance\BudgetController::class, 'checkBudget'])->name('budgets.check');
-    });
-
-    // Admin Module (Settings, Approval Rules)
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::resource('approval-rules', \App\Http\Controllers\Admin\ApprovalRuleController::class);
     });
 
     Route::get('/hrm', function () {

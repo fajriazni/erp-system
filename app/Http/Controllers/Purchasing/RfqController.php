@@ -15,9 +15,14 @@ use Inertia\Inertia;
 
 class RfqController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $rfqs = PurchaseRfq::with('user')
+            ->when($request->input('filter.status'), function ($query, $status) {
+                if ($status !== 'all') {
+                    $query->where('status', $status);
+                }
+            })
             ->latest()
             ->paginate(10); // Use server-side pagination eventually
 
@@ -26,11 +31,32 @@ class RfqController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $initialData = [];
+
+        if ($request->has('pr_id')) {
+            $pr = \App\Models\PurchaseRequest::with('items.product')->find($request->pr_id);
+            if ($pr) {
+                $initialData = [
+                    'title' => 'RFQ from '.$pr->document_number,
+                    'items' => $pr->items->map(function ($item) {
+                        return [
+                            'product_id' => (string) $item->product_id,
+                            'quantity' => $item->quantity,
+                            'uom_id' => (string) $item->product->uom_id,
+                            'target_price' => $item->estimated_unit_price,
+                            'notes' => $item->notes,
+                        ];
+                    }),
+                ];
+            }
+        }
+
         return Inertia::render('Purchasing/rfqs/create', [
             'products' => Product::with('uom')->select('id', 'name', 'code', 'uom_id')->get(),
             'uoms' => \App\Models\Uom::all(),
+            'initialData' => $initialData,
         ]);
     }
 
@@ -59,9 +85,17 @@ class RfqController extends Controller
     {
         $rfq->load(['lines.product.uom', 'vendors', 'quotations.vendor', 'quotations.lines.product', 'createdBy']);
 
+        $productIds = $rfq->lines->pluck('product_id');
+        $suggestedVendorIds = \App\Models\VendorPricelist::whereIn('product_id', $productIds)
+            ->pluck('vendor_id')
+            ->unique()
+            ->values()
+            ->all();
+
         return Inertia::render('Purchasing/rfqs/show', [
             'rfq' => $rfq,
             'vendors' => Contact::where('type', 'vendor')->select('id', 'name', 'email', 'phone')->get(),
+            'suggestedVendorIds' => $suggestedVendorIds,
             'products' => Product::with('uom')->select('id', 'name', 'code', 'uom_id')->get(),
             'uoms' => \App\Models\Uom::all(), // Passing UOMs for reference
         ]);
@@ -75,9 +109,26 @@ class RfqController extends Controller
         ]);
 
         $rfq->vendors()->syncWithoutDetaching($data['vendor_ids']);
-        // Here we would trigger email sending logic
+
+        // Disable observer to prevent double status update if exists, or just handle gracefully
+        $vendors = Contact::whereIn('id', $data['vendor_ids'])->get();
+        foreach ($vendors as $vendor) {
+            if ($vendor->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($vendor->email)
+                        ->send(new \App\Mail\Purchasing\SendRfqToVendor($rfq, $vendor));
+                } catch (\Exception $e) {
+                    // Log error but continue
+                    \Illuminate\Support\Facades\Log::error("Failed to send RFQ email to {$vendor->email}: ".$e->getMessage());
+                }
+            }
+        }
 
         $rfq->vendors()->updateExistingPivot($data['vendor_ids'], ['sent_at' => now(), 'status' => 'sent']);
+
+        if ($rfq->status === 'draft') {
+            $rfq->update(['status' => 'open']);
+        }
 
         return back()->with('success', 'Vendors invited.');
     }

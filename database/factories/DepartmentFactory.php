@@ -17,7 +17,7 @@ class DepartmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->company . ' Dept',
+            'name' => $this->faker->company.' Dept',
             'code' => strtoupper($this->faker->bothify('DEP-###')),
             'is_active' => true,
         ];

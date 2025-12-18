@@ -16,6 +16,22 @@ class Contact extends Model
         'phone',
         'address',
         'tax_id',
+        'payment_term_id',
+        'rating_score',
+        'on_time_rate',
+        'quality_rate',
+        'return_rate',
+        'last_score_update',
     ];
+
+    public function paymentTerm()
+    {
+        return $this->belongsTo(PaymentTerm::class);
+    }
+
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class, 'vendor_id');
+    }
     //
 }

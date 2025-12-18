@@ -37,4 +37,9 @@ class Product extends Model
     {
         return $this->belongsTo(Uom::class);
     }
+
+    public function warehouses(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Warehouse::class)->withPivot('quantity')->withTimestamps();
+    }
 }

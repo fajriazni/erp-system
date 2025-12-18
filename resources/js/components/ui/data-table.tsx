@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { router } from "@inertiajs/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "use-debounce";
 
 interface DataTableProps {
@@ -62,9 +62,30 @@ export function DataTable({
     const [search, setSearch] = useState(initialSearch);
     const [filterValues, setFilterValues] = useState(initialFilters);
     const [debouncedSearch] = useDebounce(search, 500);
+    const isMounted = useRef(false);
 
     // Effect to trigger router visit when params change
     useEffect(() => {
+        if (!isMounted.current) {
+            isMounted.current = true;
+            return;
+        }
+
+        // Check if state is different from URL params to avoid redundant pushes (which reset page)
+        const currentParams = new URLSearchParams(window.location.search);
+        const currentSort = currentParams.get("sort") || "";
+        const currentSearch = currentParams.get("filter[global]") || "";
+        
+        const filtersChanged = Object.keys(filterValues).some(key => {
+            const urlValue = currentParams.get(`filter[${key}]`) || "all";
+            const stateValue = filterValues[key] || "all";
+            return urlValue !== stateValue;
+        });
+
+        if (sort === currentSort && debouncedSearch === currentSearch && !filtersChanged) {
+            return;
+        }
+
         // Build query object
         const query: any = { ...routeParams };
 
@@ -76,11 +97,6 @@ export function DataTable({
                 query[`filter[${key}]`] = filterValues[key];
             }
         });
-        
-        // Preserve page if it exists in data meta but reset to 1 if search/filter changes
-        // Actually, we usually want to reset page to 1 on filter change
-        // But if we are just navigating pages, we don't handle it here, pagination links handle it.
-        // Wait, if search changes, we MUST reset to page 1.
         
         router.get(baseUrl, query, {
             preserveState: true,

@@ -33,10 +33,12 @@ class CreateVendorPaymentService
             }
 
             // Floating point comparison
-            if (abs($data['amount'] - $totalAllocated) > 0.01) {
-                // For now, strict: Total payment must match allocations
-                // Later we can allow unallocated amounts (e.g. credit on account)
-                throw new InvalidArgumentException('Payment amount must match the sum of bill allocations.');
+            // Round to 2 decimals to avoid precision issues
+            $amountDiff = abs(round($data['amount'], 2) - round($totalAllocated, 2));
+
+            if ($amountDiff > 1.0) {
+                // Allow small difference up to 1 unit (e.g. rounding errors)
+                throw new InvalidArgumentException("Payment amount ({$data['amount']}) must match the sum of bill allocations ($totalAllocated). Diff: $amountDiff");
             }
 
             // 2. Create Header
@@ -64,7 +66,7 @@ class CreateVendorPaymentService
                 // Use the fresh relationship to re-sum inclusive of this new payment
                 $amountPaid = $bill->paymentLines()->sum('amount');
 
-                if ($amountPaid >= $bill->total_amount - 0.01) {
+                if ($amountPaid >= $bill->total_amount - 1.0) {
                     $bill->update(['status' => 'paid']);
                 } else {
                     $bill->update(['status' => 'partial']);

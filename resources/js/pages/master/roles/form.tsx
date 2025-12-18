@@ -83,7 +83,7 @@ export default function RoleForm({ role, permissions, rolePermissions = [] }: { 
             { title: isEditing ? 'Edit Role' : 'Create Role', href: '#' }
         ]}>
             <div className="max-w-4xl">
-                <div className="mb-6">
+                <div>
                     <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                         <Link href={index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Roles

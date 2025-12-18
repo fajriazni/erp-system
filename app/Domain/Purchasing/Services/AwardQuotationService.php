@@ -35,7 +35,7 @@ class AwardQuotationService
             $number = 'PO-'.$year.'-'.str_pad($count, 4, '0', STR_PAD_LEFT);
 
             // Fetch warehouse (default 1 or from user preferences/config)
-            $warehouseId = 1; 
+            $warehouseId = 1;
 
             $po = PurchaseOrder::create([
                 'document_number' => $number,

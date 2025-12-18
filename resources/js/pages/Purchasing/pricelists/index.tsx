@@ -23,6 +23,7 @@ export default function Index({ pricelists }: { pricelists: any }) {
             key: 'vendor.name',
             sortable: true,
             className: 'font-medium',
+            render: (row: any) => row.vendor?.name,
         },
         {
             label: 'Product',

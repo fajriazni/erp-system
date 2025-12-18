@@ -52,6 +52,7 @@ class PurchaseOrderController extends Controller
             'vendors' => Contact::where('type', 'vendor')->orWhere('type', 'both')->get(),
             'warehouses' => Warehouse::all(),
             'products' => Product::with('uom')->get(), // Eager load UoM for item selection
+            'paymentTerms' => \App\Models\PaymentTerm::where('is_active', true)->select('id', 'name', 'description')->get(),
         ]);
     }
 
@@ -66,11 +67,30 @@ class PurchaseOrderController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'payment_term_id' => 'nullable|exists:payment_terms,id',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'withholding_tax_rate' => 'nullable|numeric|min:0|max:100',
+            'tax_inclusive' => 'nullable|boolean',
         ]);
 
         DB::transaction(function () use ($validated) {
             // Generate document number using Value Object
             $validated['document_number'] = DocumentNumber::generate()->value();
+
+            // Calculate items subtotal
+            $itemsTotal = 0;
+            foreach ($validated['items'] as $item) {
+                $itemsTotal += $item['quantity'] * $item['unit_price'];
+            }
+
+            // Calculate tax
+            $taxService = app(\App\Domain\Finance\Services\TaxCalculationService::class);
+            $taxCalc = $taxService->calculatePurchaseTax(
+                $itemsTotal,
+                $validated['tax_rate'] ?? 0,
+                $validated['withholding_tax_rate'] ?? 0,
+                $validated['tax_inclusive'] ?? false
+            );
 
             $po = PurchaseOrder::create([
                 'vendor_id' => $validated['vendor_id'],
@@ -79,14 +99,19 @@ class PurchaseOrderController extends Controller
                 'date' => $validated['date'],
                 'status' => 'draft',
                 'notes' => $validated['notes'],
-                'total' => 0, // Will update after adding items
+                'subtotal' => $taxCalc['subtotal'],
+                'tax_rate' => $validated['tax_rate'] ?? 0,
+                'tax_amount' => $taxCalc['tax_amount'],
+                'withholding_tax_rate' => $validated['withholding_tax_rate'] ?? 0,
+                'withholding_tax_amount' => $taxCalc['withholding_tax_amount'],
+                'tax_inclusive' => $validated['tax_inclusive'] ?? false,
+                'total' => $taxCalc['total'],
+                'payment_term_id' => $validated['payment_term_id'] ?? null,
             ]);
 
-            $total = 0;
             foreach ($validated['items'] as $item) {
                 $product = Product::find($item['product_id']);
                 $subtotal = $item['quantity'] * $item['unit_price'];
-                $total += $subtotal;
 
                 $po->items()->create([
                     'product_id' => $item['product_id'],
@@ -97,8 +122,6 @@ class PurchaseOrderController extends Controller
                     'subtotal' => $subtotal,
                 ]);
             }
-
-            $po->update(['total' => $total]);
         });
 
         return redirect()->route('purchasing.orders.index')->with('success', 'Purchase Order created successfully.');
@@ -110,7 +133,8 @@ class PurchaseOrderController extends Controller
             'vendor',
             'warehouse',
             'items.product.uom',
-            'items.uom', // Added back as it was in the original load
+            'items.uom',
+            'goodsReceipts.items',
             'workflowInstances' => function ($query) {
                 $query->latest()->with([
                     'workflow',
@@ -155,6 +179,7 @@ class PurchaseOrderController extends Controller
             'vendors' => Contact::where('type', 'vendor')->orWhere('type', 'both')->get(),
             'warehouses' => Warehouse::all(),
             'products' => Product::with('uom')->get(),
+            'paymentTerms' => \App\Models\PaymentTerm::where('is_active', true)->select('id', 'name', 'description')->get(),
         ]);
     }
 
@@ -173,24 +198,49 @@ class PurchaseOrderController extends Controller
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0',
+            'payment_term_id' => 'nullable|exists:payment_terms,id',
+            'tax_rate' => 'nullable|numeric|min:0|max:100',
+            'withholding_tax_rate' => 'nullable|numeric|min:0|max:100',
+            'tax_inclusive' => 'nullable|boolean',
         ]);
 
         DB::transaction(function () use ($validated, $order) {
+            // Calculate items subtotal
+            $itemsTotal = 0;
+            foreach ($validated['items'] as $item) {
+                $itemsTotal += $item['quantity'] * $item['unit_price'];
+            }
+
+            // Calculate tax
+            $taxService = app(\App\Domain\Finance\Services\TaxCalculationService::class);
+            $taxCalc = $taxService->calculatePurchaseTax(
+                $itemsTotal,
+                $validated['tax_rate'] ?? 0,
+                $validated['withholding_tax_rate'] ?? 0,
+                $validated['tax_inclusive'] ?? false
+            );
+
             $order->update([
                 'vendor_id' => $validated['vendor_id'],
                 'warehouse_id' => $validated['warehouse_id'],
                 'date' => $validated['date'],
                 'notes' => $validated['notes'],
+                'subtotal' => $taxCalc['subtotal'],
+                'tax_rate' => $validated['tax_rate'] ?? 0,
+                'tax_amount' => $taxCalc['tax_amount'],
+                'withholding_tax_rate' => $validated['withholding_tax_rate'] ?? 0,
+                'withholding_tax_amount' => $taxCalc['withholding_tax_amount'],
+                'tax_inclusive' => $validated['tax_inclusive'] ?? false,
+                'total' => $taxCalc['total'],
+                'payment_term_id' => $validated['payment_term_id'] ?? $order->payment_term_id,
             ]);
 
             // Sync items: Delete all and recreate (simplest logic for full form submission)
             $order->items()->delete();
 
-            $total = 0;
             foreach ($validated['items'] as $item) {
                 $product = Product::find($item['product_id']);
                 $subtotal = $item['quantity'] * $item['unit_price'];
-                $total += $subtotal;
 
                 $order->items()->create([
                     'product_id' => $item['product_id'],
@@ -201,8 +251,6 @@ class PurchaseOrderController extends Controller
                     'subtotal' => $subtotal,
                 ]);
             }
-
-            $order->update(['total' => $total]);
         });
 
         return redirect()->route('purchasing.orders.index')->with('success', 'Purchase Order updated successfully.');
@@ -267,5 +315,14 @@ class PurchaseOrderController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function print(PurchaseOrder $order)
+    {
+        $order->load(['items.product', 'vendor']);
+
+        return view('purchasing.orders.print', [
+            'order' => $order,
+        ]);
     }
 }

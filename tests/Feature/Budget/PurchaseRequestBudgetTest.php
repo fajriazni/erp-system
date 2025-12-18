@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Budget;
 
-use App\Domain\Finance\Services\BudgetCheckService;
 use App\Models\Budget;
 use App\Models\Department;
 use App\Models\Product;
@@ -16,19 +15,20 @@ class PurchaseRequestBudgetTest extends TestCase
     use RefreshDatabase;
 
     protected Department $department;
+
     protected Product $product;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Setup initial data
         $this->user = User::factory()->create();
         $this->department = Department::factory()->create(['name' => 'IT Dept']);
         $uom = \App\Models\Uom::factory()->create(['name' => 'Unit', 'symbol' => 'unit']);
         $this->product = Product::factory()->create([
             'cost' => 1000,
-            'uom_id' => $uom->id
+            'uom_id' => $uom->id,
         ]); // $1000 per unit
     }
 
@@ -57,13 +57,13 @@ class PurchaseRequestBudgetTest extends TestCase
                     'product_id' => $this->product->id,
                     'quantity' => 1,
                     'estimated_unit_price' => 1000,
-                ]
-            ]
+                ],
+            ],
         ];
 
         // 4. Assert Validation Exception
         $this->expectException(\Illuminate\Validation\ValidationException::class);
-        
+
         $service = app(\App\Domain\Purchasing\Services\CreatePurchaseRequestService::class);
         $service->execute($data, $this->user->id);
     }
@@ -89,8 +89,8 @@ class PurchaseRequestBudgetTest extends TestCase
                     'product_id' => $this->product->id,
                     'quantity' => 1,
                     'estimated_unit_price' => 1000,
-                ]
-            ]
+                ],
+            ],
         ];
 
         $service = app(\App\Domain\Purchasing\Services\CreatePurchaseRequestService::class);
@@ -98,14 +98,14 @@ class PurchaseRequestBudgetTest extends TestCase
 
         // 3. Assertions
         $this->assertDatabaseHas('purchase_requests', ['id' => $pr->id]);
-        
+
         // Check Encumbrance created
         $this->assertDatabaseHas('budget_encumbrances', [
             'budget_id' => $budget->id,
             'encumberable_id' => $pr->id,
             'encumberable_type' => PurchaseRequest::class,
             'amount' => 1000,
-            'status' => 'active'
+            'status' => 'active',
         ]);
     }
 }

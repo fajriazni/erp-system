@@ -20,14 +20,32 @@ class VendorBill extends Model
         'match_status',
         'match_exceptions',
         'total_amount',
+        'subtotal',
+        'tax_rate',
+        'tax_amount',
+        'withholding_tax_rate',
+        'withholding_tax_amount',
+        'tax_inclusive',
         'notes',
+        'attachment_path',
     ];
 
     protected $casts = [
         'date' => 'date',
         'due_date' => 'date',
         'total_amount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'tax_rate' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'withholding_tax_rate' => 'decimal:2',
+        'withholding_tax_amount' => 'decimal:2',
+        'tax_inclusive' => 'boolean',
         'match_exceptions' => 'array',
+    ];
+
+    protected $appends = [
+        'amount_paid',
+        'balance_due',
     ];
 
     public function purchaseOrder()

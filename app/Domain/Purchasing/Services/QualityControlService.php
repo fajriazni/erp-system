@@ -34,11 +34,13 @@ class QualityControlService
         ?string $notes = null,
         ?array $checklistResults = null
     ): QcInspection {
-        $totalQty = $passedQty + $failedQty;
+        $totalNewInspected = $passedQty + $failedQty;
         $receivedQty = $item->quantity_received ?? 0;
+        $alreadyInspected = ($item->qc_passed_qty ?? 0) + ($item->qc_failed_qty ?? 0);
+        $remainingQty = $receivedQty - $alreadyInspected;
 
-        if ($totalQty > $receivedQty) {
-            throw new Exception("Inspected qty ({$totalQty}) cannot exceed received qty ({$receivedQty}).");
+        if ($totalNewInspected > $remainingQty) {
+            throw new Exception("Inspected qty ({$totalNewInspected}) cannot exceed remaining qty ({$remainingQty}).");
         }
 
         return DB::transaction(function () use ($item, $passedQty, $failedQty, $inspector, $notes, $checklistResults, $receivedQty) {
@@ -77,6 +79,14 @@ class QualityControlService
                 'qc_by' => $inspector->id,
                 'qc_at' => now(),
             ]);
+
+            // Record Vendor Quality Performance
+            $receipt = $item->goodsReceipt;
+            if ($receipt && $totalInspected >= $receivedQty) {
+                // Only record once inspection is complete
+                app(\App\Domain\Purchasing\Services\VendorScorecardService::class)
+                    ->recordQualityPerformance($receipt, $newPassedQty, $newFailedQty);
+            }
 
             return $inspection;
         });

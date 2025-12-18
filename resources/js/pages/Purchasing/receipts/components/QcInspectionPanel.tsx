@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ClipboardCheck, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { start, inspect } from '@/routes/purchasing/receipts/qc';
 
 interface GrItem {
     id: number;
@@ -44,11 +46,13 @@ export default function QcInspectionPanel({ receiptId, items, isPosted }: Props)
         notes: '',
     });
 
+    const [processing, setProcessing] = useState(false);
+
     const openInspection = (item: GrItem) => {
         setSelectedItem(item);
         setFormData({
-            passed_qty: '',
-            failed_qty: '',
+            passed_qty: '0',
+            failed_qty: '0',
             notes: '',
         });
         setIsOpen(true);
@@ -58,16 +62,38 @@ export default function QcInspectionPanel({ receiptId, items, isPosted }: Props)
         e.preventDefault();
         if (!selectedItem) return;
 
-        router.post(route('purchasing.receipts.qc.inspect', [receiptId, selectedItem.id]), formData, {
+        const passed = parseFloat(formData.passed_qty) || 0;
+        const failed = parseFloat(formData.failed_qty) || 0;
+        const total = passed + failed;
+        const remaining = selectedItem.quantity_received - selectedItem.qc_passed_qty - selectedItem.qc_failed_qty;
+
+        if (total > remaining) {
+            toast.error(`Total inspected (${total}) exceeds remaining quantity (${remaining}).`);
+            return;
+        }
+
+        setProcessing(true);
+        router.post(inspect.url({ receipt: receiptId, item: selectedItem.id }), {
+            ...formData,
+            passed_qty: formData.passed_qty || 0,
+            failed_qty: formData.failed_qty || 0
+        }, {
             onSuccess: () => {
+                toast.success('Inspection recorded.');
                 setIsOpen(false);
                 setSelectedItem(null);
+                setProcessing(false);
             },
+            onError: (errors) => {
+                console.error(errors);
+                toast.error('Failed to save inspection. Check values.');
+                setProcessing(false);
+            }
         });
     };
 
     const handleStartQc = (itemId: number) => {
-        router.post(route('purchasing.receipts.qc.start', [receiptId, itemId]));
+        router.post(start.url({ receipt: receiptId, item: itemId }));
     };
 
     // Calculate summary stats

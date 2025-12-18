@@ -23,13 +23,35 @@ class WorkflowSeeder extends Seeder
             return;
         }
 
+        // Get available roles
+        $roles = \Spatie\Permission\Models\Role::pluck('name', 'id')->toArray();
+
+        if (empty($roles)) {
+            $this->command->warn('No roles found. Please create roles first.');
+
+            return;
+        }
+
+        $this->command->info('Available roles: '.implode(', ', $roles));
+
+        // Get role IDs for workflow assignment
+        // Prefer: Super Admin/Admin (1) > Manager (2) > Director (3)
+        $adminRoleId = collect($roles)->search(fn ($name) => str_contains(strtolower($name), 'admin'));
+        $managerRoleId = collect($roles)->search(fn ($name) => str_contains(strtolower($name), 'manager'));
+        $directorRoleId = collect($roles)->search(fn ($name) => str_contains(strtolower($name), 'director'));
+
+        // Fallback to first available role
+        $defaultRoleId = $adminRoleId ?: array_key_first($roles);
+
+        $this->command->info("Using roles - Admin: {$adminRoleId}, Manager: {$managerRoleId}, Director: {$directorRoleId}, Default: {$defaultRoleId}");
+
         // Create Purchase Order Approval Workflow
         $poWorkflow = Workflow::firstOrCreate(
             ['name' => 'Purchase Order Approval'],
             [
                 'module' => 'purchasing',
                 'entity_type' => 'App\\Models\\PurchaseOrder',
-                'description' => 'Multi-level approval workflow for purchase orders based on amount thresholds',
+                'description' => 'Approval workflow for purchase orders',
                 'is_active' => true,
                 'created_by' => $user->id,
                 'version' => 1,
@@ -37,90 +59,25 @@ class WorkflowSeeder extends Seeder
         );
 
         if ($poWorkflow->wasRecentlyCreated) {
-            // Step 1: Manager Approval (for orders < 10M)
+            // Single step approval - assign to admin/manager/first available role
+            $approverRoleId = $managerRoleId ?: $adminRoleId ?: $defaultRoleId;
+
             WorkflowStep::create([
                 'workflow_id' => $poWorkflow->id,
                 'step_number' => 1,
-                'name' => 'Manager Approval',
+                'name' => 'Approval',
                 'step_type' => 'approval',
                 'config' => [
                     'approval_type' => 'any_one',
                     'approvers' => [
                         'type' => 'role',
-                        'role_ids' => [2], // Assuming role ID 2 is Manager
+                        'role_ids' => [$approverRoleId],
                     ],
                 ],
                 'sla_hours' => 24,
             ]);
 
-            // Step 2: Director Approval (for orders >= 10M and < 50M)
-            WorkflowStep::create([
-                'workflow_id' => $poWorkflow->id,
-                'step_number' => 2,
-                'name' => 'Director Approval',
-                'step_type' => 'approval',
-                'config' => [
-                    'approval_type' => 'any_one',
-                    'approvers' => [
-                        'type' => 'role',
-                        'role_ids' => [3], // Assuming role ID 3 is Director
-                    ],
-                ],
-                'sla_hours' => 48,
-            ]);
-
-            // Step 3: CEO Approval (for orders >= 50M)
-            WorkflowStep::create([
-                'workflow_id' => $poWorkflow->id,
-                'step_number' => 3,
-                'name' => 'CEO Approval',
-                'step_type' => 'approval',
-                'config' => [
-                    'approval_type' => 'all',
-                    'approvers' => [
-                        'type' => 'role',
-                        'role_ids' => [1], // Assuming role ID 1 is CEO/Admin
-                    ],
-                ],
-                'sla_hours' => 72,
-            ]);
-
-            // Add conditions to steps for amount-based routing
-            $step1 = $poWorkflow->steps()->where('step_number', 1)->first();
-            $step1->conditions()->create([
-                'field_path' => 'total',
-                'operator' => '<',
-                'value' => [10000000],
-                'logical_operator' => 'and',
-                'group_number' => 1,
-            ]);
-
-            $step2 = $poWorkflow->steps()->where('step_number', 2)->first();
-            $step2->conditions()->create([
-                'field_path' => 'total',
-                'operator' => '>=',
-                'value' => [10000000],
-                'logical_operator' => 'and',
-                'group_number' => 1,
-            ]);
-            $step2->conditions()->create([
-                'field_path' => 'total',
-                'operator' => '<',
-                'value' => [50000000],
-                'logical_operator' => 'and',
-                'group_number' => 1,
-            ]);
-
-            $step3 = $poWorkflow->steps()->where('step_number', 3)->first();
-            $step3->conditions()->create([
-                'field_path' => 'total',
-                'operator' => '>=',
-                'value' => [50000000],
-                'logical_operator' => 'and',
-                'group_number' => 1,
-            ]);
-
-            $this->command->info('Purchase Order Approval Workflow created successfully!');
+            $this->command->info("✓ Purchase Order Approval Workflow created (Approver: Role {$approverRoleId})");
         } else {
             $this->command->info('Purchase Order Approval Workflow already exists.');
         }
@@ -131,7 +88,7 @@ class WorkflowSeeder extends Seeder
             [
                 'module' => 'purchasing',
                 'entity_type' => 'App\\Models\\PurchaseRequest',
-                'description' => 'Simple approval workflow for purchase requests',
+                'description' => 'Approval workflow for purchase requests',
                 'is_active' => true,
                 'created_by' => $user->id,
                 'version' => 1,
@@ -139,27 +96,66 @@ class WorkflowSeeder extends Seeder
         );
 
         if ($prWorkflow->wasRecentlyCreated) {
-            // Step 1: Manager Approval (Required for all PRs)
+            $approverRoleId = $managerRoleId ?: $adminRoleId ?: $defaultRoleId;
+
             WorkflowStep::create([
                 'workflow_id' => $prWorkflow->id,
                 'step_number' => 1,
-                'name' => 'Manager Approval',
+                'name' => 'Approval',
                 'step_type' => 'approval',
                 'config' => [
                     'approval_type' => 'any_one',
                     'approvers' => [
                         'type' => 'role',
-                        'role_ids' => [2], // Assuming role ID 2 is Manager
+                        'role_ids' => [$approverRoleId],
                     ],
                 ],
                 'sla_hours' => 24,
             ]);
 
-            // No conditions meant it applies to all PRs
-
-            $this->command->info('Purchase Request Approval Workflow created successfully!');
+            $this->command->info("✓ Purchase Request Approval Workflow created (Approver: Role {$approverRoleId})");
         } else {
             $this->command->info('Purchase Request Approval Workflow already exists.');
         }
+
+        // Create RFQ Approval Workflow (if RFQ model exists)
+        if (class_exists('App\\Models\\Rfq')) {
+            $rfqWorkflow = Workflow::firstOrCreate(
+                ['name' => 'RFQ Approval'],
+                [
+                    'module' => 'purchasing',
+                    'entity_type' => 'App\\Models\\Rfq',
+                    'description' => 'Approval workflow for request for quotations',
+                    'is_active' => true,
+                    'created_by' => $user->id,
+                    'version' => 1,
+                ]
+            );
+
+            if ($rfqWorkflow->wasRecentlyCreated) {
+                $approverRoleId = $managerRoleId ?: $adminRoleId ?: $defaultRoleId;
+
+                WorkflowStep::create([
+                    'workflow_id' => $rfqWorkflow->id,
+                    'step_number' => 1,
+                    'name' => 'Approval',
+                    'step_type' => 'approval',
+                    'config' => [
+                        'approval_type' => 'any_one',
+                        'approvers' => [
+                            'type' => 'role',
+                            'role_ids' => [$approverRoleId],
+                        ],
+                    ],
+                    'sla_hours' => 24,
+                ]);
+
+                $this->command->info("✓ RFQ Approval Workflow created (Approver: Role {$approverRoleId})");
+            } else {
+                $this->command->info('RFQ Approval Workflow already exists.');
+            }
+        }
+
+        $this->command->info("\n✅ Workflow seeding completed!");
     }
 }

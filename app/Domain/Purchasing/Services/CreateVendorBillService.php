@@ -24,10 +24,15 @@ class CreateVendorBillService
                 'due_date' => $data['due_date'] ?? null,
                 'status' => 'draft',
                 'notes' => $data['notes'] ?? null,
-                'total_amount' => 0, // Will calculate below
+                'attachment_path' => $data['attachment_path'] ?? null,
+                'total_amount' => $data['total_amount'] ?? 0,
+                'subtotal' => $data['subtotal'] ?? 0,
+                'tax_rate' => $data['tax_rate'] ?? 0,
+                'tax_amount' => $data['tax_amount'] ?? 0,
+                'withholding_tax_rate' => $data['withholding_tax_rate'] ?? 0,
+                'withholding_tax_amount' => $data['withholding_tax_amount'] ?? 0,
+                'tax_inclusive' => $data['tax_inclusive'] ?? false,
             ]);
-
-            $totalAmount = 0;
 
             foreach ($data['items'] as $item) {
                 // 3-Way Matching Validation
@@ -52,7 +57,6 @@ class CreateVendorBillService
                 }
 
                 $lineTotal = $item['quantity'] * $item['unit_price'];
-                $totalAmount += $lineTotal;
 
                 VendorBillItem::create([
                     'vendor_bill_id' => $bill->id,
@@ -63,8 +67,6 @@ class CreateVendorBillService
                     'total' => $lineTotal,
                 ]);
             }
-
-            $bill->update(['total_amount' => $totalAmount]);
 
             return $bill;
         });

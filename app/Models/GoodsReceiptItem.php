@@ -16,6 +16,12 @@ class GoodsReceiptItem extends Model
         'uom_id',
         'quantity_received',
         'notes',
+        'qc_status',
+        'qc_passed_qty',
+        'qc_failed_qty',
+        'qc_notes',
+        'qc_by',
+        'qc_at',
     ];
 
     protected $casts = [

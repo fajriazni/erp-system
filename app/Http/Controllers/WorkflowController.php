@@ -14,8 +14,59 @@ class WorkflowController extends Controller
     {
         $roles = Role::all();
 
+        $workflowTypes = [
+            [
+                'id' => 'purchasing',
+                'label' => 'Purchasing',
+                'children' => [
+                    [
+                        'id' => 'App\\Models\\PurchaseRequest',
+                        'label' => 'Purchase Request',
+                        'module' => 'purchasing',
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseRfq',
+                        'label' => 'Purchase RFQ',
+                        'module' => 'purchasing',
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseOrder',
+                        'label' => 'Purchase Order',
+                        'module' => 'purchasing',
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseReturn',
+                        'label' => 'Purchase Return',
+                        'module' => 'purchasing',
+                    ],
+                ],
+            ],
+            [
+                'id' => 'finance',
+                'label' => 'Finance',
+                'children' => [
+                    [
+                        'id' => 'App\\Models\\VendorBill',
+                        'label' => 'Vendor Bill',
+                        'module' => 'finance',
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorPayment',
+                        'label' => 'Vendor Payment',
+                        'module' => 'finance',
+                    ],
+                    [
+                        'id' => 'App\\Models\\Budget',
+                        'label' => 'Budget Adjustment',
+                        'module' => 'finance',
+                    ],
+                ],
+            ],
+        ];
+
         return Inertia::render('Workflow/Create', [
             'roles' => $roles,
+            'workflowTypes' => $workflowTypes,
         ]);
     }
 

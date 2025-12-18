@@ -59,7 +59,7 @@ export default function PurchaseRequestIndex({ requests }: { requests: any }) {
     return (
         <AppLayout breadcrumbs={[{ title: 'Purchasing', href: '/purchasing' }, { title: 'Purchase Requests', href: '/purchasing/requests' }]}>
             <Head title="Purchase Requests" />
-             <div className="flex items-center justify-between mb-6">
+             <div className="flex items-center justify-between">
                 <div>
                      <h1 className="text-2xl font-bold tracking-tight">Purchase Requests</h1>
                     <p className="text-muted-foreground">

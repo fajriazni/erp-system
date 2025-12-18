@@ -41,9 +41,22 @@ export default function Index({ rfqs }: { rfqs: any }) {
             ),
         },
         {
+            label: 'Created At',
+            key: 'created_at',
+            sortable: true,
+            render: (row: any) => new Date(row.created_at).toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+        },
+        {
             label: 'Created By',
             key: 'user.name',
             sortable: true,
+            render: (row: any) => row.user?.name || '-',
         },
         {
             label: '',
@@ -87,6 +100,18 @@ export default function Index({ rfqs }: { rfqs: any }) {
                     searchPlaceholder="Search RFQ..."
                     routeParams={{}}
                     baseUrl={index.url()}
+                    filters={[
+                        {
+                            key: 'status',
+                            label: 'Status',
+                            options: [
+                                { label: 'Draft', value: 'draft' },
+                                { label: 'Open', value: 'open' },
+                                { label: 'Closed', value: 'closed' },
+                                { label: 'Awarded', value: 'awarded' },
+                            ]
+                        }
+                    ]}
                 />
             </div>
         </AppLayout>

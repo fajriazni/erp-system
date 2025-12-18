@@ -21,14 +21,24 @@ interface Step {
     approver_ids: number[];
     approval_type: string;
     sla_hours: number | null;
-    [key: string]: any; // Index signature for Inertia compatibility
+    [key: string]: any;
 }
 
-export default function CreateWorkflow({ roles }: { roles: Role[] }) {
+interface WorkflowType {
+    id: string;
+    label: string;
+    children: {
+        id: string;
+        label: string;
+        module: string;
+    }[];
+}
+
+export default function CreateWorkflow({ roles, workflowTypes }: { roles: Role[], workflowTypes: WorkflowType[] }) {
     const [formData, setFormData] = useState({
         name: '',
-        module: 'purchasing',
-        entity_type: 'App\\Models\\PurchaseOrder',
+        module: '',
+        entity_type: '',
         description: '',
     });
 
@@ -65,6 +75,23 @@ export default function CreateWorkflow({ roles }: { roles: Role[] }) {
         const newSteps = [...steps];
         newSteps[index] = { ...newSteps[index], [field]: value };
         setSteps(newSteps);
+    };
+
+    const handleEntityChange = (value: string) => {
+        let selectedModule = '';
+        for (const group of workflowTypes) {
+             const found = group.children.find(c => c.id === value);
+             if (found) {
+                 selectedModule = found.module;
+                 break;
+             }
+        }
+
+        setFormData({ 
+            ...formData, 
+            entity_type: value,
+            module: selectedModule 
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -109,20 +136,32 @@ export default function CreateWorkflow({ roles }: { roles: Role[] }) {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="module">Module</Label>
+                                    <Label htmlFor="entity_type">Target Feature</Label>
                                     <Select
-                                        value={formData.module}
-                                        onValueChange={(value) => setFormData({ ...formData, module: value })}
+                                        value={formData.entity_type}
+                                        onValueChange={handleEntityChange}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue />
+                                            <SelectValue placeholder="Select a feature..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="purchasing">Purchasing</SelectItem>
-                                            <SelectItem value="sales">Sales</SelectItem>
-                                            <SelectItem value="accounting">Accounting</SelectItem>
+                                            {workflowTypes.map((group) => (
+                                                <div key={group.id}>
+                                                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
+                                                        {group.label}
+                                                    </div>
+                                                    {group.children.map((child) => (
+                                                        <SelectItem key={child.id} value={child.id} className="pl-6">
+                                                            {child.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </div>
+                                            ))}
                                         </SelectContent>
                                     </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Module: {formData.module ? formData.module.charAt(0).toUpperCase() + formData.module.slice(1) : '-'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -137,6 +176,7 @@ export default function CreateWorkflow({ roles }: { roles: Role[] }) {
                             </div>
                         </CardContent>
                     </Card>
+
 
                     <Card>
                         <CardHeader>

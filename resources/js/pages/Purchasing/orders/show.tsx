@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, Trash2, Send, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Send, CheckCircle, XCircle, Printer, Pencil } from 'lucide-react';
 import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -23,6 +23,12 @@ interface PurchaseOrder {
     date: string;
     status: string;
     total: number;
+    subtotal?: number;
+    tax_rate?: number;
+    tax_amount?: number;
+    withholding_tax_rate?: number;
+    withholding_tax_amount?: number;
+    tax_inclusive?: boolean;
     notes: string;
     created_at: string;
     vendor: {
@@ -38,8 +44,16 @@ interface PurchaseOrder {
         id: number;
         description: string;
         quantity: number;
+        quantity_received: number; // Added
         unit_price: number;
         subtotal: number;
+    }>;
+    goods_receipts?: Array<{ // Added
+        id: number;
+        receipt_number: string;
+        date: string;
+        status: string;
+        items: Array<{ id: number; quantity_received: number; }>;
     }>;
 }
 
@@ -156,7 +170,7 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
         ]}>
             <Head title={order.document_number} />
 
-            <div className="mb-6">
+            <div>
                 <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
                     <Link href="/purchasing/orders">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Purchase Orders
@@ -169,6 +183,11 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                         <p className="text-muted-foreground">Created on {formatDate(order.created_at)}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={`/purchasing/orders/${order.id}/print`} target="_blank" rel="noopener noreferrer">
+                                <Printer className="mr-2 h-4 w-4" /> Print
+                            </a>
+                        </Button>
                         {/* Draft: Edit/Delete/Submit */}
                         {order.status === 'draft' && (
                             <>
@@ -257,49 +276,60 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                 </div>
             </div>
 
+            {/* Main Content - 2 Column Layout */}
             <div className="grid gap-6 lg:grid-cols-3">
-                {/* Left column - Order details (spans 2 cols on large screens) */}
+                {/* Left column - Main content (2 cols) */}
                 <div className="lg:col-span-2 space-y-6">
+                    {/* Order Information */}
                     <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle>Order Information</CardTitle>
-                                {getStatusBadge(order.status)}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Vendor</p>
-                                <p className="mt-1 font-medium">{order.vendor?.name || '-'}</p>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Order Information</CardTitle>
+                            {getStatusBadge(order.status)}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <dl className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="space-y-1">
+                                <dt className="text-sm font-medium text-muted-foreground">Vendor</dt>
+                                <dd className="font-medium">{order.vendor?.name || '-'}</dd>
                                 {order.vendor?.email && (
-                                    <p className="text-sm text-muted-foreground">{order.vendor.email}</p>
+                                    <dd className="text-sm text-muted-foreground">{order.vendor.email}</dd>
                                 )}
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Warehouse</p>
-                                <p className="mt-1 font-medium">{order.warehouse?.name || '-'}</p>
+                            <div className="space-y-1">
+                                <dt className="text-sm font-medium text-muted-foreground">Warehouse</dt>
+                                <dd className="font-medium">{order.warehouse?.name || '-'}</dd>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Order Date</p>
-                                <p className="mt-1">{formatDate(order.date)}</p>
+                            <div className="space-y-1">
+                                <dt className="text-sm font-medium text-muted-foreground">Order Date</dt>
+                                <dd className="font-medium">{formatDate(order.date)}</dd>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Document Number</p>
-                                <p className="mt-1 font-mono font-medium">{order.document_number}</p>
+                            <div className="space-y-1">
+                                <dt className="text-sm font-medium text-muted-foreground">Total Amount</dt>
+                                <dd className="text-lg font-bold">{formatCurrency(order.total)}</dd>
                             </div>
-                        {order.notes && (
-                            <div className="sm:col-span-2">
-                                <p className="text-sm font-medium text-muted-foreground">Notes</p>
-                                <p className="mt-1 whitespace-pre-wrap text-sm">{order.notes}</p>
-                            </div>
-                        )}
+                            {order.notes && (
+                                <div className="col-span-2 md:col-span-4 space-y-1">
+                                    <dt className="text-sm font-medium text-muted-foreground">Notes</dt>
+                                    <dd className="text-sm whitespace-pre-wrap bg-muted/30 p-3 rounded-md">{order.notes}</dd>
+                                </div>
+                            )}
+                        </dl>
                     </CardContent>
                 </Card>
 
+                {/* Order Items */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Order Items</CardTitle>
-                        <CardDescription>{order.items?.length || 0} item(s)</CardDescription>
+                    <CardHeader className="bg-muted/50">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-lg">Order Items</CardTitle>
+                                <CardDescription className="mt-1">
+                                    {order.items?.length || 0} item(s) | Total: {formatCurrency(order.total)}
+                                </CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -307,6 +337,7 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                 <TableRow>
                                     <TableHead>Product</TableHead>
                                     <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Received</TableHead>
                                     <TableHead className="text-right">Unit Price</TableHead>
                                     <TableHead className="text-right">Subtotal</TableHead>
                                 </TableRow>
@@ -317,13 +348,18 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                         <TableRow key={item.id}>
                                             <TableCell className="font-medium">{item.description || '-'}</TableCell>
                                             <TableCell className="text-right">{Number(item.quantity).toFixed(2)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Badge variant={Number(item.quantity_received) >= Number(item.quantity) ? 'default' : 'secondary'}>
+                                                    {Number(item.quantity_received).toFixed(2)}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
                                             <TableCell className="text-right font-medium">{formatCurrency(item.subtotal)}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground">
                                             No items found
                                         </TableCell>
                                     </TableRow>
@@ -332,20 +368,98 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                         </Table>
 
                         <div className="flex justify-end pt-4 border-t mt-4">
-                            <div className="text-right">
-                                <p className="text-sm font-medium text-muted-foreground">Total</p>
-                                <p className="text-2xl font-bold">{formatCurrency(order.total)}</p>
+                            <div className="w-80 space-y-2 text-right">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Subtotal:</span>
+                                    <span className="font-mono">{formatCurrency(order.subtotal || order.total)}</span>
+                                </div>
+                                {(order.tax_rate ?? 0) > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted-foreground">PPN {order.tax_rate}%:</span>
+                                        <span className="font-mono text-green-600">+{formatCurrency(order.tax_amount || 0)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between font-bold text-lg border-t pt-2">
+                                    <span>Total:</span>
+                                    <span className="font-mono">{formatCurrency(order.total)}</span>
+                                </div>
+                                {(order.withholding_tax_rate ?? 0) > 0 && (
+                                    <>
+                                        <div className="flex justify-between text-sm text-red-600">
+                                            <span>PPh 23 {order.withholding_tax_rate}%:</span>
+                                            <span className="font-mono">-{formatCurrency(order.withholding_tax_amount || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between font-semibold text-primary border-t pt-2">
+                                            <span>Net Payable:</span>
+                                            <span className="font-mono">{formatCurrency((order.total || 0) - (order.withholding_tax_amount || 0))}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                 </Card>
+
+                {order.goods_receipts && order.goods_receipts.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Related Goods Receipts</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Receipt #</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Total Qty</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {order.goods_receipts.map((receipt) => (
+                                        <TableRow key={receipt.id}>
+                                            <TableCell className="font-medium">
+                                                <Link href={`/purchasing/receipts/${receipt.id}/edit`} className="hover:underline text-primary">
+                                                    {receipt.receipt_number}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>{formatDate(receipt.date)}</TableCell>
+                                            <TableCell><Badge variant="outline">{receipt.status}</Badge></TableCell>
+                                            <TableCell className="text-right">
+                                                {receipt.items?.reduce((sum, item) => sum + Number(item.quantity_received || 0), 0) || 0}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
+                </div>
+
+                {/* Right Sidebar - Workflow Timeline */}
+                <div className="lg:col-span-1">
+                    <Card className="sticky top-6">
+                        <CardHeader>
+                            <CardTitle>Workflow Timeline</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {workflowInstance ? (
+                                <WorkflowTimeline workflowInstance={workflowInstance} />
+                            ) : (
+                                <div className="text-center py-8">
+                                    <div className="text-muted-foreground text-sm space-y-1">
+                                        <p className="font-medium">No workflow data yet</p>
+                                        <p className="text-xs">Workflow will appear after order submission</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
-            {/* Right column - Workflow Timeline */}
-            <div className="lg:col-span-1">
-                <WorkflowTimeline workflowInstance={workflowInstance} />
-            </div>
-        </div>
+
 
         {/* Cancel Dialog */}
 

@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Plus, Gavel, CheckCircle } from 'lucide-react';
-import { index, invite, bid, award } from '@/routes/purchasing/rfqs'; // Ensure these routes exist in TS helper or use route() helper if generated
+import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle } from 'lucide-react';
+import { index, invite, bid } from '@/routes/purchasing/rfqs';
+import { award } from '@/routes/purchasing/quotations';
 import {
     Dialog,
     DialogContent,
@@ -19,13 +20,52 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog"
 
-// Helper for route generation if TS helper is not perfect
-const route = (window as any).route;
+// Remove const route = (window as any).route;
 
-export default function Show({ rfq, vendors, products }: { rfq: any, vendors: any[], products: any[] }) {
+interface BidItem {
+    product_id: string;
+    quantity: number;
+    unit_price: string;
+    notes: string;
+}
+
+interface BidForm {
+    vendor_id: string;
+    reference_number: string;
+    quote_date: string;
+    valid_until: string;
+    currency: string;
+    notes: string;
+    items: BidItem[];
+}
+
+export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }: { rfq: any, vendors: any[], products: any[], suggestedVendorIds?: number[] }) {
     const [inviteOpen, setInviteOpen] = useState(false);
     const [bidOpen, setBidOpen] = useState(false);
+    const [showRecommendedOnly, setShowRecommendedOnly] = useState(suggestedVendorIds?.length ? true : false);
+    const [quotationToAward, setQuotationToAward] = useState<number | null>(null);
 
     // Invite Form
     const { data: inviteData, setData: setInviteData, post: postInvite, processing: inviteProcessing, reset: resetInvite } = useForm({
@@ -33,7 +73,7 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
     });
 
     // Bid Form
-    const { data: bidData, setData: setBidData, post: postBid, processing: bidProcessing, reset: resetBid, errors: bidErrors } = useForm({
+    const { data: bidData, setData: setBidData, post: postBid, processing: bidProcessing, reset: resetBid, errors: bidErrors } = useForm<BidForm>({
         vendor_id: '',
         reference_number: '',
         quote_date: new Date().toISOString().split('T')[0],
@@ -48,9 +88,15 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
         }))
     });
 
+    // Helper to filter vendors
+    const availableVendors = vendors.filter(v => !rfq.vendors.find((rv:any) => rv.id === v.id));
+    const displayedVendors = (showRecommendedOnly 
+        ? availableVendors.filter(v => suggestedVendorIds?.includes(v.id)) 
+        : availableVendors).filter(v => !inviteData.vendor_ids.includes(v.id.toString()));
+
     const handleInviteSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        postInvite(route('purchasing.rfqs.invite', { rfq: rfq.id }), {
+        postInvite(invite.url(rfq.id), {
             onSuccess: () => {
                 setInviteOpen(false);
                 resetInvite();
@@ -60,7 +106,7 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
 
     const handleBidSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        postBid(route('purchasing.rfqs.bid', { rfq: rfq.id }), {
+        postBid(bid.url(rfq.id), {
              onSuccess: () => {
                 setBidOpen(false);
                 resetBid();
@@ -69,9 +115,7 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
     };
 
     const handleAward = (quotationId: number) => {
-        if (confirm('Are you sure you want to award this quotation? This will close the RFQ and create a Draft PO.')) {
-            router.post(route('purchasing.quotations.award', { quotation: quotationId }));
-        }
+        setQuotationToAward(quotationId);
     };
 
     return (
@@ -158,7 +202,11 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                                                               <Select value={bidData.vendor_id} onValueChange={(val) => setBidData('vendor_id', val)}>
                                                                   <SelectTrigger><SelectValue placeholder="Select Vendor" /></SelectTrigger>
                                                                   <SelectContent>
-                                                                      {vendors.map(v => <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>)}
+                                                                      {rfq.vendors
+                                                                        .filter((v: any) => !rfq.quotations.some((q: any) => q.vendor_id === v.id))
+                                                                        .map((v: any) => (
+                                                                          <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>
+                                                                      ))}
                                                                   </SelectContent>
                                                               </Select>
                                                               {bidErrors.vendor_id && <p className="text-red-500 text-xs">{bidErrors.vendor_id}</p>}
@@ -254,53 +302,79 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                             </TabsContent>
                             <TabsContent value="comparison">
                                 <Card>
-                                    <CardContent className="pt-6 overflow-x-auto">
-                                        <table className="w-full text-sm border-collapse">
-                                            <thead>
-                                                <tr>
-                                                    <th className="border p-2 bg-muted">Product</th>
-                                                    <th className="border p-2 bg-muted">Target</th>
+                                    <CardContent className="p-0 overflow-x-auto">
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead className="w-[300px]">Product</TableHead>
+                                                    <TableHead className="text-right">Target Price</TableHead>
                                                     {rfq.quotations.map((q: any) => (
-                                                        <th key={q.id} className={`border p-2 ${q.status === 'won' ? 'bg-green-100 dark:bg-green-900' : ''}`}>
-                                                            {q.vendor.name}
-                                                        </th>
+                                                        <TableHead key={q.id} className={`text-right min-w-[150px] ${q.status === 'won' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : ''}`}>
+                                                            <div className="font-bold">{q.vendor.name}</div>
+                                                            {q.status === 'won' && <div className="text-[10px] font-normal uppercase tracking-wider">Awarded</div>}
+                                                        </TableHead>
                                                     ))}
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {rfq.lines.map((line: any, idx: number) => (
-                                                    <tr key={line.id}>
-                                                        <td className="border p-2 font-medium">{line.product.name}</td>
-                                                        <td className="border p-2 text-right">
-                                                            {line.target_price ? new Intl.NumberFormat('id-ID').format(line.target_price) : '-'}
-                                                        </td>
-                                                        {rfq.quotations.map((q: any) => {
-                                                            const quoteLine = q.lines.find((ql: any) => ql.product_id === line.product_id);
-                                                            return (
-                                                                <td key={q.id} className="border p-2 text-right">
-                                                                    {quoteLine ? (
-                                                                        <div className={
-                                                                            line.target_price && quoteLine.unit_price <= line.target_price ? "text-green-600 font-bold" : ""
-                                                                        }>
-                                                                            {new Intl.NumberFormat('id-ID').format(quoteLine.unit_price)}
-                                                                        </div>
-                                                                    ) : '-'}
-                                                                </td>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                ))}
-                                                <tr className="font-bold bg-muted/50">
-                                                    <td className="border p-2">TOTAL</td>
-                                                    <td className="border p-2">-</td>
-                                                    {rfq.quotations.map((q: any) => (
-                                                        <td key={q.id} className="border p-2 text-right text-lg">
-                                                            {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(q.total_amount)}
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {rfq.lines.map((line: any) => {
+                                                    // Calculate best price for this line
+                                                    const prices = rfq.quotations
+                                                        .map((q: any) => {
+                                                            const item = q.lines.find((ql: any) => ql.product_id === line.product_id);
+                                                            return item ? parseFloat(item.unit_price) : null;
+                                                        })
+                                                        .filter((p: any) => p !== null);
+                                                    const minPrice = prices.length > 0 ? Math.min(...prices) : null;
+
+                                                    return (
+                                                        <TableRow key={line.id}>
+                                                            <TableCell>
+                                                                <div className="font-medium">{line.product.name}</div>
+                                                                <div className="text-xs text-muted-foreground">{line.product.code}</div>
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-muted-foreground">
+                                                                {line.target_price ? new Intl.NumberFormat('id-ID').format(line.target_price) : '-'}
+                                                            </TableCell>
+                                                            {rfq.quotations.map((q: any) => {
+                                                                const quoteLine = q.lines.find((ql: any) => ql.product_id === line.product_id);
+                                                                const isBestPrice = quoteLine && minPrice !== null && parseFloat(quoteLine.unit_price) === minPrice;
+                                                                
+                                                                return (
+                                                                    <TableCell key={q.id} className={`text-right ${q.status === 'won' ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}>
+                                                                        {quoteLine ? (
+                                                                            <div className={isBestPrice ? "text-emerald-600 font-bold" : ""}>
+                                                                                {new Intl.NumberFormat('id-ID').format(quoteLine.unit_price)}
+                                                                                {isBestPrice && <span className="sr-only"> (Best Price)</span>}
+                                                                            </div>
+                                                                        ) : <span className="text-muted-foreground">-</span>}
+                                                                    </TableCell>
+                                                                );
+                                                            })}
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                            <TableFooter>
+                                                <TableRow>
+                                                    <TableCell colSpan={2} className="font-bold">TOTAL</TableCell>
+                                                    {rfq.quotations.map((q: any) => {
+                                                        // Calculate if this is the best total price
+                                                        const totalPrices = rfq.quotations.map((qu: any) => parseFloat(qu.total_amount));
+                                                        const minTotal = Math.min(...totalPrices);
+                                                        const isBestTotal = parseFloat(q.total_amount) === minTotal;
+
+                                                        return (
+                                                            <TableCell key={q.id} className={`text-right font-bold lg ${q.status === 'won' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : ''}`}>
+                                                                <div className={isBestTotal && q.status !== 'won' ? "text-emerald-600" : ""}>
+                                                                    {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(q.total_amount)}
+                                                                </div>
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            </TableFooter>
+                                        </Table>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -312,10 +386,10 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-lg">Invited Vendors</CardTitle>
-                                {rfq.status === 'open' && (
+                                {['open', 'draft'].includes(rfq.status) && rfq.vendors.length > 0 && (
                                     <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
                                         <DialogTrigger asChild>
-                                            <Button size="icon" variant="outline"><Plus className="h-4 w-4" /></Button>
+                                            <Button size="sm" variant="outline"><Plus className="mr-2 h-4 w-4" /> Invite</Button>
                                         </DialogTrigger>
                                         <DialogContent>
                                             <DialogHeader>
@@ -324,11 +398,32 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                                             </DialogHeader>
                                             <form onSubmit={handleInviteSubmit}>
                                                 <div className="space-y-2 mb-4">
-                                                    <Label>Vendors</Label>
-                                                    <Select onValueChange={(val) => setInviteData('vendor_ids', [...inviteData.vendor_ids, val])}>
+                                                    <div className="flex justify-between items-center">
+                                                        <Label>Vendors</Label>
+                                                        <div className="flex items-center space-x-2">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                id="rec-only" 
+                                                                checked={showRecommendedOnly} 
+                                                                onChange={e => setShowRecommendedOnly(e.target.checked)} 
+                                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                            />
+                                                            <Label htmlFor="rec-only" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                                                                Show Recommended Only ({suggestedVendorIds?.length || 0})
+                                                            </Label>
+                                                        </div>
+                                                    </div>
+                                                    <Select 
+                                                        key={`header-${inviteData.vendor_ids.length}`}
+                                                        onValueChange={(val) => {
+                                                        if (!inviteData.vendor_ids.includes(val)) {
+                                                            setInviteData('vendor_ids', [...inviteData.vendor_ids, val]);
+                                                        }
+                                                    }}>
                                                         <SelectTrigger><SelectValue placeholder="Add a vendor..." /></SelectTrigger>
                                                         <SelectContent>
-                                                            {vendors.filter(v => !rfq.vendors.find((rv:any) => rv.id === v.id)).map(v => (
+                                                            {displayedVendors.length === 0 && <SelectItem value="none" disabled>No vendors found</SelectItem>}
+                                                            {displayedVendors.map(v => (
                                                                 <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>
                                                             ))}
                                                         </SelectContent>
@@ -336,7 +431,18 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                                                     <div className="flex flex-wrap gap-2 mt-2">
                                                         {inviteData.vendor_ids.map(id => {
                                                             const vendor = vendors.find(v => v.id.toString() === id);
-                                                            return <Badge key={id} variant="secondary">{vendor?.name}</Badge>;
+                                                            return (
+                                                                <Badge key={id} variant="secondary" className="pr-1">
+                                                                    {vendor?.name}
+                                                                    <button 
+                                                                        type="button"
+                                                                        className="ml-1 hover:text-destructive" 
+                                                                        onClick={() => setInviteData('vendor_ids', inviteData.vendor_ids.filter(vid => vid !== id))}
+                                                                    >
+                                                                        <XCircle className="h-3 w-3" />
+                                                                    </button>
+                                                                </Badge>
+                                                            );
                                                         })}
                                                     </div>
                                                 </div>
@@ -350,7 +456,76 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                             </CardHeader>
                             <CardContent>
                                 {rfq.vendors.length === 0 ? (
-                                    <p className="text-muted-foreground text-sm">No vendors invited.</p>
+                                    <div className="text-center py-6">
+                                        <p className="text-muted-foreground text-sm mb-4">No vendors invited yet.</p>
+                                        {['open', 'draft'].includes(rfq.status) && (
+                                            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                                                <DialogTrigger asChild>
+                                                    <Button size="sm"><Mail className="mr-2 h-4 w-4" /> Invite Vendors</Button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Invite Vendors</DialogTitle>
+                                                        <DialogDescription>Select vendors to send this RFQ to.</DialogDescription>
+                                                    </DialogHeader>
+                                                    <form onSubmit={handleInviteSubmit}>
+                                                        <div className="space-y-2 mb-4">
+                                                            <div className="flex justify-between items-center">
+                                                                <Label>Vendors</Label>
+                                                                <div className="flex items-center space-x-2">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        id="rec-only-empty" 
+                                                                        checked={showRecommendedOnly} 
+                                                                        onChange={e => setShowRecommendedOnly(e.target.checked)} 
+                                                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                                                    />
+                                                                    <Label htmlFor="rec-only-empty" className="text-xs font-normal text-muted-foreground cursor-pointer">
+                                                                        Show Recommended Only ({suggestedVendorIds?.length || 0})
+                                                                    </Label>
+                                                                </div>
+                                                            </div>
+                                                            <Select 
+                                                                key={`empty-${inviteData.vendor_ids.length}`}
+                                                                onValueChange={(val) => {
+                                                                if (!inviteData.vendor_ids.includes(val)) {
+                                                                    setInviteData('vendor_ids', [...inviteData.vendor_ids, val]);
+                                                                }
+                                                            }}>
+                                                                <SelectTrigger><SelectValue placeholder="Add a vendor..." /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    {displayedVendors.length === 0 && <SelectItem value="none" disabled>No vendors found</SelectItem>}
+                                                                    {displayedVendors.map(v => (
+                                                                        <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                                {inviteData.vendor_ids.map(id => {
+                                                                    const vendor = vendors.find(v => v.id.toString() === id);
+                                                                    return (
+                                                                        <Badge key={id} variant="secondary" className="pr-1">
+                                                                            {vendor?.name}
+                                                                            <button 
+                                                                                type="button"
+                                                                                className="ml-1 hover:text-destructive" 
+                                                                                onClick={() => setInviteData('vendor_ids', inviteData.vendor_ids.filter(vid => vid !== id))}
+                                                                            >
+                                                                                <XCircle className="h-3 w-3" />
+                                                                                </button>
+                                                                        </Badge>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                        <DialogFooter>
+                                                            <Button type="submit" disabled={inviteProcessing || inviteData.vendor_ids.length === 0}>Send Invites</Button>
+                                                        </DialogFooter>
+                                                    </form>
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="space-y-3">
                                         {rfq.vendors.map((vendor: any) => (
@@ -368,6 +543,23 @@ export default function Show({ rfq, vendors, products }: { rfq: any, vendors: an
                     </div>
                 </div>
             </div>
+
+            <AlertDialog open={!!quotationToAward} onOpenChange={(open) => !open && setQuotationToAward(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Award this Quotation?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action will close the RFQ and create a Draft Purchase Order based on this quotation. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => quotationToAward && router.post(award.url(quotationToAward))}>
+                            Confirm Award
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

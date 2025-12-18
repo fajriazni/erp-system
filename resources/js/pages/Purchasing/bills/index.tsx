@@ -2,10 +2,11 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Wallet } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { index, create, show } from '@/routes/purchasing/bills';
+import { create as createPayment } from '@/routes/purchasing/payments';
 
 interface Props {
     bills: {
@@ -65,14 +66,15 @@ export default function Index({ bills }: Props) {
             key: "status",
             sortable: true,
             render: (bill: any) => {
-                const variants: Record<string, { variant: any; label: string }> = {
+                const variants: Record<string, { variant: any; label: string; className?: string }> = {
                     draft: { variant: 'secondary', label: 'Draft' },
                     posted: { variant: 'default', label: 'Posted' },
-                    paid: { variant: 'outline', label: 'Paid' },
+                    partial: { variant: 'outline', label: 'Partial', className: 'text-orange-600 border-orange-600 bg-orange-50' },
+                    paid: { variant: 'outline', label: 'Paid', className: 'text-green-600 border-green-600 bg-green-50' },
                     cancelled: { variant: 'destructive', label: 'Cancelled' },
                 };
                 const config = variants[bill.status] || { variant: 'outline', label: bill.status };
-                return <Badge variant={config.variant} className={bill.status === 'paid' ? 'text-green-600 border-green-600' : ''}>{config.label}</Badge>;
+                return <Badge variant={config.variant} className={config.className || ''}>{config.label}</Badge>;
             }
         },
         {
@@ -81,6 +83,33 @@ export default function Index({ bills }: Props) {
             sortable: true,
             className: "text-right",
             render: (bill: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(bill.total_amount)
+        },
+        {
+            label: "Balance Due",
+            key: "balance_due",
+            sortable: false,
+            className: "text-right font-semibold text-red-600",
+            render: (bill: any) => {
+                if (bill.status === 'paid') return '-';
+                return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(bill.balance_due);
+            }
+        },
+        {
+            label: "Action",
+            key: "actions",
+            className: "w-[50px]",
+            render: (bill: any) => {
+                if ((bill.status === 'posted' || bill.status === 'partial') && bill.balance_due > 0) {
+                    return (
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild title="Record Payment">
+                            <Link href={`${createPayment.url()}?vendor_id=${bill.vendor_id}`}>
+                                <Wallet className="h-4 w-4 text-green-600" />
+                            </Link>
+                        </Button>
+                    );
+                }
+                return null;
+            }
         }
     ];
 

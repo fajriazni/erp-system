@@ -29,7 +29,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'department_id',
     ];
+
+    // ...
+
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

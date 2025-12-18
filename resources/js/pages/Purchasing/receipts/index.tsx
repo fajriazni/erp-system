@@ -36,6 +36,15 @@ export default function GoodsReceiptIndex({ receipts }: { receipts: any }) {
             render: (gr: any) => gr.warehouse?.name || '-'
         },
         {
+            label: "PO Remaining",
+            key: "po_remaining",
+            render: (gr: any) => {
+                if (!gr.purchase_order?.items) return '-';
+                const remaining = gr.purchase_order.items.reduce((sum: number, item: any) => sum + (item.quantity - item.quantity_received), 0);
+                return remaining > 0 ? Number(remaining).toFixed(2) : <span className="text-green-600">Completed</span>;
+            }
+        },
+        {
             label: "Status",
             key: "status",
             sortable: true,

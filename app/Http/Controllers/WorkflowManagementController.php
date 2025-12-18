@@ -13,15 +13,21 @@ class WorkflowManagementController extends Controller
     /**
      * Display workflow management dashboard
      */
-    public function index()
+    public function index(Request $request)
     {
-        $workflows = Workflow::withCount(['instances', 'steps'])
+        $query = Workflow::withCount(['instances', 'steps'])
             ->with('creator')
-            ->latest()
-            ->get();
+            ->latest();
+
+        if ($request->filled('module')) {
+            $query->where('module', $request->module);
+        }
+
+        $workflows = $query->get();
 
         return Inertia::render('Workflow/Management/Index', [
             'workflows' => $workflows,
+            'filters' => $request->only(['module']),
         ]);
     }
 
