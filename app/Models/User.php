@@ -39,6 +39,11 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+    public function employee(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

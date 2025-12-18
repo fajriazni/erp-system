@@ -139,9 +139,9 @@ type NavItem = {
     title: string
     url: string
     icon: any
+    badge?: string
 }
 
-// Menu definitions per module
 // Menu definitions per module
 const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
     '/dashboard': [
@@ -210,10 +210,10 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             group: 'Sourcing & SRM',
             items: [
                 { title: "Supplier Registry", url: "/purchasing/vendors", icon: Users },
-                { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus },
-                { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck },
-                { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award },
-                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
+                { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus, badge: 'Ready' },
+                { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck, badge: 'Ready' },
+                { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award, badge: 'Ready' },
+                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel, badge: 'Ready' },
             ]
         },
         {
@@ -228,7 +228,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             group: 'Purchasing Operations',
             items: [
                 { title: "Purchase Requisitions", url: "/purchasing/requisitions", icon: ClipboardList },
-                { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart },
+                { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart, badge: 'Ready' },
                 { title: "Direct Purchasing", url: "/purchasing/direct", icon: Zap },
                 { title: "Revisions & Versions", url: "/purchasing/orders/versions", icon: History },
             ]
@@ -257,6 +257,12 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
                 { title: "Open PO Aging", url: "/purchasing/reports/aging", icon: Hourglass },
                 { title: "History Analytics", url: "/purchasing/reports/history", icon: BarChart },
             ]
+        },
+        {
+            group: 'Documentation',
+            items: [
+                { title: "Documentation Center", url: "/purchasing/documentation", icon: BookOpen, badge: 'New' },
+            ]
         }
     ],
     '/sales': [
@@ -273,8 +279,8 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
              group: 'CRM (Customer Management)',
              items: [
-                 { title: "Leads Management", url: "/sales/leads", icon: UserPlus },
-                 { title: "Opportunities", url: "/sales/opportunities", icon: Target },
+                 { title: "Leads Management", url: "/sales/leads", icon: UserPlus, badge: 'Ready' },
+                 { title: "Deals", url: "/sales/deals", icon: Target, badge: 'Ready' },
                  { title: "Customer 360 View", url: "/sales/customers", icon: UserCircle },
                  { title: "Marketing Campaigns", url: "/sales/campaigns", icon: Megaphone },
                  { title: "Contact Management", url: "/sales/contacts", icon: Users },
@@ -283,10 +289,10 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
              group: 'Sales Operations (CPQ)',
              items: [
-                 { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText },
-                 { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart },
+                 { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText, badge: 'Ready' },
+                 { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart, badge: 'Ready' },
                  { title: "Contract Management", url: "/sales/contracts", icon: FileSignature },
-                 { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags },
+                 { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags, badge: 'Ready' },
                  { title: "Upsell/Cross-sell", url: "/sales/suggestions", icon: Sparkles },
              ]
         },
@@ -331,17 +337,17 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'General Ledger',
             items: [
-                { title: "Chart of Accounts", url: "/accounting/coa", icon: ListTree },
-                { title: "Journal Entries", url: "/accounting/journal-entries", icon: FileText },
-                { title: "Journal Templates", url: "/accounting/templates", icon: ClipboardList },
-                { title: "Account Hierarchy", url: "/accounting/hierarchy", icon: Layers },
-                { title: "Audit Trail", url: "/accounting/audit", icon: History },
+                { title: "Chart of Accounts", url: "/accounting/coa", icon: ListTree, badge: 'Ready' },
+                { title: "Journal Entries", url: "/accounting/journal-entries", icon: FileText, badge: 'Ready' },
+                { title: "Journal Templates", url: "/accounting/templates", icon: ClipboardList, badge: 'Ready' },
+                { title: "Account Hierarchy", url: "/accounting/hierarchy", icon: Layers, badge: 'Ready' },
+                { title: "Audit Trail", url: "/accounting/audit", icon: History, badge: 'Ready' },
             ]
         },
         {
             group: 'Accounts Receivable (AR)',
             items: [
-                { title: "Customer Invoices", url: "/accounting/ar/invoices", icon: Receipt },
+                { title: "Customer Invoices", url: "/accounting/ar/invoices", icon: Receipt, badge: 'Ready' },
                 { title: "Payment Matching", url: "/accounting/ar/matching", icon: CheckCircle2 },
                 { title: "AR Aging Report", url: "/accounting/ar/aging", icon: Hourglass },
                 { title: "Dunning Mgmt", url: "/accounting/ar/dunning", icon: Bell },
@@ -351,7 +357,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'Accounts Payable (AP)',
             items: [
-                { title: "Vendor Bills", url: "/accounting/ap/bills", icon: Receipt },
+                { title: "Vendor Bills", url: "/accounting/ap/bills", icon: Receipt, badge: 'Ready' },
                 { title: "Payment Runs", url: "/accounting/ap/payments", icon: Banknote },
                 { title: "AP Aging Report", url: "/accounting/ap/aging", icon: Hourglass },
                 { title: "Debit Notes", url: "/accounting/ap/debit-notes", icon: Undo },
@@ -391,6 +397,70 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         }
     ],
+    '/finance': [
+        {
+            group: 'Financial Strategy & Dashboard',
+            items: [
+                { title: "Cash Flow Forecast", url: "/finance/forecast", icon: TrendingUp },
+                { title: "Liquidity Ratio", url: "/finance/ratios", icon: Activity },
+                { title: "Spend Analysis", url: "/finance/spend", icon: PieChart },
+                { title: "Financial Health", url: "/finance/health", icon: ClipboardCheck },
+            ]
+        },
+        {
+            group: 'Accounts Receivable (AR)',
+            items: [
+                { title: "Customer Invoicing", url: "/finance/ar/invoices", icon: Receipt },
+                { title: "Payment Collection", url: "/finance/ar/collections", icon: HandCoins },
+                { title: "AR Aging Analysis", url: "/finance/ar/aging", icon: Hourglass },
+                { title: "Dunning Management", url: "/finance/ar/dunning", icon: Bell },
+                { title: "Credit Limit Mgmt", url: "/finance/ar/credit-limit", icon: ShieldAlert },
+            ]
+        },
+        {
+            group: 'Accounts Payable (AP)',
+            items: [
+                { title: "Vendor Bill Verification", url: "/finance/ap/verification", icon: FileCheck },
+                { title: "Payment Scheduling", url: "/finance/ap/scheduling", icon: CalendarDays },
+                { title: "AP Aging Analysis", url: "/finance/ap/aging", icon: Hourglass },
+                { title: "Debit Notes", url: "/finance/ap/debit-notes", icon: Undo2 },
+            ]
+        },
+        {
+            group: 'Cash & Bank Management',
+            items: [
+                { title: "Bank Reconciliation", url: "/finance/cash/reconciliation", icon: Scale },
+                { title: "Petty Cash", url: "/finance/cash/petty-cash", icon: Wallet },
+                { title: "Fund Transfer", url: "/finance/cash/transfer", icon: ArrowRightLeft },
+                { title: "Multi-Currency Reval", url: "/finance/cash/revaluation", icon: RefreshCw },
+            ]
+        },
+        {
+            group: 'Budgeting & Control',
+            items: [
+                { title: "Budget Planning", url: "/finance/budget/planning", icon: Target },
+                { title: "Budget Allocation", url: "/finance/budget/allocation", icon: PieChart },
+                { title: "Budget vs Actual", url: "/finance/budget/monitoring", icon: Activity },
+            ]
+        },
+        {
+            group: 'Expense Management',
+            items: [
+                { title: "Employee Reimbursements", url: "/finance/expenses/reimbursements", icon: Receipt },
+                { title: "Travel Expenses", url: "/finance/expenses/travel", icon: Briefcase },
+                { title: "Corporate Cards", url: "/finance/expenses/cards", icon: CreditCard },
+            ]
+        },
+        {
+            group: 'Tax & Compliance',
+            items: [
+                { title: "VAT/PPN Tracking", url: "/finance/tax/vat", icon: Percent },
+                { title: "Withholding Tax (PPh)", url: "/finance/tax/withholding", icon: FileSpreadsheet },
+                { title: "Tax Reporting", url: "/finance/tax/reporting", icon: FileText },
+            ]
+        }
+    ],
+
     '/hrm': [
         {
             group: 'HR Intelligence',
@@ -405,7 +475,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'Personnel Data',
             items: [
-                { title: "Employee Directory", url: "/hrm/employees", icon: UserCircle },
+                { title: "Employee Directory", url: "/hrm/employees", icon: UserCircle, badge: 'Ready' },
                 { title: "Contract Mgmt", url: "/hrm/contracts", icon: FileText },
                 { title: "Org Chart", url: "/hrm/org-chart", icon: Network },
                 { title: "Employee Assets", url: "/hrm/assets", icon: Package },
@@ -414,16 +484,16 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'Time & Attendance',
             items: [
-                { title: "Attendance Tracking", url: "/hrm/attendance", icon: Clock },
+                { title: "Attendance Tracking", url: "/hrm/attendance", icon: Clock, badge: 'Ready' },
                 { title: "Shift & Roster", url: "/hrm/shifts", icon: CalendarDays },
                 { title: "Overtime Mgmt", url: "/hrm/overtime", icon: Timer },
-                { title: "Leave & Time-off", url: "/hrm/leave", icon: Calendar },
+                { title: "Leave & Time-off", url: "/hrm/leave", icon: Calendar, badge: 'Ready' },
             ]
         },
         {
             group: 'Payroll & Benefits',
             items: [
-                { title: "Payroll Processing", url: "/hrm/payroll", icon: Receipt },
+                { title: "Payroll Processing", url: "/hrm/payroll", icon: Receipt, badge: 'Ready' },
                 { title: "Tax (PPh 21)", url: "/hrm/payroll/tax", icon: Gavel },
                 { title: "Social Security", url: "/hrm/payroll/bpjs", icon: Stethoscope },
                 { title: "Benefit & Loan", url: "/hrm/payroll/benefits", icon: HandCoins },
@@ -488,8 +558,8 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'Inbound Operations',
             items: [
-                { title: "Goods Receipt (GR)", url: "/inventory/inbound/receipts", icon: PackageCheck },
-                { title: "Quality Inspection (QC)", url: "/inventory/inbound/qc", icon: FileCheck },
+                { title: "Goods Receipt (GR)", url: "/inventory/inbound/receipts", icon: PackageCheck, badge: 'Ready' },
+                { title: "Quality Inspection (QC)", url: "/inventory/inbound/qc", icon: FileCheck, badge: 'Ready' },
                 { title: "Cross-Docking", url: "/inventory/inbound/cross-dock", icon: RefreshCcw },
                 { title: "Landed Cost Integration", url: "/inventory/inbound/landed-costs", icon: Calculator },
             ]
@@ -506,7 +576,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         {
             group: 'Outbound Operations',
             items: [
-                { title: "Picking & Packing", url: "/inventory/outbound/picking", icon: ScanBarcode },
+                { title: "Picking & Packing", url: "/inventory/outbound/picking", icon: ScanBarcode, badge: 'Ready' },
                 { title: "Wave & Batch Picking", url: "/inventory/outbound/waves", icon: Layers },
                 { title: "Shipping & Delivery", url: "/inventory/outbound/shipping", icon: Truck },
                 { title: "Backorder Management", url: "/inventory/outbound/backorders", icon: Clock },
@@ -989,8 +1059,7 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
 }
 
 // Default menu (fallback)
-// Default menu (fallback)
-const defaultMenu = [
+const defaultMenu: { group: string; items: NavItem[] }[] = [
     {
          group: 'Application',
          items: [
@@ -1033,6 +1102,11 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                             <Link href={item.url}>
                             <item.icon />
                             <span>{item.title}</span>
+                            {item.badge && (
+                                <span className="ml-auto text-xs font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md">
+                                    {item.badge}
+                                </span>
+                            )}
                             </Link>
                         </SidebarMenuButton>
                         </SidebarMenuItem>

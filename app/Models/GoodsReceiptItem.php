@@ -42,4 +42,9 @@ class GoodsReceiptItem extends Model
     {
         return $this->belongsTo(Uom::class);
     }
+
+    public function inspections()
+    {
+        return $this->morphMany(QcInspection::class, 'inspectable');
+    }
 }

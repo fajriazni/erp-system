@@ -91,9 +91,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('analytics.status');
 
         // Master Data
-        Route::get('/warehouses', function () {
-            return Inertia::render('Inventory/Warehouses/Index');
-        })->name('warehouses.index');
+        Route::get('/warehouses', [\App\Http\Controllers\Inventory\WarehouseController::class, 'index'])->name('warehouses.index');
+        Route::get('/moves', [\App\Http\Controllers\Inventory\StockMoveController::class, 'index'])->name('moves.index');
         Route::get('/locations', function () {
             return Inertia::render('Inventory/Locations/Index');
         })->name('locations.index');
@@ -106,18 +105,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Inbound
         Route::prefix('inbound')->name('inbound.')->group(function () {
-            Route::get('/receipts', function () {
-                return Inertia::render('Inventory/Inbound/Receipts');
-            })->name('receipts');
-            Route::get('/qc', function () {
-                return Inertia::render('Inventory/Inbound/Qc');
-            })->name('qc');
-            Route::get('/cross-dock', function () {
-                return Inertia::render('Inventory/Inbound/CrossDock');
-            })->name('cross-dock');
-            Route::get('/landed-costs', function () {
-                return Inertia::render('Inventory/Inbound/LandedCosts');
-            })->name('landed-costs');
+            Route::get('/receipts', [\App\Http\Controllers\Inventory\InboundController::class, 'index'])->name('receipts');
+            Route::get('/qc', [\App\Http\Controllers\Inventory\InboundController::class, 'qc'])->name('qc');
+            
+            // QC Inspection Actions
+            Route::get('/qc/{item}/inspect', [\App\Http\Controllers\Inventory\QcController::class, 'show'])->name('qc.show');
+            Route::post('/qc/{item}/inspect', [\App\Http\Controllers\Inventory\QcController::class, 'store'])->name('qc.store');
+
+            Route::get('/cross-dock', [\App\Http\Controllers\Inventory\InboundController::class, 'crossDock'])->name('cross-dock');
+            Route::get('/landed-costs', [\App\Http\Controllers\Inventory\InboundController::class, 'landedCosts'])->name('landed-costs');
+        });
+
+        // General Ledger
+        Route::prefix('gl')->name('gl.')->group(function () {
+             Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
+             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
         });
 
         // Internal
@@ -138,34 +141,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Outbound
         Route::prefix('outbound')->name('outbound.')->group(function () {
-            Route::get('/picking', function () {
-                return Inertia::render('Inventory/Outbound/Picking');
-            })->name('picking');
-            Route::get('/waves', function () {
-                return Inertia::render('Inventory/Outbound/Waves');
-            })->name('waves');
-            Route::get('/shipping', function () {
-                return Inertia::render('Inventory/Outbound/Shipping');
-            })->name('shipping');
-            Route::get('/backorders', function () {
-                return Inertia::render('Inventory/Outbound/Backorders');
-            })->name('backorders');
+            Route::get('/picking', [\App\Http\Controllers\Inventory\OutboundController::class, 'picking'])->name('picking');
+            Route::get('/picking/{delivery}/process', [\App\Http\Controllers\Inventory\OutboundController::class, 'pickingShow'])->name('picking.show');
+            Route::post('/picking/{delivery}/process', [\App\Http\Controllers\Inventory\OutboundController::class, 'pickingStore'])->name('picking.store');
+            Route::get('/waves', [\App\Http\Controllers\Inventory\OutboundController::class, 'waves'])->name('waves');
+            Route::get('/shipping', [\App\Http\Controllers\Inventory\OutboundController::class, 'shipping'])->name('shipping');
+            Route::get('/backorders', [\App\Http\Controllers\Inventory\OutboundController::class, 'backorders'])->name('backorders');
         });
 
-        // Control & Audit
         Route::prefix('control')->name('control.')->group(function () {
-            Route::get('/cycle-count', function () {
-                return Inertia::render('Inventory/Control/CycleCount');
-            })->name('cycle-count');
-            Route::get('/opname', function () {
-                return Inertia::render('Inventory/Control/Opname');
-            })->name('opname');
-            Route::get('/lots', function () {
-                return Inertia::render('Inventory/Control/Lots');
-            })->name('lots');
-            Route::get('/expiry', function () {
-                return Inertia::render('Inventory/Control/Expiry');
-            })->name('expiry');
+            Route::get('/cycle-count', [\App\Http\Controllers\Inventory\ControlController::class, 'cycleCount'])->name('cycle-count');
+            Route::get('/expiry', [\App\Http\Controllers\Inventory\ControlController::class, 'expiry'])->name('expiry');
+            Route::get('/lots', [\App\Http\Controllers\Inventory\ControlController::class, 'lots'])->name('lots');
+            Route::get('/opname', [\App\Http\Controllers\Inventory\ControlController::class, 'opname'])->name('opname');
         });
 
         // Advanced
@@ -207,6 +195,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('requests.convert');
         Route::resource('requests', \App\Http\Controllers\Purchasing\PurchaseRequestController::class);
 
+        // Vendor specific routes - MUST come before resource route
+        Route::get('vendors/onboarding', [\App\Http\Controllers\Purchasing\VendorController::class, 'onboarding'])->name('vendors.onboarding');
+        Route::get('vendors/audits', [\App\Http\Controllers\Purchasing\VendorController::class, 'audits'])->name('vendors.audits');
+        Route::get('vendors/scorecards', [\App\Http\Controllers\Purchasing\VendorController::class, 'scorecards'])->name('vendors.scorecards');
+
         Route::resource('vendors', \App\Http\Controllers\Purchasing\VendorController::class);
         Route::resource('payment-terms', \App\Http\Controllers\Finance\PaymentTermController::class);
 
@@ -231,6 +224,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('rfqs', \App\Http\Controllers\Purchasing\RfqController::class);
         Route::get('/reports/tax', \App\Http\Controllers\Accounting\TaxReportController::class)->name('reports.tax');
         Route::post('rfqs/{rfq}/invite', [\App\Http\Controllers\Purchasing\RfqController::class, 'invite'])->name('rfqs.invite');
+        Route::post('rfqs/{rfq}/bid', [\App\Http\Controllers\Purchasing\RfqController::class, 'recordBid'])->name('rfqs.bid'); // Added bid route which was also implicitly needed
+        Route::post('quotations/{quotation}/award', [\App\Http\Controllers\Purchasing\RfqController::class, 'award'])->name('quotations.award');
+        
         Route::get('/', function () {
             return Inertia::render('Purchasing/Dashboard');
         })->name('dashboard');
@@ -247,20 +243,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('analytics.pr-monitor');
 
         // Sourcing & SRM
-        Route::get('/vendors', function () {
-            return Inertia::render('Purchasing/Vendors/Index');
-        })->name('vendors.index');
-        Route::get('/vendors/onboarding', function () {
-            return Inertia::render('Purchasing/Vendors/Onboarding');
-        })->name('vendors.onboarding');
-        Route::get('/vendors/audits', function () {
-            return Inertia::render('Purchasing/Vendors/Audits');
-        })->name('vendors.audits');
-        Route::get('/vendors/scorecards', function () {
-            return Inertia::render('Purchasing/Vendors/Scorecards');
-        })->name('vendors.scorecards');
+        // Note: /vendors index is handled by the resource route above
+
         Route::get('/rfqs', function () {
-            return Inertia::render('Purchasing/Rfqs/Index');
+            return Inertia::render('Purchasing/rfqs/index');
         })->name('rfqs.index');
 
         // Contracts
@@ -279,7 +265,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Purchasing/Requisitions/Index');
         })->name('requisitions.index');
         Route::get('/orders', function () {
-            return Inertia::render('Purchasing/Orders/Index');
+            return Inertia::render('Purchasing/orders/index');
         })->name('orders.index');
         Route::get('/direct', function () {
             return Inertia::render('Purchasing/Operations/Direct');
@@ -290,7 +276,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Receiving & QC
         Route::get('/receipts', function () {
-            return Inertia::render('Purchasing/Receipts/Index');
+            return Inertia::render('Purchasing/receipts/index');
         })->name('receipts.index');
         Route::get('/matching', function () {
             return Inertia::render('Purchasing/Operations/Matching');
@@ -304,25 +290,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Returns & Claims
         Route::get('/returns', function () {
-            return Inertia::render('Purchasing/Returns/Index');
+            return Inertia::render('Purchasing/returns/index');
         })->name('returns.index');
         Route::get('/debit-notes', function () {
-            return Inertia::render('Purchasing/Returns/DebitNotes');
+            return Inertia::render('Purchasing/returns/debit-notes');
         })->name('debit-notes.index');
         Route::get('/claims', function () {
-            return Inertia::render('Purchasing/Returns/Claims');
+            return Inertia::render('Purchasing/returns/claims');
         })->name('claims.index');
 
         // Reporting
         Route::get('/reports/variance', function () {
-            return Inertia::render('Purchasing/Reports/Variance');
+            return Inertia::render('Purchasing/reports/variance');
         })->name('reports.variance');
         Route::get('/reports/aging', function () {
-            return Inertia::render('Purchasing/Reports/Aging');
+            return Inertia::render('Purchasing/reports/aging');
         })->name('reports.aging');
         Route::get('/reports/history', function () {
-            return Inertia::render('Purchasing/Reports/History');
+            return Inertia::render('Purchasing/reports/history');
         })->name('reports.history');
+
+        // Documentation
+        Route::get('/documentation', function () {
+            return Inertia::render('Purchasing/Documentation/Index');
+        })->name('documentation.index');
+        
+        Route::get('/documentation/srm-guide', function () {
+            return Inertia::render('Purchasing/Documentation/SrmGuide');
+        })->name('documentation.srm-guide');
     });
 
     Route::prefix('sales')->name('sales.')->group(function () {
@@ -345,12 +340,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('analytics.activities');
 
         // CRM
-        Route::get('/leads', function () {
-            return Inertia::render('Sales/Crm/Leads');
-        })->name('leads.index');
-        Route::get('/opportunities', function () {
-            return Inertia::render('Sales/Crm/Opportunities');
-        })->name('opportunities.index');
+        Route::resource('leads', \App\Http\Controllers\Sales\Crm\LeadController::class);
+        Route::post('deals/{deal}/update-stage', [\App\Http\Controllers\Sales\Crm\DealController::class, 'updateStage'])->name('deals.update-stage');
+        Route::resource('deals', \App\Http\Controllers\Sales\Crm\DealController::class);
         Route::get('/customers', function () {
             return Inertia::render('Sales/Crm/Customers');
         })->name('customers.index');
@@ -362,18 +354,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('contacts.index');
 
         // Operations
-        Route::get('/quotations', function () {
-            return Inertia::render('Sales/Operations/Quotations');
-        })->name('quotations.index');
-        Route::get('/orders', function () {
-            return Inertia::render('Sales/Operations/Orders');
-        })->name('orders.index');
+        Route::resource('price-lists', \App\Http\Controllers\Sales\Operations\PriceListController::class);
+        Route::resource('quotations', \App\Http\Controllers\Sales\Operations\QuotationController::class);
+        Route::resource('orders', \App\Http\Controllers\Sales\SalesOrderController::class);
         Route::get('/contracts', function () {
             return Inertia::render('Sales/Operations/Contracts');
         })->name('contracts.index');
-        Route::get('/price-lists', function () {
-            return Inertia::render('Sales/Operations/PriceLists');
-        })->name('price-lists.index');
+        Route::get('/contracts', function () {
+            return Inertia::render('Sales/Operations/Contracts');
+        })->name('contracts.index');
         Route::get('/suggestions', function () {
             return Inertia::render('Sales/Operations/Suggestions');
         })->name('suggestions.index');
@@ -438,26 +427,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('analytics.budget');
 
         // General Ledger
-        Route::get('/coa', function () {
-            return Inertia::render('Accounting/Coa/Index');
-        })->name('coa.index');
-        Route::get('/journal-entries', function () {
-            return Inertia::render('Accounting/JournalEntries/Index');
-        })->name('journal-entries.index');
-        Route::get('/templates', function () {
-            return Inertia::render('Accounting/GeneralLedger/Templates');
-        })->name('templates.index');
-        Route::get('/hierarchy', function () {
-            return Inertia::render('Accounting/GeneralLedger/Hierarchy');
-        })->name('hierarchy.index');
-        Route::get('/audit', function () {
-            return Inertia::render('Accounting/GeneralLedger/Audit');
-        })->name('audit.index');
+        Route::get('/coa', [\App\Http\Controllers\Accounting\ChartOfAccountController::class, 'index'])->name('coa.index');
+        Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
+
+        Route::prefix('gl')->name('gl.')->group(function () {
+             Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
+             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
+        });
 
         // Accounts Receivable
-        Route::get('/ar/invoices', function () {
-            return Inertia::render('Accounting/Ar/Invoices');
-        })->name('ar.invoices');
+        Route::get('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'index'])->name('ar.invoices');
+        Route::get('/ar/invoices/create', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'create'])->name('ar.invoices.create');
+        Route::post('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'store'])->name('ar.invoices.store');
+        
         Route::get('/ar/matching', function () {
             return Inertia::render('Accounting/Ar/Matching');
         })->name('ar.matching');
@@ -1131,66 +1114,54 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('hrm')->name('hrm.')->group(function () {
         Route::get('/', function () {
-            return Inertia::render('Hrm/Dashboard');
+            return Inertia::render('HRM/Dashboard');
         })->name('dashboard');
 
         // HR Intelligence
         Route::get('/analytics/workforce', function () {
-            return Inertia::render('Hrm/Analytics/Workforce');
+            return Inertia::render('HRM/Analytics/Workforce');
         })->name('analytics.workforce');
         Route::get('/analytics/turnover', function () {
-            return Inertia::render('Hrm/Analytics/Turnover');
+            return Inertia::render('HRM/Analytics/Turnover');
         })->name('analytics.turnover');
         Route::get('/analytics/labor-cost', function () {
-            return Inertia::render('Hrm/Analytics/LaborCost');
+            return Inertia::render('HRM/Analytics/LaborCost');
         })->name('analytics.labor-cost');
         Route::get('/analytics/demographics', function () {
-            return Inertia::render('Hrm/Analytics/Demographics');
+            return Inertia::render('HRM/Analytics/Demographics');
         })->name('analytics.demographics');
 
         // Personnel Data
-        Route::get('/employees', function () {
-            return Inertia::render('Hrm/Employees/Index');
-        })->name('employees.index');
+        // Personnel Data
+        Route::resource('employees', \App\Http\Controllers\HRM\EmployeeController::class);
         Route::get('/contracts', function () {
-            return Inertia::render('Hrm/Contracts/Index');
+            return Inertia::render('HRM/Contracts/Index');
         })->name('contracts.index');
         Route::get('/org-chart', function () {
-            return Inertia::render('Hrm/Personnel/OrgChart');
+            return Inertia::render('HRM/Personnel/OrgChart');
         })->name('org-chart');
         Route::get('/assets', function () {
-            return Inertia::render('Hrm/Personnel/Assets');
+            return Inertia::render('HRM/Personnel/Assets');
         })->name('assets');
 
         // Time & Attendance
-        Route::get('/attendance', function () {
-            return Inertia::render('Hrm/Attendance/Index');
-        })->name('attendance.index');
-        Route::get('/shifts', function () {
-            return Inertia::render('Hrm/Attendance/Shifts');
-        })->name('shifts');
-        Route::get('/overtime', function () {
-            return Inertia::render('Hrm/Attendance/Overtime');
-        })->name('overtime');
-        Route::get('/leave', function () {
-            return Inertia::render('Hrm/Attendance/Leave');
-        })->name('leave');
+        Route::get('/attendance', [\App\Http\Controllers\HRM\AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance', [\App\Http\Controllers\HRM\AttendanceController::class, 'store'])->name('attendance.store');
+        Route::get('/leave', [\App\Http\Controllers\HRM\AttendanceController::class, 'leave'])->name('leave');
 
         // Payroll & Benefits
-        Route::get('/payroll', function () {
-            return Inertia::render('Hrm/Payroll/Index');
-        })->name('payroll.index');
+        Route::resource('payroll', \App\Http\Controllers\HRM\PayrollController::class);
         Route::get('/payroll/tax', function () {
-            return Inertia::render('Hrm/Payroll/Tax');
+            return Inertia::render('HRM/Payroll/Tax');
         })->name('payroll.tax');
         Route::get('/payroll/bpjs', function () {
-            return Inertia::render('Hrm/Payroll/Bpjs');
+            return Inertia::render('HRM/Payroll/Bpjs');
         })->name('payroll.bpjs');
         Route::get('/payroll/benefits', function () {
-            return Inertia::render('Hrm/Payroll/Benefits');
+            return Inertia::render('HRM/Payroll/Benefits');
         })->name('payroll.benefits');
         Route::get('/payroll/payslips', function () {
-            return Inertia::render('Hrm/Payroll/Payslips');
+            return Inertia::render('HRM/Payroll/Payslips');
         })->name('payroll.payslips');
 
         // Recruitment (ATS)

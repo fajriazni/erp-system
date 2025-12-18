@@ -42,124 +42,56 @@ export type Module = {
   name: string
   logo: ComponentType<{ className?: string }>
   plan: string
-  url: string // Root URL for the module
-  prefix: string // URL prefix to auto-detect
+  url: string
+  prefix: string
 }
 
-export const modules: Module[] = [
+type ModuleGroup = {
+  label: string
+  modules: Module[]
+}
+
+const moduleGroups: ModuleGroup[] = [
   {
-    name: "Dashboard",
-    logo: LayoutDashboard,
-    plan: "General",
-    url: "/dashboard",
-    prefix: "/dashboard"
+      label: "Core Modules",
+      modules: [
+          { name: "Dashboard", logo: LayoutDashboard, plan: "General", url: "/dashboard", prefix: "/dashboard" },
+          { name: "Sales & CRM", logo: ShoppingCart, plan: "Orders & Customers", url: "/sales", prefix: "/sales" },
+          { name: "Purchasing", logo: ShoppingBag, plan: "Procurement & Bills", url: "/purchasing", prefix: "/purchasing" },
+          { name: "Inventory", logo: Package, plan: "Stock & Warehouse", url: "/inventory", prefix: "/inventory" },
+          { name: "Accounting", logo: Calculator, plan: "GL & Taxes", url: "/accounting", prefix: "/accounting" },
+          { name: "Finance", logo: Wallet, plan: "Cash, AR & AP", url: "/finance", prefix: "/finance" },
+      ]
   },
   {
-    name: "Inventory",
-    logo: Package,
-    plan: "Stock & Warehouse",
-    url: "/inventory",
-    prefix: "/inventory"
+      label: "Operations",
+      modules: [
+          { name: "HRM & Payroll", logo: Users, plan: "Employees", url: "/hrm", prefix: "/hrm" },
+          { name: "Manufacturing", logo: Factory, plan: "MRP & Quality", url: "/mrp", prefix: "/mrp" },
+          { name: "Projects", logo: Briefcase, plan: "Tasks & Planning", url: "/projects", prefix: "/projects" },
+          { name: "Assets", logo: Building2, plan: "Depreciation", url: "/assets", prefix: "/assets" },
+      ]
   },
   {
-    name: "Purchasing",
-    logo: ShoppingBag,
-    plan: "Procurement & Bills",
-    url: "/purchasing",
-    prefix: "/purchasing"
+      label: "Customer Facing",
+      modules: [
+          { name: "Point of Sale", logo: Store, plan: "Retail Shop", url: "/pos", prefix: "/pos" },
+          { name: "Helpdesk", logo: Headset, plan: "Support Tickets", url: "/helpdesk", prefix: "/helpdesk" },
+      ]
   },
   {
-    name: "Sales & CRM",
-    logo: ShoppingCart,
-    plan: "Orders & Customers",
-    url: "/sales",
-    prefix: "/sales"
-  },
-  {
-    name: "Accounting",
-    logo: Calculator,
-    plan: "GL & Taxes",
-    url: "/accounting",
-    prefix: "/accounting"
-  },
-  {
-    name: "Finance",
-    logo: Wallet,
-    plan: "Cash, AR & AP",
-    url: "/finance", // Note: This route prefix needs to be supported in sidebar logic
-    prefix: "/finance"
-  },
-  {
-    name: "HRM & Payroll",
-    logo: Users,
-    plan: "Employees",
-    url: "/hrm",
-    prefix: "/hrm"
-  },
-  {
-    name: "Manufacturing",
-    logo: Factory,
-    plan: "MRP & Quality",
-    url: "/mrp",
-    prefix: "/mrp"
-  },
-  {
-    name: "Projects",
-    logo: Briefcase,
-    plan: "Tasks & Planning",
-    url: "/projects",
-    prefix: "/projects"
-  },
-  {
-    name: "Assets",
-    logo: Building2,
-    plan: "Depreciation",
-    url: "/assets",
-    prefix: "/assets"
-  },
-  {
-    name: "Point of Sale",
-    logo: Store,
-    plan: "Retail Shop",
-    url: "/pos",
-    prefix: "/pos"
-  },
-  {
-    name: "Fleet",
-    logo: Truck,
-    plan: "Vehicles",
-    url: "/fleet",
-    prefix: "/fleet"
-  },
-  {
-    name: "Workflows",
-    logo: GitBranch,
-    plan: "Approvals & Automation",
-    url: "/workflows/management",
-    prefix: "/workflows"
-  },
-  {
-    name: "Helpdesk",
-    logo: Headset,
-    plan: "Support Tickets",
-    url: "/helpdesk",
-    prefix: "/helpdesk"
-  },
-  {
-    name: "Business Intelligence",
-    logo: PieChart,
-    plan: "Analytics & KPI",
-    url: "/bi",
-    prefix: "/bi"
-  },
-  {
-    name: "System Admin",
-    logo: Shield,
-    plan: "Config & Security",
-    url: "/admin",
-    prefix: "/admin"
-  },
+      label: "Support & Analytics",
+      modules: [
+          { name: "Fleet", logo: Truck, plan: "Vehicles", url: "/fleet", prefix: "/fleet" },
+          { name: "Workflows", logo: GitBranch, plan: "Approvals & Automation", url: "/workflows/management", prefix: "/workflows" },
+          { name: "Business Intelligence", logo: PieChart, plan: "Analytics & KPI", url: "/bi", prefix: "/bi" },
+          { name: "System Admin", logo: Shield, plan: "Config & Security", url: "/admin", prefix: "/admin" },
+      ]
+  }
 ]
+
+// Flattened list for easy lookup
+export const modules: Module[] = moduleGroups.flatMap(g => g.modules)
 
 export function ModuleSwitcher() {
   const { isMobile } = useSidebar()
@@ -196,29 +128,40 @@ export function ModuleSwitcher() {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[500px] min-w-56 rounded-lg max-h-[80vh] overflow-y-auto"
             align="start"
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Modules
-            </DropdownMenuLabel>
-            {modules.map((module) => (
-              <DropdownMenuItem
-                key={module.name}
-                onClick={() => setActiveModule(module)}
-                asChild
-                className="gap-2 p-2"
-              >
-                  <Link href={module.url}>
-                    <div className="flex size-6 items-center justify-center rounded-sm border">
-                      <module.logo className="size-4 shrink-0" />
+            {moduleGroups.map((group, index) => (
+                <div key={group.label}>
+                    {index > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider font-bold mt-2">
+                      {group.label}
+                    </DropdownMenuLabel>
+                    <div className="grid grid-cols-2 gap-1 p-1">
+                        {group.modules.map((module) => (
+                        <DropdownMenuItem
+                            key={module.name}
+                            onClick={() => setActiveModule(module)}
+                            asChild
+                            className="gap-2 p-2 cursor-pointer"
+                        >
+                            <Link href={module.url}>
+                                <div className="flex size-8 items-center justify-center rounded-md border bg-muted/50">
+                                <module.logo className="size-4 shrink-0 text-muted-foreground" />
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="font-medium text-sm">{module.name}</span>
+                                    <span className="text-[10px] text-muted-foreground leading-tight">{module.plan}</span>
+                                </div>
+                            </Link>
+                        </DropdownMenuItem>
+                        ))}
                     </div>
-                    {module.name}
-                  </Link>
-              </DropdownMenuItem>
+                </div>
             ))}
+            
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 p-2" disabled>
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">

@@ -7,6 +7,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         // PostgreSQL: Drop existing constraint and recreate with new values
         DB::statement('
             ALTER TABLE approval_tasks 

@@ -4,28 +4,30 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class QcInspection extends Model
 {
     protected $fillable = [
-        'goods_receipt_item_id',
+        'reference_number',
+        'inspectable_type',
+        'inspectable_id',
         'inspector_id',
+        'quantity_inspected',
         'passed_qty',
         'failed_qty',
+        'status',
         'notes',
         'checklist_results',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'checklist_results' => 'array',
-        ];
-    }
+    protected $casts = [
+        'checklist_results' => 'array',
+    ];
 
-    public function goodsReceiptItem(): BelongsTo
+    public function inspectable(): MorphTo
     {
-        return $this->belongsTo(GoodsReceiptItem::class);
+        return $this->morphTo();
     }
 
     public function inspector(): BelongsTo

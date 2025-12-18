@@ -112,7 +112,7 @@ class CreateCustomerInvoiceService
             }
 
             $this->createJournalEntryService->execute(
-                $invoice->date->format('Y-m-d'),
+                \Illuminate\Support\Carbon::parse($invoice->date)->format('Y-m-d'),
                 $invoice->invoice_number,
                 "Sales Invoice #{$invoice->invoice_number} - {$invoice->customer_id}", // TODO: Customer Name
                 $lines
