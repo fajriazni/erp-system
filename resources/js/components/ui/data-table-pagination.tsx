@@ -58,7 +58,7 @@ export function DataTablePagination({
     if (!links || links.length <= 3) return null;
 
     return (
-        <div className="flex items-center justify-between p-4 border-t bg-gray-50">
+        <div className="flex items-center justify-between border-t bg-gray-50 p-4">
             <div className="flex items-center gap-6">
                  {/* Gap-6 gives a bit more breathing room than gap-2 between the selector group and text */}
                 <div className="flex items-center gap-2">

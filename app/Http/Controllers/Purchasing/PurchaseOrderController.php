@@ -41,8 +41,9 @@ class PurchaseOrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Purchasing/orders/index', [
+        return Inertia::render('Purchasing/orders/Index', [
             'orders' => $orders,
+            'filters' => request()->only(['global', 'status', 'per_page']),
         ]);
     }
 

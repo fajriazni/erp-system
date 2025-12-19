@@ -220,7 +220,7 @@ const menuMap: Record<string, MenuGroup[]> = {
                 { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus },
                 { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck },
                 { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award },
-                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
+
             ]
         },
         {
@@ -234,7 +234,8 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'Purchasing Operations',
             items: [
-                { title: "Purchase Requisitions", url: "/purchasing/requisitions", icon: ClipboardList },
+                { title: "Purchase Requisitions", url: "/purchasing/requests", icon: ClipboardList },
+                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
                 { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart, badge: 'Ready' },
                 { title: "Direct Purchasing", url: "/purchasing/direct", icon: Zap },
                 { title: "Revisions & Versions", url: "/purchasing/orders/versions", icon: History },
@@ -268,7 +269,8 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'Documentation',
             items: [
-                { title: "Documentation Center", url: "/purchasing/documentation", icon: BookOpen, badge: 'New' },
+                { title: "Sourcing & SRM Guide", url: "/purchasing/documentation/srm-guide", icon: BookOpen },
+                { title: "Purchasing Ops Guide", url: "/purchasing/documentation/ops-guide", icon: ClipboardList },
             ]
         }
     ],

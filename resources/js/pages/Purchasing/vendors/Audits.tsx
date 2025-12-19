@@ -257,7 +257,7 @@ export default function Audits({ audits, stats, vendors, auditors }: Props) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{stats.avg_score.toFixed(1)}%</div>
+                            <div className="text-2xl font-bold">{Number(stats.avg_score || 0).toFixed(1)}%</div>
                         </CardContent>
                     </Card>
                 </div>

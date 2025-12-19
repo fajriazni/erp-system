@@ -15,6 +15,7 @@ return new class extends Migration
             // Drop foreign key if exists (might vary by DB driver, generic approach)
             // For sqlite/testing we often just ignore, but for production we should drop
             $table->dropForeign(['goods_receipt_item_id']);
+            $table->dropIndex(['goods_receipt_item_id']);
             $table->dropColumn('goods_receipt_item_id');
 
             // Polymorphic relation

@@ -8,33 +8,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import InputError from '@/components/input-error';
 import { toast } from 'sonner';
-import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { FormEvent } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
-import { index, store } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
+import { index, update } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
 
 interface RequestItem {
     product_id: number;
     quantity: number;
     estimated_unit_price: number;
+    // For editing, we might need ID if we were doing granular updates, but we're destructively replacing items in the service
+}
+
+interface PurchaseRequest {
+    id: number;
+    document_number: string;
+    date: string;
+    required_date: string;
+    notes: string;
+    items: Array<{
+        product_id: number;
+        quantity: number;
+        estimated_unit_price: number;
+    }>;
 }
 
 interface Props {
     products: any[];
+    request: PurchaseRequest;
 }
 
-export default function PurchaseRequestCreate({ products }: Props) {
-    const { data, setData, post, processing, errors } = useForm<{
+export default function PurchaseRequestEdit({ products, request }: Props) {
+    const { data, setData, put, processing, errors } = useForm<{
         date: string;
         required_date: string;
         notes: string;
         items: RequestItem[];
         budget?: string;
+        error?: string;
     }>({
-        date: new Date().toISOString().split('T')[0],
-        required_date: '',
-        notes: '',
-        items: [{ product_id: 0, quantity: 1, estimated_unit_price: 0 }],
+        date: request.date ? new Date(request.date).toISOString().split('T')[0] : '',
+        required_date: request.required_date ? new Date(request.required_date).toISOString().split('T')[0] : '',
+        notes: request.notes || '',
+        items: request.items.map(item => ({
+            product_id: item.product_id,
+            quantity: Number(item.quantity),
+            estimated_unit_price: Number(item.estimated_unit_price)
+        })),
     });
 
     const addItem = () => {
@@ -80,8 +100,8 @@ export default function PurchaseRequestCreate({ products }: Props) {
             return;
         }
 
-        post(store.url(), {
-            onSuccess: () => toast.success('Purchase Request created successfully.'),
+        put(update.url(request.id), {
+            onSuccess: () => toast.success('Purchase Request updated successfully.'),
             onError: () => toast.error('Please check the form for errors.'),
         });
     };
@@ -90,16 +110,17 @@ export default function PurchaseRequestCreate({ products }: Props) {
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' }, 
             { title: 'Purchase Requests', href: index.url() },
-            { title: 'New Request', href: '#' }
+            { title: request.document_number, href: `/purchasing/requests/${request.id}` },
+            { title: 'Edit', href: '#' }
         ]}>
-            <Head title="New Purchase Request" />
+            <Head title={`Edit ${request.document_number}`} />
             
             <PageHeader
-                title="Create New Purchase Request"
-                description="Fill in the details for your request."
+                title={`Edit ${request.document_number}`}
+                description="Modify the details of your purchase request."
                 actions={
                     <Button variant="outline" asChild>
-                        <Link href={index.url()}>
+                        <Link href={`/purchasing/requests/${request.id}`}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
                         </Link>
                     </Button>
@@ -107,6 +128,12 @@ export default function PurchaseRequestCreate({ products }: Props) {
             />
 
             <form onSubmit={submit} className="space-y-6">
+                {errors.error && (
+                    <div className="bg-destructive/15 text-destructive p-3 rounded-md border border-destructive/20 mb-4 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-sm font-medium">{errors.error}</p>
+                    </div>
+                )}
                 {errors.budget && (
                     <div className="bg-destructive/15 text-destructive p-3 rounded-md border border-destructive/20 mb-4">
                         <p className="font-medium text-sm">Budget Validation Failed</p>
@@ -189,7 +216,7 @@ export default function PurchaseRequestCreate({ products }: Props) {
                                         )}
                                     </div>
 
-                                    <div className="col-span-2 flex gap-2">
+                                    <div className="col-span-3 flex gap-2">
                                         <div className="flex-1 space-y-2">
                                             <Label>Quantity <span className="text-destructive">*</span></Label>
                                             <Input
@@ -203,12 +230,12 @@ export default function PurchaseRequestCreate({ products }: Props) {
                                                 <InputError message={errors[`items.${index}.quantity` as keyof typeof errors]} />
                                             )}
                                         </div>
-                                        <div className="w-[60px] space-y-2">
+                                        <div className="space-y-2">
                                             <Label>UoM</Label>
                                             <Input
                                                 readOnly
                                                 disabled
-                                                className="bg-muted px-2 text-center"
+                                                className="bg-muted px-2"
                                                 value={products.find(p => p.id === item.product_id)?.uom?.name || '-'}
                                                 placeholder="-"
                                             />
@@ -255,10 +282,10 @@ export default function PurchaseRequestCreate({ products }: Props) {
 
                 <div className="flex justify-end gap-4">
                     <Button type="button" variant="outline" asChild>
-                        <Link href={index.url()}>Cancel</Link>
+                        <Link href={`/purchasing/requests/${request.id}`}>Cancel</Link>
                     </Button>
                     <Button type="submit" disabled={processing}>
-                        {processing ? 'Saving...' : 'Create Request'}
+                        {processing ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </div>
             </form>

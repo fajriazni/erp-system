@@ -42,6 +42,11 @@ class PurchaseRequest extends Model implements HasWorkflow
         return $this->hasMany(PurchaseRequestItem::class);
     }
 
+    public function rfqs(): HasMany
+    {
+        return $this->hasMany(PurchaseRfq::class);
+    }
+
     public function getTotalAmountAttribute(): float
     {
         return $this->items->sum('estimated_total');

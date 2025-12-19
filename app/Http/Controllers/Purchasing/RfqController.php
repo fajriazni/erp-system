@@ -63,6 +63,7 @@ class RfqController extends Controller
     public function store(Request $request, CreateRfqService $service)
     {
         $data = $request->validate([
+            'purchase_request_id' => 'required|exists:purchase_requests,id',
             'title' => 'required|string|max:255',
             'deadline' => 'required|date',
             'notes' => 'nullable|string',
@@ -168,7 +169,7 @@ class RfqController extends Controller
 
         $formData = [
             'title' => $rfq->title,
-            'deadline' => $rfq->deadline->format('Y-m-d'),
+            'deadline' => $rfq->deadline?->format('Y-m-d'),
             'notes' => $rfq->notes,
             'items' => $rfq->lines->map(function ($line) {
                 return [

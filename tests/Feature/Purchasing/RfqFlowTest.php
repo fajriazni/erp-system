@@ -37,7 +37,13 @@ class RfqFlowTest extends TestCase
 
     public function test_can_create_rfq()
     {
+        $pr = \App\Models\PurchaseRequest::factory()->create([
+            'status' => 'approved',
+            'requester_id' => $this->user->id,
+        ]);
+
         $response = $this->actingAs($this->user)->post(route('purchasing.rfqs.store'), [
+            'purchase_request_id' => $pr->id,
             'title' => 'Test RFQ',
             'deadline' => now()->addDays(7)->toDateString(),
             'notes' => 'Urgent',

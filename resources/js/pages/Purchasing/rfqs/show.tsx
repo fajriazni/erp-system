@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm, router } from '@inertiajs/react'; // Add router import
 import { Button } from '@/components/ui/button';
@@ -126,23 +127,22 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
         ]}>
             <Head title={`RFQ ${rfq.document_number}`} />
             
-            <div className="container mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" asChild>
-                            <Link href={index.url()}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">{rfq.document_number}: {rfq.title}</h1>
-                            <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                                <Badge variant={rfq.status === 'open' ? 'default' : 'secondary'}>{rfq.status.toUpperCase()}</Badge>
-                                <span>Deadline: {new Date(rfq.deadline).toLocaleDateString('id-ID')}</span>
-                            </div>
+            <div className="container mx-auto space-y-6">
+                <PageHeader
+                    title={`${rfq.document_number}: ${rfq.title}`}
+                    description={
+                        <div className="flex items-center gap-2 mt-1">
+                             <Badge variant={rfq.status === 'open' ? 'default' : 'secondary'}>{rfq.status.toUpperCase()}</Badge>
+                             <span className="text-muted-foreground">Deadline: {new Date(rfq.deadline).toLocaleDateString('id-ID')}</span>
                         </div>
-                    </div>
-                </div>
+                    }
+                >
+                    <Button variant="outline" asChild>
+                        <Link href={index.url()}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                        </Link>
+                    </Button>
+                </PageHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* LEFT COLUMN: Overview & Items */}
@@ -151,28 +151,28 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                             <CardHeader>
                                 <CardTitle>Requested Items</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b text-left">
-                                            <th className="py-2">Product</th>
-                                            <th className="py-2">Qty</th>
-                                            <th className="py-2">Target Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="pl-4">Product</TableHead>
+                                            <TableHead>Qty</TableHead>
+                                            <TableHead>Target Price</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
                                         {rfq.lines.map((line: any) => (
-                                            <tr key={line.id} className="border-b last:border-0">
-                                                <td className="py-2">
+                                            <TableRow key={line.id}>
+                                                <TableCell className="pl-4">
                                                     <div className="font-medium">{line.product.name}</div>
                                                     <div className="text-xs text-muted-foreground">{line.product.code}</div>
-                                                </td>
-                                                <td className="py-2">{line.quantity} {line.uom}</td>
-                                                <td className="py-2">{line.target_price ? new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(line.target_price) : '-'}</td>
-                                            </tr>
+                                                </TableCell>
+                                                <TableCell>{line.quantity} {line.uom}</TableCell>
+                                                <TableCell>{line.target_price ? new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(line.target_price) : '-'}</TableCell>
+                                            </TableRow>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </TableBody>
+                                </Table>
                             </CardContent>
                         </Card>
 
@@ -275,27 +275,39 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                         {rfq.quotations.length === 0 ? (
                                             <p className="text-muted-foreground text-sm">No bids received yet.</p>
                                         ) : (
-                                            <div className="space-y-4">
-                                                {rfq.quotations.map((quote: any) => (
-                                                    <div key={quote.id} className="border p-4 rounded-lg flex justify-between items-center">
-                                                        <div>
-                                                            <div className="font-bold">{quote.vendor.name}</div>
-                                                            <div className="text-sm">Ref: {quote.reference_number || '-'}</div>
-                                                            <div className="text-sm font-medium text-emerald-600">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Vendor</TableHead>
+                                                        <TableHead>Reference</TableHead>
+                                                        <TableHead>Total Amount</TableHead>
+                                                        <TableHead>Status</TableHead>
+                                                        <TableHead className="text-right">Actions</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {rfq.quotations.map((quote: any) => (
+                                                        <TableRow key={quote.id}>
+                                                            <TableCell className="font-bold">{quote.vendor.name}</TableCell>
+                                                            <TableCell>{quote.reference_number || '-'}</TableCell>
+                                                            <TableCell className="font-medium text-emerald-600">
                                                                 {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(quote.total_amount)}
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex gap-2 items-center">
-                                                            {quote.status === 'won' && <Badge className="bg-green-500">AWARDED</Badge>}
-                                                            {quote.status === 'submitted' && rfq.status === 'open' && (
-                                                                <Button size="sm" variant="outline" onClick={() => handleAward(quote.id)}>
-                                                                    <CheckCircle className="mr-2 h-4 w-4" /> Award
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                {quote.status === 'won' && <Badge className="bg-green-500">AWARDED</Badge>}
+                                                                {quote.status !== 'won' && <Badge variant="outline">{quote.status.toUpperCase()}</Badge>}
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                {quote.status === 'submitted' && rfq.status === 'open' && (
+                                                                    <Button size="sm" variant="outline" onClick={() => handleAward(quote.id)}>
+                                                                        <CheckCircle className="mr-2 h-4 w-4" /> Award
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
                                         )}
                                     </CardContent>
                                 </Card>
@@ -532,16 +544,26 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="space-y-3">
-                                        {rfq.vendors.map((vendor: any) => (
-                                            <div key={vendor.id} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
-                                                <span>{vendor.name}</span>
-                                                <Badge variant={vendor.pivot.status === 'responded' ? 'default' : 'outline'}>
-                                                    {vendor.pivot.status}
-                                                </Badge>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Vendor Name</TableHead>
+                                                <TableHead>Status</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {rfq.vendors.map((vendor: any) => (
+                                                <TableRow key={vendor.id}>
+                                                    <TableCell>{vendor.name}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={vendor.pivot.status === 'responded' ? 'default' : 'outline'}>
+                                                            {vendor.pivot.status}
+                                                        </Badge>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 )}
                             </CardContent>
                         </Card>

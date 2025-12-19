@@ -16,6 +16,7 @@ class CreateRfqService
 
             $rfq = PurchaseRfq::create([
                 'document_number' => $number,
+                'purchase_request_id' => $data['purchase_request_id'] ?? null,
                 'title' => $data['title'],
                 'deadline' => $data['deadline'],
                 'created_by' => $userId,

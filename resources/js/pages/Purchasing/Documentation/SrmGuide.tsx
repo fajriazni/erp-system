@@ -6,7 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { 
     Award, Building2, CheckCircle2, FileCheck, Info, 
-    TrendingUp, Users, UserPlus, Zap, ArrowRight 
+    TrendingUp, Users, UserPlus, Zap, ArrowRight,
 } from 'lucide-react';
 
 export default function UserGuide() {
@@ -38,13 +38,49 @@ export default function UserGuide() {
                 </Alert>
 
                 <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="registry">Supplier Registry</TabsTrigger>
-                        <TabsTrigger value="scorecards">Scorecards</TabsTrigger>
-                        <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-                        <TabsTrigger value="audits">Audits</TabsTrigger>
-                    </TabsList>
+                    <div className="grid md:grid-cols-[240px_1fr] gap-8 items-start">
+                        <div className="space-y-4">
+                            <div className="px-3 py-2">
+                                <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+                                    Contents
+                                </h2>
+                                <TabsList className="flex flex-col h-auto bg-transparent p-0 space-y-1">
+                                    <TabsTrigger 
+                                        value="overview" 
+                                        className="w-full justify-start px-4 py-2 text-left font-medium hover:bg-muted/50 data-[state=active]:bg-muted"
+                                    >
+                                        Overview
+                                    </TabsTrigger>
+                                    <TabsTrigger 
+                                        value="registry" 
+                                        className="w-full justify-start px-4 py-2 text-left font-medium hover:bg-muted/50 data-[state=active]:bg-muted"
+                                    >
+                                        Supplier Registry
+                                    </TabsTrigger>
+
+                                    <TabsTrigger 
+                                        value="scorecards" 
+                                        className="w-full justify-start px-4 py-2 text-left font-medium hover:bg-muted/50 data-[state=active]:bg-muted"
+                                    >
+                                        Scorecards
+                                    </TabsTrigger>
+                                    <TabsTrigger 
+                                        value="onboarding" 
+                                        className="w-full justify-start px-4 py-2 text-left font-medium hover:bg-muted/50 data-[state=active]:bg-muted"
+                                    >
+                                        Onboarding
+                                    </TabsTrigger>
+                                    <TabsTrigger 
+                                        value="audits" 
+                                        className="w-full justify-start px-4 py-2 text-left font-medium hover:bg-muted/50 data-[state=active]:bg-muted"
+                                    >
+                                        Audits
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
+                        </div>
+
+                        <div className="min-h-screen">
 
                     {/* Overview Tab */}
                     <TabsContent value="overview" className="space-y-6">
@@ -91,6 +127,7 @@ export default function UserGuide() {
                                             description: "Scheduled audits to ensure vendor compliance and capability",
                                             badge: "Quality"
                                         },
+
                                     ].map((feature, idx) => (
                                         <Card key={idx} className="border-l-4 border-l-primary">
                                             <CardHeader>
@@ -182,6 +219,8 @@ export default function UserGuide() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+
 
                     {/* Scorecards Tab */}
                     <TabsContent value="scorecards" className="space-y-6">
@@ -436,6 +475,8 @@ export default function UserGuide() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+                        </div>
+                    </div>
                 </Tabs>
 
                 {/* Footer */}

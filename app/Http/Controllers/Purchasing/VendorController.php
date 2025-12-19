@@ -210,7 +210,7 @@ class VendorController extends Controller
         return Inertia::render('Purchasing/vendors/audits', [
             'audits' => $audits,
             'stats' => $stats,
-            'vendors' => \App\Models\Contact::where('type', 'vendor')->orWhere('type', 'both')->select('id', 'name')->orderBy('name')->get(),
+            'vendors' => Contact::where('type', 'vendor')->orWhere('type', 'both')->select('id', 'name')->orderBy('name')->get(),
             'auditors' => \App\Models\User::select('id', 'name')->orderBy('name')->get(),
         ]);
     }

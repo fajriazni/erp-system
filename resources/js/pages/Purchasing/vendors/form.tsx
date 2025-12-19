@@ -600,7 +600,7 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
                                 </TabsContent>
 
                                 {/* Tab 5: Documents */}
-                                <TabsContent value="documents" className="space-y-6 mt-6">
+                                <TabsContent value="documents" className="space-y-6">
                                     {/* Document Upload Section */}
                                     <div className="space-y-4">
                                         <div>

@@ -17,6 +17,7 @@ class PurchaseRequestController extends Controller
     {
         $requests = QueryBuilder::for(PurchaseRequest::class)
             ->with(['requester'])
+            ->withCount(['items'])
             ->allowedFilters([
                 'document_number',
                 'status',
@@ -35,6 +36,7 @@ class PurchaseRequestController extends Controller
 
         return Inertia::render('Purchasing/requests/index', [
             'requests' => $requests,
+            'filters' => request()->only(['filter']),
         ]);
     }
 
@@ -63,9 +65,48 @@ class PurchaseRequestController extends Controller
             ->with('success', 'Purchase Request created successfully.');
     }
 
+    public function edit(PurchaseRequest $request)
+    {
+        if ($request->status !== 'draft') {
+            return redirect()->route('purchasing.requests.show', $request->id)
+                ->with('error', 'Only draft requests can be edited.');
+        }
+
+        $request->load(['items.product.uom']);
+
+        return Inertia::render('Purchasing/requests/edit', [
+            'request' => $request,
+            'products' => Product::with('uom')->get(),
+        ]);
+    }
+
+    public function update(Request $request, $id, \App\Domain\Purchasing\Services\UpdatePurchaseRequestService $service)
+    {
+        $purchaseRequest = PurchaseRequest::findOrFail($id);
+
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'required_date' => 'nullable|date|after_or_equal:date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.estimated_unit_price' => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            $service->execute($purchaseRequest, $validated, auth()->id());
+            
+            return redirect()->route('purchasing.requests.show', $purchaseRequest->id)
+                ->with('success', 'Purchase Request updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
     public function show(PurchaseRequest $request)
     {
-        $request->load(['items.product.uom', 'requester']);
+        $request->load(['items.product.uom', 'requester', 'rfqs']);
 
         $request->load([
             'workflowInstances' => function ($query) {

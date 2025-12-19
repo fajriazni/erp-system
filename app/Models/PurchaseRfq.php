@@ -6,12 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property \Illuminate\Support\Carbon|null $deadline
+ */
 class PurchaseRfq extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'document_number',
+        'purchase_request_id',
         'title',
         'deadline',
         'status',
@@ -23,6 +27,11 @@ class PurchaseRfq extends Model
     protected $casts = [
         'deadline' => 'date',
     ];
+
+    public function purchaseRequest()
+    {
+        return $this->belongsTo(PurchaseRequest::class);
+    }
 
     public function user()
     {

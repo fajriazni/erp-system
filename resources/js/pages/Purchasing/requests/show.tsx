@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Trash2, Send, CheckCircle, XCircle, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Trash2, Send, CheckCircle, XCircle, ShoppingCart, FileText, Edit } from 'lucide-react';
 import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,11 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import axios from 'axios';
 import WorkflowTimeline from '@/components/WorkflowTimeline';
+import { PageHeader } from '@/components/ui/page-header';
+import { create } from '@/actions/App/Http/Controllers/Purchasing/RfqController';
+import { index, destroy, submit } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
 
-// Manual routes placeholders
-const indexUrl = '/purchasing/requests';
-const destroyUrl = (id: number) => `/purchasing/requests/${id}`;
-const submitUrl = (id: number) => `/purchasing/requests/${id}/submit`;
+// Manual routes placeholders until Wayfinder fully propagated or used directly
 const convertUrl = (id: number) => `/purchasing/requests/${id}/convert`;
 
 interface PurchaseRequest {
@@ -46,6 +46,12 @@ interface PurchaseRequest {
             }
         };
     }>;
+    rfqs: Array<{
+        id: number;
+        document_number: string;
+        status: string;
+        created_at: string;
+    }>;
 }
 
 interface Vendor {
@@ -64,14 +70,14 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
     const [rejectReason, setRejectReason] = useState('');
 
     const handleDelete = () => {
-        router.delete(destroyUrl(request.id), {
+        router.delete(destroy.url(request.id), {
             onSuccess: () => toast.success('Purchase Request deleted successfully'),
             onError: () => toast.error('Failed to delete purchase request'),
         });
     };
 
     const handleSubmit = () => {
-        router.post(submitUrl(request.id), {}, {
+        router.post(submit.url(request.id), {}, {
             onSuccess: () => toast.success('Purchase Request submitted for approval'),
             onError: (errors: any) => toast.error(errors.error || 'Failed to submit purchase request'),
         });
@@ -148,29 +154,34 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
     return (
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' },
-            { title: 'Purchase Requests', href: indexUrl },
+            { title: 'Purchase Requests', href: index.url() },
             { title: request.document_number, href: '#' }
         ]}>
             <Head title={request.document_number} />
 
-            <div>
-                <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
-                    <Link href={indexUrl}>
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                    </Link>
-                </Button>
-
-                <div className="flex items-start justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">{request.document_number}</h1>
-                        <p className="text-muted-foreground">Requested by {request.requester?.name}</p>
+            <PageHeader
+                title={request.document_number}
+                description={
+                    <div className="flex items-center gap-2">
+                        <span>Requested by {request.requester?.name}</span>
+                        <span>•</span>
+                        {getStatusBadge(request.status)}
                     </div>
-                    <div className="flex gap-2">
+                }
+                actions={
+                    <div className="flex items-center gap-2">
                          {request.status === 'draft' && (
                             <>
+                                <Button variant="outline" asChild>
+                                    <Link href={`/purchasing/requests/${request.id}/edit`}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                                
                                 <DeleteConfirmDialog
                                     trigger={
-                                        <Button variant="destructive" size="sm">
+                                        <Button variant="destructive">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Delete
                                         </Button>
@@ -180,9 +191,9 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                                     description="Are you sure you want to delete this? This action cannot be undone."
                                 />
 
-                                <Button size="sm" onClick={handleSubmit}>
+                                <Button onClick={handleSubmit}>
                                     <Send className="mr-2 h-4 w-4" />
-                                    Submit for Approval
+                                    Submit
                                 </Button>
                             </>
                         )}
@@ -191,7 +202,6 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                         {pendingApprovalTask && (
                             <>
                                 <Button 
-                                    size="sm" 
                                     variant="default"
                                     onClick={() => setApproveDialogOpen(true)}
                                     disabled={processing}
@@ -200,7 +210,6 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                                     Approve
                                 </Button>
                                 <Button 
-                                    size="sm" 
                                     variant="destructive"
                                     onClick={() => setRejectDialogOpen(true)}
                                     disabled={processing}
@@ -213,30 +222,27 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
 
                         {request.status === 'approved' && (
                             <>
-                                <Button variant="secondary" size="sm" asChild>
-                                    <Link href={`/purchasing/rfqs/create?pr_id=${request.id}`}>
-                                        <Send className="mr-2 h-4 w-4" />
+                                <Button variant="secondary" asChild>
+                                    <Link href={`${create.url()}?pr_id=${request.id}`}>
+                                        <FileText className="mr-2 h-4 w-4" />
                                         Create RFQ
                                     </Link>
                                 </Button>
-                                <Button size="sm" onClick={() => setConvertDialogOpen(true)}>
+                                <Button onClick={() => setConvertDialogOpen(true)}>
                                     <ShoppingCart className="mr-2 h-4 w-4" />
                                     Convert to PO
                                 </Button>
                             </>
                         )}
                     </div>
-                </div>
-            </div>
+                }
+            />
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-2 space-y-6">
                     <Card>
                         <CardHeader>
-                             <div className="flex items-center justify-between">
-                                <CardTitle>Request Details</CardTitle>
-                                {getStatusBadge(request.status)}
-                            </div>
+                            <CardTitle>Request Details</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-2">
                              <div>
@@ -288,10 +294,66 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                             </Table>
                         </CardContent>
                     </Card>
+
+                    {/* Linked RFQs Section */}
+                    {request.rfqs && request.rfqs.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Related RFQs</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>RFQ #</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Created At</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {request.rfqs.map((rfq) => (
+                                            <TableRow key={rfq.id}>
+                                                <TableCell>
+                                                    <Link href={`/purchasing/rfqs/${rfq.id}`} className="hover:underline font-medium text-primary">
+                                                        {rfq.document_number}
+                                                    </Link>
+                                                </TableCell>
+                                                <TableCell>
+                                                     <Badge variant="outline" className="capitalize">{rfq.status}</Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {new Date(rfq.created_at).toLocaleDateString()}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
 
                 <div className="lg:col-span-1">
-                    <WorkflowTimeline workflowInstance={workflowInstance} />
+                    {workflowInstance ? (
+                        <WorkflowTimeline workflowInstance={workflowInstance} />
+                    ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Approval Workflow</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground space-y-2">
+                                    <div className="p-3 bg-muted rounded-full">
+                                        <Send className="h-4 w-4" />
+                                    </div>
+                                    <p className="text-sm font-medium">Not Started</p>
+                                    <p className="text-xs">
+                                        Submit this request to initiate the approval workflow.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
 

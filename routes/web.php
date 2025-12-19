@@ -273,9 +273,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/requisitions', function () {
             return Inertia::render('Purchasing/Requisitions/Index');
         })->name('requisitions.index');
-        Route::get('/orders', function () {
-            return Inertia::render('Purchasing/orders/index');
-        })->name('orders.index');
+        
         Route::get('/direct', function () {
             return Inertia::render('Purchasing/Operations/Direct');
         })->name('direct.index');
@@ -327,6 +325,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/documentation/srm-guide', function () {
             return Inertia::render('Purchasing/Documentation/SrmGuide');
         })->name('documentation.srm-guide');
+
+        Route::get('/documentation/ops-guide', function () {
+            return Inertia::render('Purchasing/Documentation/PurchasingOperationsGuide');
+        })->name('documentation.ops-guide');
     });
 
     Route::prefix('sales')->name('sales.')->group(function () {
