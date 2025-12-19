@@ -3,43 +3,36 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import Form from './Form';
 import { PageHeader } from '@/components/ui/page-header';
-import { index, store } from '@/routes/purchasing/rfqs';
+import { index, update } from '@/routes/purchasing/rfqs';
 import { Button } from '@/components/ui/button';
 import { Link } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 
 interface Props {
+    rfq: { id: number; document_number: string };
     products: { id: number; name: string; code: string; uom_id?: number | null }[];
     uoms: { id: number; name: string; symbol: string }[];
-    initialData?: {
+    initialData: {
         title: string;
+        deadline: string;
+        notes: string;
         items: { product_id: string; quantity: number | string; uom_id: string; target_price: number | string; notes: string }[];
     };
 }
 
-export default function Create({ products, uoms, initialData }: Props) {
-    // Adapter to map initialData to expected recursive type if needed
-    // The Form component expects `items` to be slightly different structure or it's compatible
-    // For now we pass logic directly.
-
-    const formInitialData = (initialData && initialData.items) ? {
-        title: initialData.title,
-        deadline: '', // Will use default in Form
-        notes: '',
-        items: initialData.items.map(i => ({...i, notes: i.notes || ''}))
-    } : undefined;
-
+export default function Edit({ rfq, products, uoms, initialData }: Props) {
     return (
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' },
             { title: 'RFQs', href: index.url() },
-            { title: 'Create RFQ' }
+            { title: rfq.document_number, href: `/purchasing/rfqs/${rfq.id}` }, // Ideally link to show
+            { title: 'Edit' }
         ]}>
-            <Head title="Create RFQ" />
+            <Head title={`Edit ${rfq.document_number}`} />
             
             <PageHeader 
-                title="Create RFQ" 
-                description="Create a new tender to invite vendor bids."
+                title={`Edit ${rfq.document_number}`} 
+                description="Update tender details."
             >
                 <Button variant="outline" asChild>
                     <Link href={index.url()}>
@@ -52,9 +45,11 @@ export default function Create({ products, uoms, initialData }: Props) {
                 <Form 
                     products={products}
                     uoms={uoms}
-                    initialData={formInitialData}
-                    submitUrl={store.url()}
+                    initialData={initialData}
+                    submitUrl={update.url(rfq.id)}
+                    method="put"
                     cancelUrl={index.url()}
+                    isEdit
                 />
             </div>
         </AppLayout>

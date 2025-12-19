@@ -31,7 +31,7 @@ export default function Show({ order }: Props) {
         ]}>
             <Head title={`Sales Order ${order.document_number}`} />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader 
                     title={`Order ${order.document_number}`}
                     description={`Created on ${new Date(order.date).toLocaleDateString()}`}

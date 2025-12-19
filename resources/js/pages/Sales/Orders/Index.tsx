@@ -37,7 +37,7 @@ export default function Index({ orders }: Props) {
         ]}>
             <Head title="Sales Orders" />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader 
                     title="Sales Orders" 
                     description="Manage customer orders and fulfillment status."

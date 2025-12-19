@@ -64,7 +64,7 @@ export default function Create({ customers, warehouses, products }: Props) {
         ]}>
             <Head title="Create Sales Order" />
             
-            <form onSubmit={handleSubmit} className="container mx-auto p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="container mx-auto space-y-6">
                 <PageHeader 
                     title="Create Sales Order" 
                     description="Create a new sales order for a customer."

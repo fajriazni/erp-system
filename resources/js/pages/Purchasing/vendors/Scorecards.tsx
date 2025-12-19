@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { PageHeader } from '@/components/page-header';
+import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -63,8 +63,9 @@ export default function Scorecards({ vendors }: Props) {
         }
     };
 
-    const avgRating = vendors.data.length > 0
-        ? vendors.data.reduce((sum, v) => sum + (v.rating_score ?? 0), 0) / vendors.data.length
+    const ratedVendors = vendors.data.filter(v => v.rating_score !== null);
+    const avgRating = ratedVendors.length > 0
+        ? ratedVendors.reduce((sum, v) => sum + Number(v.rating_score), 0) / ratedVendors.length
         : 0;
 
     const excellentVendors = vendors.data.filter(v => (v.rating_score ?? 0) >= 4.5).length;
@@ -76,7 +77,7 @@ export default function Scorecards({ vendors }: Props) {
         ]}>
             <Head title="Supplier Scorecards" />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader 
                     title="Supplier Scorecards"
                     description="Monitor and analyze supplier performance metrics"

@@ -78,7 +78,7 @@ export default function Process({ delivery }: Props) {
         ]}>
             <Head title={`Pick ${delivery.delivery_number}`} />
 
-            <form onSubmit={handleSubmit} className="container mx-auto p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="container mx-auto space-y-6">
                 <PageHeader 
                     title={`Pick ${delivery.delivery_number}`}
                     description={`Customer: ${delivery.sales_order?.customer?.name || 'N/A'}`}

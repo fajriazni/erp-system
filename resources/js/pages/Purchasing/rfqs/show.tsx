@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle, Crown } from 'lucide-react';
 import { index, invite, bid } from '@/routes/purchasing/rfqs';
 import { award } from '@/routes/purchasing/quotations';
 import {
@@ -310,8 +310,13 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                     <TableHead className="text-right">Target Price</TableHead>
                                                     {rfq.quotations.map((q: any) => (
                                                         <TableHead key={q.id} className={`text-right min-w-[150px] ${q.status === 'won' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400' : ''}`}>
-                                                            <div className="font-bold">{q.vendor.name}</div>
-                                                            {q.status === 'won' && <div className="text-[10px] font-normal uppercase tracking-wider">Awarded</div>}
+                                                            <div className="flex flex-col items-end">
+                                                                <div className="font-bold flex items-center gap-1">
+                                                                    {q.status === 'won' && <Crown className="h-4 w-4 fill-emerald-600 text-emerald-600" />}
+                                                                    {q.vendor.name}
+                                                                </div>
+                                                                {q.status === 'won' && <div className="text-[10px] font-normal uppercase tracking-wider text-emerald-600">Winner</div>}
+                                                            </div>
                                                         </TableHead>
                                                     ))}
                                                 </TableRow>

@@ -24,7 +24,7 @@ class RfqController extends Controller
                 }
             })
             ->latest()
-            ->paginate(10); // Use server-side pagination eventually
+            ->paginate($request->input('per_page', 10));
 
         return Inertia::render('Purchasing/rfqs/index', [
             'rfqs' => $rfqs,
@@ -161,5 +161,64 @@ class RfqController extends Controller
 
         return redirect()->route('purchasing.orders.show', $po->id)
             ->with('success', 'Quotation awarded and PO created.');
+    }
+    public function edit(PurchaseRfq $rfq)
+    {
+        $rfq->load(['lines.product.uom']);
+
+        $formData = [
+            'title' => $rfq->title,
+            'deadline' => $rfq->deadline->format('Y-m-d'),
+            'notes' => $rfq->notes,
+            'items' => $rfq->lines->map(function ($line) {
+                return [
+                    'product_id' => (string) $line->product_id,
+                    'quantity' => $line->quantity,
+                    'uom_id' => (string) $line->uom_id,
+                    'target_price' => $line->target_price,
+                    'notes' => $line->notes,
+                ];
+            }),
+        ];
+
+        return Inertia::render('Purchasing/rfqs/edit', [
+            'rfq' => $rfq,
+            'products' => Product::with('uom')->select('id', 'name', 'code', 'uom_id')->get(),
+            'uoms' => \App\Models\Uom::all(),
+            'initialData' => $formData,
+        ]);
+    }
+
+    public function update(Request $request, PurchaseRfq $rfq)
+    {
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'deadline' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|numeric|min:0.01',
+            'items.*.uom_id' => 'nullable|exists:uoms,id',
+            'items.*.target_price' => 'nullable|numeric|min:0',
+            'items.*.notes' => 'nullable|string',
+        ]);
+
+        // Simple update logic - can be moved to dedicated service if complex
+        $rfq->update([
+            'title' => $data['title'],
+            'deadline' => $data['deadline'],
+            'notes' => $data['notes'],
+        ]);
+
+        // Sync items - simpler to delete and recreate for RFQ as it's draft
+        // Ideally should sync by ID to preserve logic if needed, but for now strict replace is fine for Draft
+        if ($rfq->status === 'draft') {
+            $rfq->lines()->delete();
+            foreach ($data['items'] as $item) {
+                $rfq->lines()->create($item);
+            }
+        }
+
+        return redirect()->route('purchasing.rfqs.index')->with('success', 'RFQ updated successfully.');
     }
 }

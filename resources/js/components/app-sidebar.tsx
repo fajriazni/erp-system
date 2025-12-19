@@ -1,15 +1,15 @@
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
 } from "@/components/ui/sidebar"
 import {
     LayoutDashboard,
@@ -142,8 +142,14 @@ type NavItem = {
     badge?: string
 }
 
+type MenuGroup = {
+    group: string
+    items: NavItem[]
+    badge?: string
+}
+
 // Menu definitions per module
-const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
+const menuMap: Record<string, MenuGroup[]> = {
     '/dashboard': [
         {
             group: 'Key Performance Indicators (KPI)',
@@ -208,12 +214,13 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
         },
         {
             group: 'Sourcing & SRM',
+            badge: 'Ready',
             items: [
                 { title: "Supplier Registry", url: "/purchasing/vendors", icon: Users },
-                { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus, badge: 'Ready' },
-                { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck, badge: 'Ready' },
-                { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award, badge: 'Ready' },
-                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel, badge: 'Ready' },
+                { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus },
+                { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck },
+                { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award },
+                { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
             ]
         },
         {
@@ -277,24 +284,24 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'CRM (Customer Management)',
-             items: [
-                 { title: "Leads Management", url: "/sales/leads", icon: UserPlus, badge: 'Ready' },
-                 { title: "Deals", url: "/sales/deals", icon: Target, badge: 'Ready' },
-                 { title: "Customer 360 View", url: "/sales/customers", icon: UserCircle },
-                 { title: "Marketing Campaigns", url: "/sales/campaigns", icon: Megaphone },
-                 { title: "Contact Management", url: "/sales/contacts", icon: Users },
-             ]
+            group: 'CRM (Customer Management)',
+            items: [
+                { title: "Leads Management", url: "/sales/leads", icon: UserPlus, badge: 'Ready' },
+                { title: "Deals", url: "/sales/deals", icon: Target, badge: 'Ready' },
+                { title: "Customer 360 View", url: "/sales/customers", icon: UserCircle },
+                { title: "Marketing Campaigns", url: "/sales/campaigns", icon: Megaphone },
+                { title: "Contact Management", url: "/sales/contacts", icon: Users },
+            ]
         },
         {
-             group: 'Sales Operations (CPQ)',
-             items: [
-                 { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText, badge: 'Ready' },
-                 { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart, badge: 'Ready' },
-                 { title: "Contract Management", url: "/sales/contracts", icon: FileSignature },
-                 { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags, badge: 'Ready' },
-                 { title: "Upsell/Cross-sell", url: "/sales/suggestions", icon: Sparkles },
-             ]
+            group: 'Sales Operations (CPQ)',
+            items: [
+                { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText, badge: 'Ready' },
+                { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart, badge: 'Ready' },
+                { title: "Contract Management", url: "/sales/contracts", icon: FileSignature },
+                { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags, badge: 'Ready' },
+                { title: "Upsell/Cross-sell", url: "/sales/suggestions", icon: Sparkles },
+            ]
         },
         {
             group: 'Sales Force Automation (SFA)',
@@ -306,20 +313,20 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Multi-Channel & Fulfillment',
-             items: [
-                 { title: "E-commerce Sync", url: "/sales/sync", icon: RefreshCcw },
-                 { title: "Available-to-Promise", url: "/sales/atp", icon: PackageCheck },
-                 { title: "Credit Limit Check", url: "/sales/credit-check", icon: ShieldAlert },
-                 { title: "Delivery Tracking", url: "/sales/delivery", icon: Truck },
-             ]
+            group: 'Multi-Channel & Fulfillment',
+            items: [
+                { title: "E-commerce Sync", url: "/sales/sync", icon: RefreshCcw },
+                { title: "Available-to-Promise", url: "/sales/atp", icon: PackageCheck },
+                { title: "Credit Limit Check", url: "/sales/credit-check", icon: ShieldAlert },
+                { title: "Delivery Tracking", url: "/sales/delivery", icon: Truck },
+            ]
         },
         {
             group: 'Customer Portal',
             items: [
-                 { title: "Order Tracking", url: "/sales/portal/orders", icon: MousePointer2 },
-                 { title: "Online Payments", url: "/sales/portal/payments", icon: CreditCard },
-                 { title: "Document Downloads", url: "/sales/portal/documents", icon: HardDriveDownload },
+                { title: "Order Tracking", url: "/sales/portal/orders", icon: MousePointer2 },
+                { title: "Online Payments", url: "/sales/portal/payments", icon: CreditCard },
+                { title: "Document Downloads", url: "/sales/portal/documents", icon: HardDriveDownload },
             ]
         }
     ],
@@ -652,49 +659,49 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Execution & Tracking',
-             items: [
-                 { title: "My Tasks", url: "/projects/my-tasks", icon: CheckSquare },
-                 { title: "Kanban Board", url: "/projects/kanban", icon: LayoutDashboard },
-                 { title: "Issues & Risks", url: "/projects/issues", icon: AlertTriangle },
-                 { title: "Documents", url: "/projects/documents", icon: FolderOpen },
-                 { title: "Collaboration", url: "/projects/collaboration", icon: MessageSquare },
-             ]
+            group: 'Execution & Tracking',
+            items: [
+                { title: "My Tasks", url: "/projects/my-tasks", icon: CheckSquare },
+                { title: "Kanban Board", url: "/projects/kanban", icon: LayoutDashboard },
+                { title: "Issues & Risks", url: "/projects/issues", icon: AlertTriangle },
+                { title: "Documents", url: "/projects/documents", icon: FolderOpen },
+                { title: "Collaboration", url: "/projects/collaboration", icon: MessageSquare },
+            ]
         },
         {
-              group: 'Procurement (Project)',
-              items: [
-                  { title: "Project PR", url: "/projects/procurement/requests", icon: ShoppingCart },
-                  { title: "Sub-contractors", url: "/projects/procurement/subcontractors", icon: HardHat },
-                  { title: "Material Consumption", url: "/projects/procurement/consumption", icon: Hammer },
-              ]
+            group: 'Procurement (Project)',
+            items: [
+                { title: "Project PR", url: "/projects/procurement/requests", icon: ShoppingCart },
+                { title: "Sub-contractors", url: "/projects/procurement/subcontractors", icon: HardHat },
+                { title: "Material Consumption", url: "/projects/procurement/consumption", icon: Hammer },
+            ]
         },
         {
-             group: 'Billing & Finance',
-             items: [
-                 { title: "Revenue Recognition", url: "/projects/billing/revenue", icon: TrendingUp },
-                 { title: "Milestone Billing", url: "/projects/billing/milestones", icon: Receipt },
-                 { title: "Expense Claims", url: "/projects/expenses", icon: Wallet },
-                 { title: "Project P&L", url: "/projects/pnl", icon: FileSpreadsheet },
-             ]
+            group: 'Billing & Finance',
+            items: [
+                { title: "Revenue Recognition", url: "/projects/billing/revenue", icon: TrendingUp },
+                { title: "Milestone Billing", url: "/projects/billing/milestones", icon: Receipt },
+                { title: "Expense Claims", url: "/projects/expenses", icon: Wallet },
+                { title: "Project P&L", url: "/projects/pnl", icon: FileSpreadsheet },
+            ]
         },
         {
-             group: 'Quality & Closing',
-             items: [
-                 { title: "QA Checklist", url: "/projects/quality", icon: ClipboardCheck },
-                 { title: "Handover (BAST)", url: "/projects/handover", icon: FileSignature },
-                 { title: "Project Closure", url: "/projects/closure", icon: Archive },
-             ]
+            group: 'Quality & Closing',
+            items: [
+                { title: "QA Checklist", url: "/projects/quality", icon: ClipboardCheck },
+                { title: "Handover (BAST)", url: "/projects/handover", icon: FileSignature },
+                { title: "Project Closure", url: "/projects/closure", icon: Archive },
+            ]
         }
     ],
     '/assets': [
         {
             group: 'Dashboard & Analytics',
             items: [
-                 { title: "Asset Overview", url: "/assets", icon: LayoutDashboard },
-                 { title: "Lifecycle Status", url: "/assets/lifecycle", icon: PieChart },
-                 { title: "Maintenance Calendar", url: "/assets/maintenance-calendar", icon: CalendarDays },
-                 { title: "Depreciation Forecast", url: "/assets/forecast", icon: TrendingUp },
+                { title: "Asset Overview", url: "/assets", icon: LayoutDashboard },
+                { title: "Lifecycle Status", url: "/assets/lifecycle", icon: PieChart },
+                { title: "Maintenance Calendar", url: "/assets/maintenance-calendar", icon: CalendarDays },
+                { title: "Depreciation Forecast", url: "/assets/forecast", icon: TrendingUp },
             ]
         },
         {
@@ -707,39 +714,39 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Financial & Depreciation',
-             items: [
-                 { title: "Depreciation Methods", url: "/assets/methods", icon: Calculator },
-                 { title: "Asset Revaluation", url: "/assets/revaluation", icon: TrendingUp },
-                 { title: "Fiscal vs Commercial", url: "/assets/fiscal", icon: BookOpen },
-                 { title: "Component Accounting", url: "/assets/components", icon: Layers },
-             ]
+            group: 'Financial & Depreciation',
+            items: [
+                { title: "Depreciation Methods", url: "/assets/methods", icon: Calculator },
+                { title: "Asset Revaluation", url: "/assets/revaluation", icon: TrendingUp },
+                { title: "Fiscal vs Commercial", url: "/assets/fiscal", icon: BookOpen },
+                { title: "Component Accounting", url: "/assets/components", icon: Layers },
+            ]
         },
         {
             group: 'Operations',
             items: [
-                 { title: "Acquisition (Drafts)", url: "/assets/acquisition", icon: ShoppingCart },
-                 { title: "Asset Transfer", url: "/assets/transfer", icon: ArrowRightLeft },
-                 { title: "Check-in / Check-out", url: "/assets/checkout", icon: LogOut },
-                 { title: "Disposal & Scrap", url: "/assets/disposal", icon: Trash2 },
+                { title: "Acquisition (Drafts)", url: "/assets/acquisition", icon: ShoppingCart },
+                { title: "Asset Transfer", url: "/assets/transfer", icon: ArrowRightLeft },
+                { title: "Check-in / Check-out", url: "/assets/checkout", icon: LogOut },
+                { title: "Disposal & Scrap", url: "/assets/disposal", icon: Trash2 },
             ]
         },
         {
             group: 'Maintenance (EAM)',
             items: [
-                 { title: "Preventive Schedule", url: "/assets/preventive", icon: Calendar },
-                 { title: "Work Orders", url: "/assets/work-orders", icon: Wrench },
-                 { title: "Insurance Policies", url: "/assets/insurance", icon: Shield },
-                 { title: "Warranty Tracking", url: "/assets/warranty", icon: Award },
+                { title: "Preventive Schedule", url: "/assets/preventive", icon: Calendar },
+                { title: "Work Orders", url: "/assets/work-orders", icon: Wrench },
+                { title: "Insurance Policies", url: "/assets/insurance", icon: Shield },
+                { title: "Warranty Tracking", url: "/assets/warranty", icon: Award },
             ]
         },
         {
-             group: 'Audit & Compliance',
-             items: [
-                 { title: "Stock Take (Audit)", url: "/assets/audit/stock-take", icon: ScanBarcode },
-                 { title: "Audit Trail", url: "/assets/audit/log", icon: History },
-                 { title: "Legal Documents", url: "/assets/documents", icon: FileCheck },
-             ]
+            group: 'Audit & Compliance',
+            items: [
+                { title: "Stock Take (Audit)", url: "/assets/audit/stock-take", icon: ScanBarcode },
+                { title: "Audit Trail", url: "/assets/audit/log", icon: History },
+                { title: "Legal Documents", url: "/assets/documents", icon: FileCheck },
+            ]
         }
     ],
     '/pos': [
@@ -753,21 +760,21 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Multi-Store & Global',
-             items: [
-                 { title: "Shop & Branches", url: "/pos/branches", icon: Store },
-                 { title: "Price & Tax Rules", url: "/pos/pricing", icon: Tags },
-                 { title: "Promotions & Discounts", url: "/pos/promotions", icon: Percent },
-                 { title: "Vouchers", url: "/pos/vouchers", icon: Gift },
-             ]
+            group: 'Multi-Store & Global',
+            items: [
+                { title: "Shop & Branches", url: "/pos/branches", icon: Store },
+                { title: "Price & Tax Rules", url: "/pos/pricing", icon: Tags },
+                { title: "Promotions & Discounts", url: "/pos/promotions", icon: Percent },
+                { title: "Vouchers", url: "/pos/vouchers", icon: Gift },
+            ]
         },
         {
-             group: 'Inventory Integration',
-             items: [
-                 { title: "Inter-Store Transfer", url: "/pos/inventory/transfers", icon: ArrowRightLeft },
-                 { title: "Stock Take (Branch)", url: "/pos/inventory/stock-take", icon: ScanBarcode },
-                 { title: "Purchase Requests", url: "/pos/inventory/requests", icon: Archive },
-             ]
+            group: 'Inventory Integration',
+            items: [
+                { title: "Inter-Store Transfer", url: "/pos/inventory/transfers", icon: ArrowRightLeft },
+                { title: "Stock Take (Branch)", url: "/pos/inventory/stock-take", icon: ScanBarcode },
+                { title: "Purchase Requests", url: "/pos/inventory/requests", icon: Archive },
+            ]
         },
         {
             group: 'CRM & Loyalty',
@@ -779,28 +786,28 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Multi-Channel',
-             items: [
-                 { title: "Online Orders", url: "/pos/online-orders", icon: Globe },
-                 { title: "Delivery Tracking", url: "/pos/delivery", icon: Truck },
-                 { title: "Kitchen Display (KDS)", url: "/pos/kds", icon: ChefHat },
-             ]
+            group: 'Multi-Channel',
+            items: [
+                { title: "Online Orders", url: "/pos/online-orders", icon: Globe },
+                { title: "Delivery Tracking", url: "/pos/delivery", icon: Truck },
+                { title: "Kitchen Display (KDS)", url: "/pos/kds", icon: ChefHat },
+            ]
         },
         {
             group: 'Accounting & Reporting',
             items: [
-                 { title: "Daily Journal", url: "/pos/reports/journal", icon: FileText },
-                 { title: "Tax Report", url: "/pos/reports/tax", icon: FileSpreadsheet },
-                 { title: "Cash Discrepancy", url: "/pos/reports/discrepancy", icon: AlertTriangle },
+                { title: "Daily Journal", url: "/pos/reports/journal", icon: FileText },
+                { title: "Tax Report", url: "/pos/reports/tax", icon: FileSpreadsheet },
+                { title: "Cash Discrepancy", url: "/pos/reports/discrepancy", icon: AlertTriangle },
             ]
         },
         {
-             group: 'Analytics & BI',
-             items: [
-                 { title: "Sales Performance", url: "/pos/analytics/sales", icon: BarChart },
-                 { title: "Top Selling", url: "/pos/analytics/top-selling", icon: TrendingUp },
-                 { title: "Profit Margin", url: "/pos/analytics/margin", icon: PieChart },
-             ]
+            group: 'Analytics & BI',
+            items: [
+                { title: "Sales Performance", url: "/pos/analytics/sales", icon: BarChart },
+                { title: "Top Selling", url: "/pos/analytics/top-selling", icon: TrendingUp },
+                { title: "Profit Margin", url: "/pos/analytics/margin", icon: PieChart },
+            ]
         }
     ],
     '/fleet': [
@@ -814,22 +821,22 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Vehicle Master Data',
-             items: [
-                 { title: "Vehicle Registry", url: "/fleet/vehicles", icon: Truck }, // or Car
-                 { title: "Asset Linkage", url: "/fleet/vehicles/assets", icon: Building2 },
-                 { title: "Odometer Logs", url: "/fleet/vehicles/odometer", icon: Gauge },
-                 { title: "Fuel Cards", url: "/fleet/vehicles/fuel-cards", icon: CreditCard },
-             ]
+            group: 'Vehicle Master Data',
+            items: [
+                { title: "Vehicle Registry", url: "/fleet/vehicles", icon: Truck }, // or Car
+                { title: "Asset Linkage", url: "/fleet/vehicles/assets", icon: Building2 },
+                { title: "Odometer Logs", url: "/fleet/vehicles/odometer", icon: Gauge },
+                { title: "Fuel Cards", url: "/fleet/vehicles/fuel-cards", icon: CreditCard },
+            ]
         },
         {
-             group: 'Driver & HR',
-             items: [
-                 { title: "Driver Profiles", url: "/fleet/drivers", icon: UserCircle },
-                 { title: "License Tracking", url: "/fleet/drivers/licenses", icon: FileCheck },
-                 { title: "Assignments", url: "/fleet/drivers/assignments", icon: Key },
-                 { title: "Safety Scorecards", url: "/fleet/drivers/safety", icon: Award },
-             ]
+            group: 'Driver & HR',
+            items: [
+                { title: "Driver Profiles", url: "/fleet/drivers", icon: UserCircle },
+                { title: "License Tracking", url: "/fleet/drivers/licenses", icon: FileCheck },
+                { title: "Assignments", url: "/fleet/drivers/assignments", icon: Key },
+                { title: "Safety Scorecards", url: "/fleet/drivers/safety", icon: Award },
+            ]
         },
         {
             group: 'Maintenance (EAM)',
@@ -841,28 +848,28 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Fuel & Expenses',
-             items: [
-                 { title: "Fuel Logs", url: "/fleet/expenses/fuel", icon: Fuel },
-                 { title: "Expense Claims", url: "/fleet/expenses/claims", icon: Receipt },
-                 { title: "Fines & Tickets", url: "/fleet/expenses/fines", icon: AlertOctagon },
-             ]
+            group: 'Fuel & Expenses',
+            items: [
+                { title: "Fuel Logs", url: "/fleet/expenses/fuel", icon: Fuel },
+                { title: "Expense Claims", url: "/fleet/expenses/claims", icon: Receipt },
+                { title: "Fines & Tickets", url: "/fleet/expenses/fines", icon: AlertOctagon },
+            ]
         },
         {
             group: 'Booking & Operations',
             items: [
-                 { title: "Vehicle Booking", url: "/fleet/operations/booking", icon: CalendarDays },
-                 { title: "Dispatch & Routing", url: "/fleet/operations/dispatch", icon: Map },
-                 { title: "Trip Logs", url: "/fleet/operations/trips", icon: History },
+                { title: "Vehicle Booking", url: "/fleet/operations/booking", icon: CalendarDays },
+                { title: "Dispatch & Routing", url: "/fleet/operations/dispatch", icon: Map },
+                { title: "Trip Logs", url: "/fleet/operations/trips", icon: History },
             ]
         },
         {
-             group: 'Compliance & Insurance',
-             items: [
-                 { title: "Documents (STNK/KIR)", url: "/fleet/compliance/documents", icon: FolderOpen },
-                 { title: "Insurance Policies", url: "/fleet/compliance/insurance", icon: Shield },
-                 { title: "Tax Management", url: "/fleet/compliance/tax", icon: Banknote },
-             ]
+            group: 'Compliance & Insurance',
+            items: [
+                { title: "Documents (STNK/KIR)", url: "/fleet/compliance/documents", icon: FolderOpen },
+                { title: "Insurance Policies", url: "/fleet/compliance/insurance", icon: Shield },
+                { title: "Tax Management", url: "/fleet/compliance/tax", icon: Banknote },
+            ]
         }
     ],
     '/workflows': [
@@ -893,22 +900,22 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Operational Analytics',
-             items: [
-                 { title: "Sales & Revenue BI", url: "/bi/operations/sales", icon: ShoppingCart },
-                 { title: "Supply Chain BI", url: "/bi/operations/supply", icon: Package },
-                 { title: "Human Capital BI", url: "/bi/operations/hr", icon: Users },
-                 { title: "Manufacturing BI", url: "/bi/operations/manufacturing", icon: Factory },
-             ]
+            group: 'Operational Analytics',
+            items: [
+                { title: "Sales & Revenue BI", url: "/bi/operations/sales", icon: ShoppingCart },
+                { title: "Supply Chain BI", url: "/bi/operations/supply", icon: Package },
+                { title: "Human Capital BI", url: "/bi/operations/hr", icon: Users },
+                { title: "Manufacturing BI", url: "/bi/operations/manufacturing", icon: Factory },
+            ]
         },
         {
-             group: 'Financial Intelligence',
-             items: [
-                 { title: "Cash Flow Forecasting", url: "/bi/financial/cashflow", icon: TrendingUp },
-                 { title: "Profitability Analysis", url: "/bi/financial/profitability", icon: DollarSign },
-                 { title: "Budget vs Actual", url: "/bi/financial/budget", icon: BarChart },
-                 { title: "Tax Exposure", url: "/bi/financial/tax", icon: FileSpreadsheet },
-             ]
+            group: 'Financial Intelligence',
+            items: [
+                { title: "Cash Flow Forecasting", url: "/bi/financial/cashflow", icon: TrendingUp },
+                { title: "Profitability Analysis", url: "/bi/financial/profitability", icon: DollarSign },
+                { title: "Budget vs Actual", url: "/bi/financial/budget", icon: BarChart },
+                { title: "Tax Exposure", url: "/bi/financial/tax", icon: FileSpreadsheet },
+            ]
         },
         {
             group: 'Predictive Analytics (AI)',
@@ -920,20 +927,20 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Data Management',
-             items: [
-                 { title: "Data Sources", url: "/bi/data/sources", icon: Database },
-                 { title: "Warehouse Status", url: "/bi/data/warehouse", icon: Server },
-                 { title: "Master Data (MDM)", url: "/bi/data/mdm", icon: FileCheck },
-                 { title: "Report Scheduler", url: "/bi/data/scheduler", icon: Clock },
-             ]
+            group: 'Data Management',
+            items: [
+                { title: "Data Sources", url: "/bi/data/sources", icon: Database },
+                { title: "Warehouse Status", url: "/bi/data/warehouse", icon: Server },
+                { title: "Master Data (MDM)", url: "/bi/data/mdm", icon: FileCheck },
+                { title: "Report Scheduler", url: "/bi/data/scheduler", icon: Clock },
+            ]
         },
         {
             group: 'Self-Service BI',
             items: [
-                 { title: "Report Builder", url: "/bi/self/builder", icon: FileEdit },
-                 { title: "Pivot Analytics", url: "/bi/self/pivot", icon: Grid3x3 },
-                 { title: "Query Library", url: "/bi/self/queries", icon: BookOpen },
+                { title: "Report Builder", url: "/bi/self/builder", icon: FileEdit },
+                { title: "Pivot Analytics", url: "/bi/self/pivot", icon: Grid3x3 },
+                { title: "Query Library", url: "/bi/self/queries", icon: BookOpen },
             ]
         }
     ],
@@ -949,22 +956,22 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Multi-Entity Setup',
-             items: [
-                 { title: "Company Profile", url: "/admin/company/profile", icon: Building2 },
-                 { title: "Org Hierarchy", url: "/admin/company/hierarchy", icon: Network },
-                 { title: "Branches & Cost Centers", url: "/admin/company/branches", icon: MapPin },
-                 { title: "Currency & Exchange", url: "/admin/company/currency", icon: DollarSign },
-             ]
+            group: 'Multi-Entity Setup',
+            items: [
+                { title: "Company Profile", url: "/admin/company/profile", icon: Building2 },
+                { title: "Org Hierarchy", url: "/admin/company/hierarchy", icon: Network },
+                { title: "Branches & Cost Centers", url: "/admin/company/branches", icon: MapPin },
+                { title: "Currency & Exchange", url: "/admin/company/currency", icon: DollarSign },
+            ]
         },
         {
-             group: 'Workflow & Automation',
-             items: [
-                 { title: "Approval Workflow Designer", url: "/admin/workflow/designer", icon: GitBranch },
-                 { title: "Scheduled Actions (Cron)", url: "/admin/workflow/cron", icon: Clock },
-                 { title: "Notifications", url: "/admin/workflow/notifications", icon: Bell },
-                 { title: "Webhooks & API", url: "/admin/workflow/api", icon: CloudCog },
-             ]
+            group: 'Workflow & Automation',
+            items: [
+                { title: "Approval Workflow Designer", url: "/admin/workflow/designer", icon: GitBranch },
+                { title: "Scheduled Actions (Cron)", url: "/admin/workflow/cron", icon: Clock },
+                { title: "Notifications", url: "/admin/workflow/notifications", icon: Bell },
+                { title: "Webhooks & API", url: "/admin/workflow/api", icon: CloudCog },
+            ]
         },
         {
             group: 'Data & Audit',
@@ -976,21 +983,21 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Customization',
-             items: [
-                 { title: "Field Customization", url: "/admin/custom/fields", icon: Settings },
-                 { title: "Form & Report Designer", url: "/admin/custom/forms", icon: FileEdit },
-                 { title: "Translation & Localization", url: "/admin/custom/translation", icon: Globe },
-                 { title: "Menu Editor", url: "/admin/custom/menu", icon: Layers },
-             ]
+            group: 'Customization',
+            items: [
+                { title: "Field Customization", url: "/admin/custom/fields", icon: Settings },
+                { title: "Form & Report Designer", url: "/admin/custom/forms", icon: FileEdit },
+                { title: "Translation & Localization", url: "/admin/custom/translation", icon: Globe },
+                { title: "Menu Editor", url: "/admin/custom/menu", icon: Layers },
+            ]
         },
         {
             group: 'System Health',
             items: [
-                 { title: "System Logs", url: "/admin/health/logs", icon: FileText },
-                 { title: "Integration Dashboard", url: "/admin/health/integrations", icon: Zap },
-                 { title: "Performance Monitor", url: "/admin/health/performance", icon: Activity },
-                 { title: "Backup & Recovery", url: "/admin/health/backup", icon: ServerCog },
+                { title: "System Logs", url: "/admin/health/logs", icon: FileText },
+                { title: "Integration Dashboard", url: "/admin/health/integrations", icon: Zap },
+                { title: "Performance Monitor", url: "/admin/health/performance", icon: Activity },
+                { title: "Backup & Recovery", url: "/admin/health/backup", icon: ServerCog },
             ]
         }
     ],
@@ -1005,22 +1012,22 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Ticket Management',
-             items: [
-                 { title: "All Tickets", url: "/helpdesk/tickets", icon: Ticket },
-                 { title: "My Pipeline", url: "/helpdesk/tickets/my", icon: UserCircle },
-                 { title: "Team Tickets", url: "/helpdesk/tickets/team", icon: Users2 },
-                 { title: "Ticket Views", url: "/helpdesk/tickets/views", icon: ClipboardList },
-             ]
+            group: 'Ticket Management',
+            items: [
+                { title: "All Tickets", url: "/helpdesk/tickets", icon: Ticket },
+                { title: "My Pipeline", url: "/helpdesk/tickets/my", icon: UserCircle },
+                { title: "Team Tickets", url: "/helpdesk/tickets/team", icon: Users2 },
+                { title: "Ticket Views", url: "/helpdesk/tickets/views", icon: ClipboardList },
+            ]
         },
         {
-             group: 'Omnichannel',
-             items: [
-                 { title: "Email-to-Ticket", url: "/helpdesk/channels/email", icon: Mail },
-                 { title: "Live Chat & WA", url: "/helpdesk/channels/chat", icon: MessageCircle },
-                 { title: "Social Media", url: "/helpdesk/channels/social", icon: MessagesSquare },
-                 { title: "Self-Service Portal", url: "/helpdesk/channels/portal", icon: Globe },
-             ]
+            group: 'Omnichannel',
+            items: [
+                { title: "Email-to-Ticket", url: "/helpdesk/channels/email", icon: Mail },
+                { title: "Live Chat & WA", url: "/helpdesk/channels/chat", icon: MessageCircle },
+                { title: "Social Media", url: "/helpdesk/channels/social", icon: MessagesSquare },
+                { title: "Self-Service Portal", url: "/helpdesk/channels/portal", icon: Globe },
+            ]
         },
         {
             group: 'SLA & Automation',
@@ -1032,111 +1039,117 @@ const menuMap: Record<string, { group: string; items: NavItem[] }[]> = {
             ]
         },
         {
-             group: 'Knowledge & Self-Help',
-             items: [
-                 { title: "Knowledge Base", url: "/helpdesk/knowledge/articles", icon: BookOpen },
-                 { title: "Internal Wiki", url: "/helpdesk/knowledge/wiki", icon: BookMarked }, // Lock or BookLock
-                 { title: "Canned Responses", url: "/helpdesk/knowledge/canned", icon: MessageSquare },
-             ]
+            group: 'Knowledge & Self-Help',
+            items: [
+                { title: "Knowledge Base", url: "/helpdesk/knowledge/articles", icon: BookOpen },
+                { title: "Internal Wiki", url: "/helpdesk/knowledge/wiki", icon: BookMarked }, // Lock or BookLock
+                { title: "Canned Responses", url: "/helpdesk/knowledge/canned", icon: MessageSquare },
+            ]
         },
         {
             group: 'Field & Project Integration',
             items: [
-                 { title: "On-site Visit (Fleet)", url: "/helpdesk/integration/onsite", icon: Truck },
-                 { title: "Project Issue", url: "/helpdesk/integration/project", icon: Briefcase },
-                 { title: "RMA (Returns)", url: "/helpdesk/integration/rma", icon: RefreshCcw },
+                { title: "On-site Visit (Fleet)", url: "/helpdesk/integration/onsite", icon: Truck },
+                { title: "Project Issue", url: "/helpdesk/integration/project", icon: Briefcase },
+                { title: "RMA (Returns)", url: "/helpdesk/integration/rma", icon: RefreshCcw },
             ]
         },
         {
-             group: 'Reporting & Compliance',
-             items: [
-                 { title: "Resolution Time", url: "/helpdesk/reports/resolution", icon: Timer },
-                 { title: "Recurring Issues", url: "/helpdesk/reports/recurring", icon: AlertTriangle },
-                 { title: "Audit Trail", url: "/helpdesk/reports/audit", icon: History },
-             ]
+            group: 'Reporting & Compliance',
+            items: [
+                { title: "Resolution Time", url: "/helpdesk/reports/resolution", icon: Timer },
+                { title: "Recurring Issues", url: "/helpdesk/reports/recurring", icon: AlertTriangle },
+                { title: "Audit Trail", url: "/helpdesk/reports/audit", icon: History },
+            ]
         }
     ]
 }
 
 // Default menu (fallback)
-const defaultMenu: { group: string; items: NavItem[] }[] = [
+const defaultMenu: MenuGroup[] = [
     {
-         group: 'Application',
-         items: [
+        group: 'Application',
+        items: [
             { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-         ]
+        ]
     }
 ]
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
-  const { url } = usePage()
+    const { url } = usePage()
 
-  // Determine current active module to render the correct menu
-  const activeMenu = useMemo(() => {
-    // Special handling for master data to keep it under Dashboard/Core context
-    if (url.startsWith('/master')) {
-        return menuMap['/dashboard']
-    }
+    // Determine current active module to render the correct menu
+    const activeMenu = useMemo(() => {
+        // Special handling for master data to keep it under Dashboard/Core context
+        if (url.startsWith('/master')) {
+            return menuMap['/dashboard']
+        }
 
-      const currentModule = modules.find(m => url.startsWith(m.prefix))
-      if (currentModule && menuMap[currentModule.prefix]) {
-          return menuMap[currentModule.prefix]
-      }
-      return defaultMenu
-  }, [url])
+        const currentModule = modules.find(m => url.startsWith(m.prefix))
+        if (currentModule && menuMap[currentModule.prefix]) {
+            return menuMap[currentModule.prefix]
+        }
+        return defaultMenu
+    }, [url])
 
-  return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <ModuleSwitcher />
-      </SidebarHeader>
-      <SidebarContent>
-         {activeMenu.map((group) => (
-            <SidebarGroup key={group.group}>
-                <SidebarGroupLabel>{group.group}</SidebarGroupLabel>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                    {group.items.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild tooltip={item.title} isActive={url === item.url}>
-                            <Link href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                            {item.badge && (
+    return (
+        <Sidebar collapsible="icon" {...props}>
+            <SidebarHeader>
+                <ModuleSwitcher />
+            </SidebarHeader>
+            <SidebarContent>
+                {activeMenu.map((group) => (
+                    <SidebarGroup key={group.group}>
+                        <SidebarGroupLabel>{group.group}
+                            {group.badge && (
                                 <span className="ml-auto text-xs font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md">
-                                    {item.badge}
+                                    {group.badge}
                                 </span>
                             )}
+                        </SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {group.items.map((item) => (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton asChild tooltip={item.title} isActive={url === item.url}>
+                                            <Link href={item.url}>
+                                                <item.icon />
+                                                <span>{item.title}</span>
+                                                {item.badge && (
+                                                    <span className="ml-auto text-xs font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-md">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
+            </SidebarContent>
+            <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Settings" isActive={url.startsWith('/settings')}>
+                            <Link href="/settings/company">
+                                <Settings />
+                                <span>Settings</span>
                             </Link>
                         </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    ))}
-                    </SidebarMenu>
-                </SidebarGroupContent>
-            </SidebarGroup>
-         ))}
-      </SidebarContent>
-      <SidebarFooter>
-         <SidebarMenu>
-           <SidebarMenuItem>
-               <SidebarMenuButton asChild tooltip="Settings" isActive={url.startsWith('/settings')}>
-                    <Link href="/settings/company">
-                        <Settings />
-                        <span>Settings</span>
-                    </Link>
-               </SidebarMenuButton>
-           </SidebarMenuItem>
-           <SidebarMenuItem>
-               <SidebarMenuButton asChild>
-                    <Link href="/logout" method="post" as="button">
-                        <LogOut />
-                        <span>Sign Out</span>
-                    </Link>
-               </SidebarMenuButton>
-           </SidebarMenuItem>
-         </SidebarMenu>
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
-  )
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href="/logout" method="post" as="button">
+                                <LogOut />
+                                <span>Sign Out</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
+            <SidebarRail />
+        </Sidebar>
+    )
 }

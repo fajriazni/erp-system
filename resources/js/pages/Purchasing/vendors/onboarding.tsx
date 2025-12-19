@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { PageHeader } from '@/components/page-header';
+import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -75,7 +75,7 @@ export default function Onboarding({ onboarding, stats }: Props) {
         ]}>
             <Head title="Vendor Onboarding" />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader 
                     title="Vendor Onboarding"
                     description="Manage vendor registration and qualification workflow"

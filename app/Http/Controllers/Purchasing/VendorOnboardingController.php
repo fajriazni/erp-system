@@ -32,7 +32,7 @@ class VendorOnboardingController extends Controller
             'rejected' => VendorOnboarding::where('status', VendorOnboarding::STATUS_REJECTED)->count(),
         ];
 
-        return Inertia::render('Purchasing/vendors/onboarding', [
+        return Inertia::render('Purchasing/vendors/Onboarding', [
             'onboarding' => $onboardings,
             'stats' => $stats,
         ]);

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InputError from '@/components/input-error';
 import { toast } from 'sonner';
@@ -174,7 +174,13 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
                 {/* Form Card */}
                 <form onSubmit={submit}>
                     <Card>
-                        <CardContent className="-mt-2">
+                        <CardHeader>
+                            <CardTitle>Vendor Details</CardTitle>
+                            <CardDescription>
+                                Enter the vendor's basic information, business details, and banking configuration.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
                             <Tabs defaultValue="basic" className="w-full">
                                 <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
                                     <TabsTrigger 
@@ -219,11 +225,6 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
                                 <TabsContent value="basic" className="space-y-8 mt-6">
                                     {/* Company Information Section */}
                                     <div className="space-y-4">
-                                        <div>
-                                            <h3 className="text-lg font-semibold">Company Information</h3>
-                                            <p className="text-sm text-muted-foreground">Basic details about the vendor</p>
-                                        </div>
-                                        
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <div className="space-y-2">
                                                 <Label htmlFor="type">
@@ -313,12 +314,7 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
                                     </div>
 
                                     {/* Address & Status Section */}
-                                    <div className="pt-6 border-t space-y-4">
-                                        <div>
-                                            <h3 className="text-lg font-semibold">Address & Status</h3>
-                                            <p className="text-sm text-muted-foreground">Location and account status</p>
-                                        </div>
-
+                                    <div className="space-y-4">
                                         <div className="grid grid-cols-1 gap-6">
                                             <div className="md:col-span-2 space-y-2">
                                                 <Label htmlFor="address">Full Address</Label>
@@ -554,7 +550,9 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
 
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div className="space-y-2">
-                                                                    <Label>Name</Label>
+                                                                    <Label>
+                                                                        Name <span className="text-destructive">*</span>
+                                                                    </Label>
                                                                     <Input value={contact.name}
                                                                         onChange={(e) => updateContactPerson(index, 'name', e.target.value)}
                                                                         placeholder="John Doe" />
@@ -726,17 +724,15 @@ export default function VendorForm({ vendor, paymentTerms = [] }: Props) {
                                 </TabsContent>
                             </Tabs>
                         </CardContent>
+                        <CardFooter className="flex justify-between border-t px-6 pt-5">
+                            <Button type="button" variant="outline" asChild>
+                                <Link href={index.url()}>Cancel</Link>
+                            </Button>
+                            <Button type="submit" disabled={processing}>
+                                {processing ? 'Saving...' : (isEditing ? 'Update Vendor' : 'Create Vendor')}
+                            </Button>
+                        </CardFooter>
                     </Card>
-
-                    {/* Footer Actions */}
-                    <div className="flex justify-end gap-4 mt-6">
-                        <Button type="button" variant="outline" asChild>
-                            <Link href={index.url()}>Cancel</Link>
-                        </Button>
-                        <Button type="submit" disabled={processing}>
-                            {processing ? 'Saving...' : (isEditing ? 'Update Vendor' : 'Create Vendor')}
-                        </Button>
-                    </div>
                 </form>
             </div>
         </AppLayout>

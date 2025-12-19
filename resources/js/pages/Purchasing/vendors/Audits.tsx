@@ -1,11 +1,16 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { PageHeader } from '@/components/page-header';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileCheck, Calendar, Loader, CheckCircle2, Award } from 'lucide-react';
+import { FileCheck, Calendar, Loader, CheckCircle2, Award, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from 'react';
 
 interface VendorAudit {
     id: number;
@@ -34,9 +39,29 @@ interface Props {
         completed: number;
         avg_score: number;
     };
+    vendors: Array<{ id: number; name: string }>;
+    auditors: Array<{ id: number; name: string }>;
 }
 
-export default function Audits({ audits, stats }: Props) {
+export default function Audits({ audits, stats, vendors, auditors }: Props) {
+    const [open, setOpen] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        vendor_id: '',
+        audit_type: 'periodic',
+        audit_date: new Date().toISOString().split('T')[0],
+        auditor_id: '',
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/purchasing/vendors/audits', {
+            onSuccess: () => {
+                setOpen(false);
+                reset();
+            },
+        });
+    };
+
     const getStatusBadge = (status: string) => {
         const statusMap: Record<string, { label: string; variant: any; icon: any; className?: string }> = {
             scheduled: { label: 'Scheduled', variant: 'secondary' as const, icon: Calendar },
@@ -68,10 +93,12 @@ export default function Audits({ audits, stats }: Props) {
     const getScoreBadge = (score: number | null) => {
         if (score === null) return <span className="text-muted-foreground">Pending</span>;
         
-        if (score >= 90) return <Badge className="bg-green-600">{score.toFixed(0)}%</Badge>;
-        if (score >= 75) return <Badge className="bg-blue-600">{score.toFixed(0)}%</Badge>;
-        if (score >= 60) return <Badge variant="secondary">{score.toFixed(0)}%</Badge>;
-        return <Badge variant="destructive">{score.toFixed(0)}%</Badge>;
+        const numScore = Number(score);
+        
+        if (numScore >= 90) return <Badge className="bg-green-600">{numScore.toFixed(0)}%</Badge>;
+        if (numScore >= 75) return <Badge className="bg-blue-600">{numScore.toFixed(0)}%</Badge>;
+        if (numScore >= 60) return <Badge variant="secondary">{numScore.toFixed(0)}%</Badge>;
+        return <Badge variant="destructive">{numScore.toFixed(0)}%</Badge>;
     };
 
     return (
@@ -81,15 +108,108 @@ export default function Audits({ audits, stats }: Props) {
         ]}>
             <Head title="Vendor Qualification & Audits" />
 
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader 
                     title="Vendor Qualification & Audits"
                     description="Track and manage supplier qualification assessments"
                 >
-                    <Button>
-                        <FileCheck className="h-4 w-4 mr-2" />
-                        Schedule Audit
-                    </Button>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild>
+                            <Button>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Schedule Audit
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Schedule New Audit</DialogTitle>
+                                <DialogDescription>
+                                    Plan a new vendor audit. Select the vendor, type, and assigned auditor.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="vendor">Vendor</Label>
+                                    <Select 
+                                        value={data.vendor_id} 
+                                        onValueChange={(val) => setData('vendor_id', val)}
+                                    >
+                                        <SelectTrigger id="vendor">
+                                            <SelectValue placeholder="Select vendor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {vendors.map((vendor) => (
+                                                <SelectItem key={vendor.id} value={String(vendor.id)}>
+                                                    {vendor.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.vendor_id && <span className="text-sm text-destructive">{errors.vendor_id}</span>}
+                                </div>
+                                
+                                <div className="grid gap-2">
+                                    <Label htmlFor="type">Audit Type</Label>
+                                    <Select 
+                                        value={data.audit_type} 
+                                        onValueChange={(val) => setData('audit_type', val)}
+                                    >
+                                        <SelectTrigger id="type">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="initial">Initial Assessment</SelectItem>
+                                            <SelectItem value="periodic">Periodic Review</SelectItem>
+                                            <SelectItem value="quality">Quality Audit</SelectItem>
+                                            <SelectItem value="compliance">Compliance Check</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.audit_type && <span className="text-sm text-destructive">{errors.audit_type}</span>}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="date">Scheduled Date</Label>
+                                    <Input 
+                                        id="date" 
+                                        type="date" 
+                                        value={data.audit_date}
+                                        onChange={(e) => setData('audit_date', e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                    />
+                                    {errors.audit_date && <span className="text-sm text-destructive">{errors.audit_date}</span>}
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="auditor">Assigned Auditor</Label>
+                                    <Select 
+                                        value={data.auditor_id} 
+                                        onValueChange={(val) => setData('auditor_id', val)}
+                                    >
+                                        <SelectTrigger id="auditor">
+                                            <SelectValue placeholder="Select auditor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {auditors.map((auditor) => (
+                                                <SelectItem key={auditor.id} value={String(auditor.id)}>
+                                                    {auditor.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.auditor_id && <span className="text-sm text-destructive">{errors.auditor_id}</span>}
+                                </div>
+                                
+                                <DialogFooter className="pt-4">
+                                    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? 'Scheduling...' : 'Schedule Audit'}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </PageHeader>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -194,7 +314,7 @@ export default function Audits({ audits, stats }: Props) {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button size="sm" variant="ghost" asChild>
-                                                    <Link href={`/purchasing/vendors/${audit.vendor.id}`}>
+                                                    <Link href={`/purchasing/vendors/audits/${audit.id}`}>
                                                         Details
                                                     </Link>
                                                 </Button>

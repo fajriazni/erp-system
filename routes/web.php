@@ -205,8 +205,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{onboarding}/reject', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'reject'])->name('reject');
         });
         
-        // Other vendor routes
         Route::get('vendors/audits', [\App\Http\Controllers\Purchasing\VendorController::class, 'audits'])->name('vendors.audits');
+        Route::post('vendors/audits', [\App\Http\Controllers\Purchasing\VendorAuditController::class, 'store'])->name('vendors.audits.store');
+        Route::get('vendors/audits/{audit}', [\App\Http\Controllers\Purchasing\VendorAuditController::class, 'show'])->name('vendors.audits.show');
+        Route::put('vendors/audits/{audit}', [\App\Http\Controllers\Purchasing\VendorAuditController::class, 'update'])->name('vendors.audits.update');
         Route::get('vendors/scorecards', [\App\Http\Controllers\Purchasing\VendorController::class, 'scorecards'])->name('vendors.scorecards');
 
         Route::resource('vendors', \App\Http\Controllers\Purchasing\VendorController::class);
@@ -254,9 +256,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Sourcing & SRM
         // Note: /vendors index is handled by the resource route above
 
-        Route::get('/rfqs', function () {
-            return Inertia::render('Purchasing/rfqs/index');
-        })->name('rfqs.index');
+
 
         // Contracts
         Route::get('/contracts', function () {
