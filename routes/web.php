@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Purchasing\GoodsReceiptController;
 use App\Http\Controllers\Purchasing\PurchaseOrderController;
+use App\Http\Controllers\Purchasing\QuoteRequestController;
+use App\Http\Controllers\Purchasing\PurchaseAgreementController;
+use App\Http\Controllers\Purchasing\BlanketOrderController;
+use App\Http\Controllers\Sales\CustomerController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -179,13 +183,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Purchasing/Dashboard');
         })->name('dashboard');
 
+        // Specific routes MUST come before resource routes
+        // Specific routes MUST come before resource routes
+        Route::get('/orders/versions', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'index'])->name('orders.versions');
+        
+        Route::get('/contracts/alerts', function () {
+            return Inertia::render('Purchasing/Contracts/Alerts');
+        })->name('contracts.alerts');
+
         Route::resource('orders', PurchaseOrderController::class);
+        Route::resource('contracts', PurchaseAgreementController::class);
+        Route::resource('blanket-orders', BlanketOrderController::class);
 
         // Status action routes
         Route::post('orders/{order}/submit', [PurchaseOrderController::class, 'submit'])->name('orders.submit');
         Route::post('orders/{order}/approve', [PurchaseOrderController::class, 'approve'])->name('orders.approve');
         Route::post('orders/{order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('orders.cancel');
         Route::get('orders/{order}/print', [PurchaseOrderController::class, 'print'])->name('orders.print');
+
+        // Version Control
+        Route::get('orders/{order}/versions', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'history'])->name('orders.versions.history');
+        Route::get('orders/versions/{version}', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'show'])->name('orders.versions.show');
+        Route::get('orders/versions/{version}/compare/{other}', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'compare'])->name('orders.versions.compare');
+        Route::post('orders/versions/{version}/restore', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'restore'])->name('orders.versions.restore');
 
         // Purchase Requests
         // Purchase Requests
@@ -258,42 +278,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 
-        // Contracts
-        Route::get('/contracts', function () {
-            return Inertia::render('Purchasing/Contracts/Index');
-        })->name('contracts.index');
-        Route::get('/blanket-orders', function () {
-            return Inertia::render('Purchasing/Contracts/BlanketOrders');
-        })->name('blanket-orders.index');
-        Route::get('/contracts/alerts', function () {
-            return Inertia::render('Purchasing/Contracts/Alerts');
-        })->name('contracts.alerts');
 
         // Operations
         Route::get('/requisitions', function () {
             return Inertia::render('Purchasing/Requisitions/Index');
         })->name('requisitions.index');
         
-        Route::get('/direct', function () {
-            return Inertia::render('Purchasing/Operations/Direct');
-        })->name('direct.index');
-        Route::get('/orders/versions', function () {
-            return Inertia::render('Purchasing/Operations/Versions');
-        })->name('orders.versions');
-
         // Receiving & QC
         Route::get('/receipts', function () {
             return Inertia::render('Purchasing/receipts/index');
         })->name('receipts.index');
-        Route::get('/matching', function () {
-            return Inertia::render('Purchasing/Operations/Matching');
-        })->name('matching.index');
-        Route::get('/qc', function () {
-            return Inertia::render('Purchasing/Operations/Qc');
-        })->name('qc.index');
-        Route::get('/landed-costs', function () {
-            return Inertia::render('Purchasing/Operations/LandedCosts');
-        })->name('landed-costs.index');
+        
+        // Three-Way Matching
+        Route::get('/matching', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'index'])->name('matching.index');
+        Route::get('/matching/{match}', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'show'])->name('matching.show');
+        Route::post('/matching/{match}/approve', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'approve'])->name('matching.approve');
+        Route::post('/matching/{match}/rematch', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'rematch'])->name('matching.rematch');
+        
+        Route::get('/qc', [\App\Http\Controllers\Purchasing\QcController::class, 'index'])->name('qc.index');
+        Route::get('/qc/{item}', [\App\Http\Controllers\Purchasing\QcController::class, 'show'])->name('qc.show');
+        Route::post('/qc/{item}/record', [\App\Http\Controllers\Purchasing\QcController::class, 'record'])->name('qc.record');
+        
+        Route::get('/landed-costs', [\App\Http\Controllers\Purchasing\LandedCostController::class, 'index'])->name('landed-costs.index');
+        
+        Route::get('/direct', [\App\Http\Controllers\Purchasing\DirectPurchasingController::class, 'index'])->name('direct.index');
+        Route::post('/direct', [\App\Http\Controllers\Purchasing\DirectPurchasingController::class, 'store'])->name('direct.store');
 
         // Returns & Claims
         Route::get('/returns', function () {

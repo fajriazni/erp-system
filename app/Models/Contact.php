@@ -67,5 +67,13 @@ class Contact extends Model
     {
         return $this->hasOne(VendorOnboarding::class, 'vendor_id');
     }
-    //
+    public function purchaseAgreements()
+    {
+        return $this->hasMany(PurchaseAgreement::class, 'vendor_id');
+    }
+
+    public function blanketOrders()
+    {
+        return $this->hasMany(BlanketOrder::class, 'vendor_id');
+    }
 }

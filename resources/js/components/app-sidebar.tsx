@@ -225,6 +225,7 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Contracts & Blanket Orders',
+            badge: 'On Progress',
             items: [
                 { title: "Purchase Agreements", url: "/purchasing/contracts", icon: FileSignature },
                 { title: "Blanket Orders", url: "/purchasing/blanket-orders", icon: Layers },
@@ -233,10 +234,11 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Purchasing Operations',
+            badge: 'Ready',
             items: [
                 { title: "Purchase Requisitions", url: "/purchasing/requests", icon: ClipboardList },
                 { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
-                { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart, badge: 'Ready' },
+                { title: "Purchase Orders", url: "/purchasing/orders", icon: ShoppingCart },
                 { title: "Direct Purchasing", url: "/purchasing/direct", icon: Zap },
                 { title: "Revisions & Versions", url: "/purchasing/orders/versions", icon: History },
             ]

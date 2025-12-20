@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Domain\Workflow\Contracts\HasWorkflow;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class VendorPayment extends Model
+class VendorPayment extends Model implements HasWorkflow
 {
-    use HasFactory;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory;
 
     protected $fillable = [
         'payment_number',
@@ -20,6 +21,7 @@ class VendorPayment extends Model
         'payment_method',
         'notes',
         'status',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -35,5 +37,30 @@ class VendorPayment extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(VendorPaymentLine::class);
+    }
+
+    // Domain Methods
+    public function approve(): void
+    {
+        $this->status = 'approved';
+        $this->save();
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->status = 'rejected';
+        $this->rejection_reason = $reason;
+        $this->save();
+    }
+
+    // HasWorkflow Implementation
+    public function onWorkflowApproved(): void
+    {
+        $this->approve();
+    }
+
+    public function onWorkflowRejected(string $reason): void
+    {
+        $this->reject($reason);
     }
 }

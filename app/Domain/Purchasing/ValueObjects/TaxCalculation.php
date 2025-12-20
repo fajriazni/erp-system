@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 /**
  * TaxCalculation Value Object
- * 
+ *
  * Encapsulates tax calculation logic for Purchase Orders
  */
 class TaxCalculation

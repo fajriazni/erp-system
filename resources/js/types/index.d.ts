@@ -27,6 +27,14 @@ export interface SharedData {
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    company: Company;
+    [key: string]: unknown;
+}
+
+export interface Company {
+    id: number;
+    name: string;
+    currency: string;
     [key: string]: unknown;
 }
 

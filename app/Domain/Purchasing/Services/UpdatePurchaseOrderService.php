@@ -5,7 +5,7 @@ namespace App\Domain\Purchasing\Services;
 use App\Domain\Purchasing\ValueObjects\Money;
 use App\Domain\Purchasing\ValueObjects\TaxCalculation;
 use App\Models\PurchaseOrder;
-use App\Models\Purchase OrderItem;
+use App\Models\PurchaseOrderItem;
 use Illuminate\Support\Facades\DB;
 
 class UpdatePurchaseOrderService
@@ -16,7 +16,7 @@ class UpdatePurchaseOrderService
             $order = PurchaseOrder::with('items')->findOrFail($purchaseOrderId);
 
             // Validate can be updated
-            if (!$order->canBeEdited()) {
+            if (! $order->canBeEdited()) {
                 throw new \InvalidArgumentException('Purchase order cannot be edited in current status');
             }
 
@@ -55,11 +55,11 @@ class UpdatePurchaseOrderService
                     ]);
                 }
 
-                // Recalculate taxes
+                // Calculate taxes using Value Object
                 $taxCalc = TaxCalculation::calculate(
                     Money::from($subtotal),
-                    $order->tax_rate,
-                    $order->withholding_tax_rate,
+                    (float) $order->tax_rate,
+                    (float) $order->withholding_tax_rate,
                     $order->tax_inclusive
                 );
 

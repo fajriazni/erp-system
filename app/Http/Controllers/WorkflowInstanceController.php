@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Workflow\Services\WorkflowEngine;
 use App\Models\WorkflowInstance;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class WorkflowInstanceController extends Controller
 {
+    public function __construct(
+        private WorkflowEngine $workflowEngine
+    ) {}
+
     public function index(Request $request)
     {
         $query = WorkflowInstance::with([
@@ -145,7 +150,7 @@ class WorkflowInstanceController extends Controller
             foreach ($instances as $instance) {
                 // Check permission (admin or workflow owner)
                 if (auth()->user()->hasRole('Super Admin')) {
-                    $engine->cancelWorkflow($instance, auth()->id(), $request->input('reason', 'Bulk cancellation'));
+                    $this->workflowEngine->cancelWorkflow($instance, auth()->id(), $request->input('reason', 'Bulk cancellation'));
                     $count++;
                 }
             }

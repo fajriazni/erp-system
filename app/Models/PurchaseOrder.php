@@ -21,6 +21,7 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
         'document_number',
         'date',
         'status',
+        'source',
         'total',
         'subtotal',
         'tax_rate',
@@ -32,6 +33,7 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
         'cancellation_reason',
         'purchase_request_id',
         'payment_term_id',
+        'blanket_order_id',
     ];
 
     protected $casts = [
@@ -64,6 +66,16 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class);
+    }
+
+    public function versions(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderVersion::class)->orderBy('version_number');
+    }
+
+    public function latestVersion(): ?PurchaseOrderVersion
+    {
+        return $this->versions()->latest('version_number')->first();
     }
 
     public function goodsReceipts(): HasMany
@@ -221,5 +233,10 @@ class PurchaseOrder extends Model implements \App\Domain\Workflow\Contracts\HasW
     public function paymentTerm()
     {
         return $this->belongsTo(\App\Models\PaymentTerm::class);
+    }
+
+    public function blanketOrder()
+    {
+        return $this->belongsTo(BlanketOrder::class);
     }
 }

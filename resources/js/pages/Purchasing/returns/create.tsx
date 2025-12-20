@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Trash2, Plus } from 'lucide-react';
 import { index, store } from '@/routes/purchasing/returns';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface Props {
     vendors: { id: number; name: string }[];
@@ -175,7 +176,7 @@ export default function Create({ vendors, products, warehouses }: Props) {
                                             />
                                         </div>
                                         <div className="w-32 pt-2 text-right font-medium">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.quantity * item.unit_price)}
+                                            {useCurrency().format(item.quantity * item.unit_price)}
                                         </div>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(idx)}>
                                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -190,7 +191,7 @@ export default function Create({ vendors, products, warehouses }: Props) {
 
                             <div className="flex justify-end items-center gap-4">
                                 <div className="text-lg font-bold">
-                                    Total: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(calculateTotal())}
+                                    Total: {useCurrency().format(calculateTotal())}
                                 </div>
                             </div>
 

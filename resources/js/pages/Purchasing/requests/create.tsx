@@ -12,6 +12,7 @@ import { Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { FormEvent } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import { index, store } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface RequestItem {
     product_id: number;
@@ -246,7 +247,7 @@ export default function PurchaseRequestCreate({ products }: Props) {
                             <div className="flex justify-end pt-4 border-t">
                                 <span className="text-sm text-muted-foreground mr-2">Estimated Total:</span>
                                 <span className="font-bold">
-                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(calculateTotal())}
+                                    {useCurrency().format(calculateTotal())}
                                 </span>
                             </div>
                         </div>

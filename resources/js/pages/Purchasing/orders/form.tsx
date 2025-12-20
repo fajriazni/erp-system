@@ -15,6 +15,7 @@ import { FormEvent, useEffect } from 'react';
 import { store, update, index } from '@/routes/purchasing/orders';
 import axios from 'axios';
 import { PageHeader } from '@/components/ui/page-header'; // Added import
+import { useCurrency } from '@/hooks/use-currency';
 
 interface PurchaseOrderItem {
     product_id: number;
@@ -28,9 +29,13 @@ interface Props {
     products: any[];
     paymentTerms?: any[];
     order?: any;
+    initialValues?: {
+        vendor_id?: number;
+        blanket_order_id?: number;
+    };
 }
 
-export default function PurchaseOrderForm({ vendors, warehouses, products, paymentTerms = [], order }: Props) {
+export default function PurchaseOrderForm({ vendors, warehouses, products, paymentTerms = [], order, ...props }: Props) {
     const isEditing = !!order;
     
     const { data, setData, post, put, processing, errors } = useForm<{
@@ -43,8 +48,9 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
         tax_rate: number;
         withholding_tax_rate: number;
         tax_inclusive: boolean;
+        blanket_order_id: number | '';
     }>({
-        vendor_id: order?.vendor_id || '',
+        vendor_id: order?.vendor_id || (props.initialValues?.vendor_id ?? ''),
         warehouse_id: order?.warehouse_id || '',
         date: order?.date || new Date().toISOString().split('T')[0],
         payment_term_id: order?.payment_term_id ? String(order.payment_term_id) : '',
@@ -57,6 +63,7 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
         tax_rate: order?.tax_rate ?? 11,
         withholding_tax_rate: order?.withholding_tax_rate ?? 0,
         tax_inclusive: order?.tax_inclusive ?? false,
+        blanket_order_id: order?.blanket_order_id || (props.initialValues?.blanket_order_id ?? ''),
     });
 
     const addItem = () => {
@@ -138,7 +145,7 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
     };
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+        return useCurrency().format(amount);
     };
 
     const taxCalc = calculateTax();
@@ -174,19 +181,16 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
             
             <form onSubmit={submit} className="container mx-auto space-y-6">
                 <div>
-                     <Button variant="ghost" asChild className="mb-2 pl-0 hover:pl-2 transition-all">
-                        <Link href={index.url()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Purchase Orders
-                        </Link>
-                    </Button>
-
                     <PageHeader
                         title={isEditing ? `Edit ${order.document_number}` : 'Create Purchase Order'}
                         description={isEditing ? 'Update purchase order details' : 'Fill in the details for your new purchase order.'}
                     >
                          <div className="flex gap-2">
                              <Button type="button" variant="outline" asChild>
-                                <Link href={index.url()}>Cancel</Link>
+                                <Link href={index().url}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Back
+                                </Link>
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 <Save className="mr-2 h-4 w-4" />
@@ -364,7 +368,7 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                         <Label>Subtotal</Label>
                                         <Input
                                             type="text"
-                                            value={new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(calculateSubtotal(item))}
+                                            value={useCurrency().format(calculateSubtotal(item))}
                                             disabled
                                             className="bg-muted text-right font-mono"
                                         />

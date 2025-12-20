@@ -5,6 +5,7 @@ import { Head, Link, useForm, router } from '@inertiajs/react'; // Add router im
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useCurrency } from "@/hooks/use-currency"
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle, Crown } from 'lucide-react';
 import { index, invite, bid } from '@/routes/purchasing/rfqs';
@@ -168,7 +169,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                     <div className="text-xs text-muted-foreground">{line.product.code}</div>
                                                 </TableCell>
                                                 <TableCell>{line.quantity} {line.uom}</TableCell>
-                                                <TableCell>{line.target_price ? new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(line.target_price) : '-'}</TableCell>
+                                                <TableCell>{line.target_price ? useCurrency().format(line.target_price) : '-'}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -291,7 +292,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                             <TableCell className="font-bold">{quote.vendor.name}</TableCell>
                                                             <TableCell>{quote.reference_number || '-'}</TableCell>
                                                             <TableCell className="font-medium text-emerald-600">
-                                                                {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(quote.total_amount)}
+                                                                {useCurrency().format(quote.total_amount)}
                                                             </TableCell>
                                                             <TableCell>
                                                                 {quote.status === 'won' && <Badge className="bg-green-500">AWARDED</Badge>}
@@ -351,7 +352,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                                 <div className="text-xs text-muted-foreground">{line.product.code}</div>
                                                             </TableCell>
                                                             <TableCell className="text-right text-muted-foreground">
-                                                                {line.target_price ? new Intl.NumberFormat('id-ID').format(line.target_price) : '-'}
+                                                                {line.target_price ? useCurrency().format(line.target_price) : '-'}
                                                             </TableCell>
                                                             {rfq.quotations.map((q: any) => {
                                                                 const quoteLine = q.lines.find((ql: any) => ql.product_id === line.product_id);
@@ -361,7 +362,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                                     <TableCell key={q.id} className={`text-right ${q.status === 'won' ? 'bg-emerald-50 dark:bg-emerald-950/30' : ''}`}>
                                                                         {quoteLine ? (
                                                                             <div className={isBestPrice ? "text-emerald-600 font-bold" : ""}>
-                                                                                {new Intl.NumberFormat('id-ID').format(quoteLine.unit_price)}
+                                                                                {useCurrency().format(quoteLine.unit_price)}
                                                                                 {isBestPrice && <span className="sr-only"> (Best Price)</span>}
                                                                             </div>
                                                                         ) : <span className="text-muted-foreground">-</span>}
@@ -384,7 +385,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                                                         return (
                                                             <TableCell key={q.id} className={`text-right font-bold lg ${q.status === 'won' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : ''}`}>
                                                                 <div className={isBestTotal && q.status !== 'won' ? "text-emerald-600" : ""}>
-                                                                    {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR'}).format(q.total_amount)}
+                                                                    {useCurrency().format(q.total_amount)}
                                                                 </div>
                                                             </TableCell>
                                                         );

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { index } from '@/routes/purchasing/returns';
+import { useCurrency } from '@/hooks/use-currency';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -117,7 +118,7 @@ export default function Show({ return: returnData }: Props) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(returnData.amount)}
+                                {useCurrency().format(returnData.amount)}
                             </div>
                         </CardContent>
                     </Card>
@@ -146,10 +147,10 @@ export default function Show({ return: returnData }: Props) {
                                         </td>
                                         <td className="px-4 py-2 text-right">{line.quantity}</td>
                                         <td className="px-4 py-2 text-right">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(line.unit_price)}
+                                            {useCurrency().format(line.unit_price)}
                                         </td>
                                         <td className="px-4 py-2 text-right font-medium">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(line.total)}
+                                            {useCurrency().format(line.total)}
                                         </td>
                                     </tr>
                                 ))}

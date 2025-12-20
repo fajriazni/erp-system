@@ -2,6 +2,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import SpendChart from './components/SpendChart';
 import AgingSummary from './components/AgingSummary';
+import { useCurrency } from "@/hooks/use-currency"
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Props {
@@ -55,7 +56,7 @@ export default function Index({ spendData, agingData, topVendors }: Props) {
                                                  <span className="font-medium">{vendor.company_name}</span>
                                             </div>
                                              <span className="font-bold">
-                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(vendor.total_spend)}
+                                                 {useCurrency().format(vendor.total_spend)}
                                              </span>
                                          </div>
                                      ))

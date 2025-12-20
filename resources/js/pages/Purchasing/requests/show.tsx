@@ -17,6 +17,7 @@ import WorkflowTimeline from '@/components/WorkflowTimeline';
 import { PageHeader } from '@/components/ui/page-header';
 import { create } from '@/actions/App/Http/Controllers/Purchasing/RfqController';
 import { index, destroy, submit } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
+import { useCurrency } from '@/hooks/use-currency';
 
 // Manual routes placeholders until Wayfinder fully propagated or used directly
 const convertUrl = (id: number) => `/purchasing/requests/${id}/convert`;
@@ -148,7 +149,7 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
     };
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return useCurrency().format(amount);
     };
 
     return (
@@ -234,6 +235,13 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
                                 </Button>
                             </>
                         )}
+                        
+                        {/* Back Button - Always visible, positioned last */}
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={index.url()}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                            </Link>
+                        </Button>
                     </div>
                 }
             />

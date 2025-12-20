@@ -22,6 +22,10 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             ContactSeeder::class,
             PermissionSeeder::class,
+
+            // Workflow seeders
+            ConditionalPurchaseOrderWorkflowSeeder::class,
+            PurchaseOrderPermissionSeeder::class,
         ]);
 
         // User::factory(10)->create();

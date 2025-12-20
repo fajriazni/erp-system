@@ -13,6 +13,7 @@ class WorkflowController extends Controller
     public function create()
     {
         $roles = Role::all();
+        $users = \App\Models\User::select('id', 'name', 'email')->get();
 
         $workflowTypes = [
             [
@@ -23,6 +24,11 @@ class WorkflowController extends Controller
                         'id' => 'App\\Models\\PurchaseRequest',
                         'label' => 'Purchase Request',
                         'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'estimated_total', 'label' => 'Estimated Total', 'type' => 'number'],
+                            ['value' => 'requester.id', 'label' => 'Requester ID', 'type' => 'number'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
                     ],
                     [
                         'id' => 'App\\Models\\PurchaseRfq',
@@ -33,6 +39,13 @@ class WorkflowController extends Controller
                         'id' => 'App\\Models\\PurchaseOrder',
                         'label' => 'Purchase Order',
                         'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'total', 'label' => 'Total Amount', 'type' => 'number'],
+                            ['value' => 'subtotal', 'label' => 'Subtotal', 'type' => 'number'],
+                            ['value' => 'tax_amount', 'label' => 'Tax Amount', 'type' => 'number'],
+                            ['value' => 'vendor.id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
                     ],
                     [
                         'id' => 'App\\Models\\PurchaseReturn',
@@ -66,102 +79,101 @@ class WorkflowController extends Controller
 
         return Inertia::render('Workflow/Create', [
             'roles' => $roles,
+            'users' => $users,
             'workflowTypes' => $workflowTypes,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\StoreWorkflowRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'module' => 'required|string|max:100',
-            'entity_type' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'steps' => 'required|array|min:1',
-            'steps.*.name' => 'required|string',
-            'steps.*.step_type' => 'required|string',
-            'steps.*.approver_type' => 'required|string',
-            'steps.*.approver_ids' => 'required|array',
-            'steps.*.sla_hours' => 'nullable|integer',
-        ]);
-
-        $workflow = Workflow::create([
-            'name' => $validated['name'],
-            'module' => $validated['module'],
-            'entity_type' => $validated['entity_type'],
-            'description' => $validated['description'],
-            'is_active' => true,
-            'created_by' => auth()->id(),
-            'version' => 1,
-        ]);
-
-        foreach ($validated['steps'] as $index => $stepData) {
-            WorkflowStep::create([
-                'workflow_id' => $workflow->id,
-                'step_number' => $index + 1,
-                'name' => $stepData['name'],
-                'step_type' => $stepData['step_type'],
-                'config' => [
-                    'approval_type' => $stepData['approval_type'] ?? 'all',
-                    'approvers' => [
-                        'type' => $stepData['approver_type'],
-                        'role_ids' => $stepData['approver_type'] === 'role' ? $stepData['approver_ids'] : null,
-                        'user_ids' => $stepData['approver_type'] === 'user' ? $stepData['approver_ids'] : null,
-                    ],
-                ],
-                'sla_hours' => $stepData['sla_hours'] ?? null,
-            ]);
-        }
+        $service = app(\App\Domain\Workflow\Services\CreateWorkflowService::class);
+        
+        $workflow = $service->execute($request->validated());
 
         return redirect()->route('workflows.management')->with('success', 'Workflow created successfully!');
     }
 
     public function edit(Workflow $workflow)
     {
-        $workflow->load(['steps', 'creator']);
+        $workflow->load(['steps.conditions', 'creator']);
         $roles = Role::all();
+        $users = \App\Models\User::select('id', 'name', 'email')->get();
+
+        $workflowTypes = [
+            [
+                'id' => 'purchasing',
+                'label' => 'Purchasing',
+                'children' => [
+                    [
+                        'id' => 'App\\Models\\PurchaseRequest',
+                        'label' => 'Purchase Request',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'estimated_total', 'label' => 'Estimated Total', 'type' => 'number'],
+                            ['value' => 'requester.id', 'label' => 'Requester ID', 'type' => 'number'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseRfq',
+                        'label' => 'Purchase RFQ',
+                        'module' => 'purchasing',
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseOrder',
+                        'label' => 'Purchase Order',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'total', 'label' => 'Total Amount', 'type' => 'number'],
+                            ['value' => 'subtotal', 'label' => 'Subtotal', 'type' => 'number'],
+                            ['value' => 'tax_amount', 'label' => 'Tax Amount', 'type' => 'number'],
+                            ['value' => 'vendor.id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\PurchaseReturn',
+                        'label' => 'Purchase Return',
+                        'module' => 'purchasing',
+                    ],
+                ],
+            ],
+            [
+                'id' => 'finance',
+                'label' => 'Finance',
+                'children' => [
+                    [
+                        'id' => 'App\\Models\\VendorBill',
+                        'label' => 'Vendor Bill',
+                        'module' => 'finance',
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorPayment',
+                        'label' => 'Vendor Payment',
+                        'module' => 'finance',
+                    ],
+                    [
+                        'id' => 'App\\Models\\Budget',
+                        'label' => 'Budget Adjustment',
+                        'module' => 'finance',
+                    ],
+                ],
+            ],
+        ];
 
         return Inertia::render('Workflow/Edit', [
             'workflow' => $workflow,
             'roles' => $roles,
+            'users' => $users,
+            'workflowTypes' => $workflowTypes,
         ]);
     }
 
-    public function update(Request $request, Workflow $workflow)
+    public function update(\App\Http\Requests\StoreWorkflowRequest $request, Workflow $workflow)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'steps' => 'required|array|min:1',
-        ]);
-
-        $workflow->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'is_active' => $validated['is_active'] ?? true,
-        ]);
-
-        // Delete existing steps and recreate
-        $workflow->steps()->delete();
-
-        foreach ($validated['steps'] as $index => $stepData) {
-            WorkflowStep::create([
-                'workflow_id' => $workflow->id,
-                'step_number' => $index + 1,
-                'name' => $stepData['name'],
-                'step_type' => $stepData['step_type'],
-                'config' => [
-                    'approval_type' => $stepData['approval_type'] ?? 'all',
-                    'approvers' => [
-                        'type' => $stepData['approver_type'],
-                        'role_ids' => $stepData['approver_type'] === 'role' ? $stepData['approver_ids'] : null,
-                        'user_ids' => $stepData['approver_type'] === 'user' ? $stepData['approver_ids'] : null,
-                    ],
-                ],
-                'sla_hours' => $stepData['sla_hours'] ?? null,
-            ]);
-        }
+        $service = app(\App\Domain\Workflow\Services\UpdateWorkflowService::class);
+        
+        $workflow = $service->execute($workflow, $request->validated());
 
         return redirect()->route('workflows.management')->with('success', 'Workflow updated successfully!');
     }

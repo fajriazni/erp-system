@@ -84,7 +84,10 @@ class RfqController extends Controller
 
     public function show(PurchaseRfq $rfq)
     {
-        $rfq->load(['lines.product.uom', 'vendors', 'quotations.vendor', 'quotations.lines.product', 'createdBy']);
+        $rfq->load(['lines.product.uom', 'quotations.vendor', 'quotations.lines.product', 'createdBy']);
+        $rfq->load(['vendors' => function ($query) {
+            $query->withPivot('status', 'sent_at');
+        }]);
 
         $productIds = $rfq->lines->pluck('product_id');
         $suggestedVendorIds = \App\Models\VendorPricelist::whereIn('product_id', $productIds)

@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Domain\Workflow\Contracts\HasWorkflow;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Budget extends Model
+class Budget extends Model implements HasWorkflow
 {
-    use HasFactory;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory;
 
     protected $fillable = [
         'name',
@@ -22,6 +23,8 @@ class Budget extends Model
         'warning_threshold',
         'is_strict',
         'is_active',
+        'status',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -72,5 +75,32 @@ class Budget extends Model
         }
 
         return ($this->encumbered_amount / $this->amount) * 100;
+    }
+
+    // Domain Methods
+    public function approve(): void
+    {
+        $this->status = 'approved';
+        $this->is_active = true;
+        $this->save();
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->status = 'rejected';
+        $this->rejection_reason = $reason;
+        $this->is_active = false;
+        $this->save();
+    }
+
+    // HasWorkflow Implementation
+    public function onWorkflowApproved(): void
+    {
+        $this->approve();
+    }
+
+    public function onWorkflowRejected(string $reason): void
+    {
+        $this->reject($reason);
     }
 }

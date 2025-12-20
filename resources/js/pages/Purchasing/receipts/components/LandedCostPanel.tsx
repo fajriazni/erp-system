@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Truck, Shield, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { store, destroy } from '@/routes/purchasing/receipts/landed-costs';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface LandedCost {
     id: number;
@@ -45,15 +46,10 @@ const allocationMethodLabels: Record<string, string> = {
     by_weight: 'By Weight',
 };
 
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(amount);
-};
+
 
 export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Props) {
+    const { format, currencyCode } = useCurrency();
     const [isOpen, setIsOpen] = useState(false);
     const [formData, setFormData] = useState({
         cost_type: 'freight',
@@ -127,7 +123,7 @@ export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Pr
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Amount (IDR)</Label>
+                                        <Label>Amount ({currencyCode})</Label>
                                         <Input
                                             type="number"
                                             value={formData.amount}
@@ -195,7 +191,7 @@ export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Pr
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-medium">
-                                            {formatCurrency(cost.amount)}
+                                            {format(cost.amount)}
                                         </TableCell>
                                         {!isPosted && (
                                             <TableCell>
@@ -215,7 +211,7 @@ export default function LandedCostPanel({ receiptId, landedCosts, isPosted }: Pr
                         <div className="flex justify-end mt-4 pt-4 border-t">
                             <div className="text-right">
                                 <p className="text-sm text-muted-foreground">Total Landed Cost</p>
-                                <p className="text-lg font-semibold">{formatCurrency(totalLandedCost)}</p>
+                                <p className="text-lg font-semibold">{format(totalLandedCost)}</p>
                             </div>
                         </div>
                     </>

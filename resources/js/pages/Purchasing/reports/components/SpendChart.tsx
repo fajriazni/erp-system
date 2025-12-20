@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface SpendData {
     month: string;
@@ -25,7 +26,7 @@ export default function SpendChart({ data }: { data: SpendData[] }) {
                                         style={{ height: `${heightPercentage}%` }}
                                     >
                                         <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow whitespace-nowrap z-10">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.amount)}
+                                            {useCurrency().format(item.amount)}
                                         </div>
                                     </div>
                                 </div>

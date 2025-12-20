@@ -18,7 +18,7 @@ class UpdatePurchaseRequestService
             throw new \Exception('Only draft purchase requests can be updated.');
         }
 
-        return DB::transaction(function () use ($pr, $data, $userId) {
+        return DB::transaction(function () use ($pr, $data) {
             // 1. Update Header
             $pr->update([
                 'date' => $data['date'] ?? $pr->date,
@@ -28,7 +28,7 @@ class UpdatePurchaseRequestService
             ]);
 
             // 2. Re-create Items (Simple Sync)
-            // In a more complex scenario, we might diff items to preserve IDs if needed, 
+            // In a more complex scenario, we might diff items to preserve IDs if needed,
             // but for a draft, replacing them is usually acceptable and safer for totals.
             $pr->items()->delete();
 
@@ -57,9 +57,9 @@ class UpdatePurchaseRequestService
 
             // 3. TODO: Update Budget Encumbrance
             // We would need to release the previous encumbrance and create a new one.
-            // For this MVP step, we are skipping the budget encumbrance update strictly, 
+            // For this MVP step, we are skipping the budget encumbrance update strictly,
             // but existing encumbrance will remain. Ideally, we should update it.
-            
+
             return $pr->refresh();
         });
     }

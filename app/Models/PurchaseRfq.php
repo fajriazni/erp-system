@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Workflow\Contracts\HasWorkflow;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,9 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * @property \Illuminate\Support\Carbon|null $deadline
  */
-class PurchaseRfq extends Model
+class PurchaseRfq extends Model implements HasWorkflow
 {
-    use HasFactory, SoftDeletes;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'document_number',
@@ -22,6 +23,7 @@ class PurchaseRfq extends Model
         'user_id',
         'created_by',
         'notes',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -63,5 +65,30 @@ class PurchaseRfq extends Model
     public function quotations()
     {
         return $this->hasMany(VendorQuotation::class);
+    }
+
+    // Domain Methods
+    public function approve(): void
+    {
+        $this->status = 'approved';
+        $this->save();
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->status = 'rejected';
+        $this->rejection_reason = $reason;
+        $this->save();
+    }
+
+    // HasWorkflow Implementation
+    public function onWorkflowApproved(): void
+    {
+        $this->approve();
+    }
+
+    public function onWorkflowRejected(string $reason): void
+    {
+        $this->reject($reason);
     }
 }

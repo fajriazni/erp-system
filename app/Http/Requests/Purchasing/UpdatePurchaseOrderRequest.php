@@ -15,7 +15,8 @@ class UpdatePurchaseOrderRequest extends FormRequest
             return false;
         }
         
-        return $this->user()->can('po.edit');
+        // Allow any authenticated user to edit draft POs
+        return true;
     }
 
     public function rules(): array

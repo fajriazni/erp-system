@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing\Services;
 
+use App\Domain\Purchasing\ValueObjects\DocumentNumber;
 use App\Domain\Purchasing\ValueObjects\Money;
 use App\Domain\Purchasing\ValueObjects\TaxCalculation;
 use App\Models\PurchaseOrder;
@@ -13,8 +14,12 @@ class CreatePurchaseOrderService
     public function execute(array $data): PurchaseOrder
     {
         return DB::transaction(function () use ($data) {
+            // Generate document number
+            $documentNumber = DocumentNumber::generate();
+
             // Create the Purchase Order
             $order = PurchaseOrder::create([
+                'document_number' => $documentNumber->value(),
                 'vendor_id' => $data['vendor_id'],
                 'warehouse_id' => $data['warehouse_id'],
                 'date' => $data['date'] ?? now(),
@@ -48,8 +53,8 @@ class CreatePurchaseOrderService
             // Calculate taxes using Value Object
             $taxCalc = TaxCalculation::calculate(
                 Money::from($subtotal),
-                $order->tax_rate,
-                $order->withholding_tax_rate,
+                (float) $order->tax_rate,
+                (float) $order->withholding_tax_rate,
                 $order->tax_inclusive
             );
 

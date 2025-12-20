@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface AgingData {
     '0-30': number;
@@ -25,7 +26,7 @@ export default function AgingSummary({ data }: { data: AgingData }) {
                 <div className="mt-6 pt-4 border-t flex justify-between items-center">
                     <span className="font-medium text-muted-foreground">Total Payables</span>
                     <span className="text-xl font-bold">
-                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(total)}
+                        {useCurrency().format(total)}
                     </span>
                 </div>
             </CardContent>

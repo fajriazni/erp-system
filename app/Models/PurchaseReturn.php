@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Domain\Workflow\Contracts\HasWorkflow;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PurchaseReturn extends Model
+class PurchaseReturn extends Model implements HasWorkflow
 {
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow;
+
     protected $fillable = [
         'document_number',
         'vendor_id',
@@ -16,6 +19,7 @@ class PurchaseReturn extends Model
         'status',
         'amount',
         'notes',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -31,5 +35,30 @@ class PurchaseReturn extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(PurchaseReturnLine::class);
+    }
+
+    // Domain Methods
+    public function approve(): void
+    {
+        $this->status = 'approved';
+        $this->save();
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->status = 'rejected';
+        $this->rejection_reason = $reason;
+        $this->save();
+    }
+
+    // HasWorkflow Implementation
+    public function onWorkflowApproved(): void
+    {
+        $this->approve();
+    }
+
+    public function onWorkflowRejected(string $reason): void
+    {
+        $this->reject($reason);
     }
 }

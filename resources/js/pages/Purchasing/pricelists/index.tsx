@@ -15,6 +15,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog"
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function Index({ pricelists }: { pricelists: any }) {
     const columns = [
@@ -55,7 +56,7 @@ export default function Index({ pricelists }: { pricelists: any }) {
             key: 'price',
             sortable: true,
             className: 'text-right font-medium',
-            render: (row: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.price),
+            render: (row: any) => useCurrency().format(row.price),
         },
         {
             label: '',

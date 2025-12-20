@@ -6,23 +6,28 @@ use InvalidArgumentException;
 
 /**
  * OrderStatus Value Object
- * 
+ *
  * Represents the lifecycle status of a Purchase Order
  */
 class OrderStatus
 {
     // Status constants
     public const DRAFT = 'draft';
+
     public const TO_APPROVE = 'to_approve';
+
     public const OPEN = 'open';
+
     public const PARTIALLY_RECEIVED = 'partially_received';
+
     public const CLOSED = 'closed';
+
     public const CANCELLED = 'cancelled';
 
     private function __construct(
         private readonly string $value
     ) {
-        if (!self::isValid($value)) {
+        if (! self::isValid($value)) {
             throw new InvalidArgumentException("Invalid order status: {$value}");
         }
     }
@@ -114,7 +119,7 @@ class OrderStatus
 
     public function canCancel(): bool
     {
-        return !$this->isCancelled() && !$this->isClosed();
+        return ! $this->isCancelled() && ! $this->isClosed();
     }
 
     public function canReceive(): bool

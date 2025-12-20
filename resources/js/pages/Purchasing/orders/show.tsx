@@ -17,13 +17,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import WorkflowTimeline from '@/components/WorkflowTimeline';
-import { PageHeader } from '@/components/ui/page-header'; // Added import
+import { PageHeader } from '@/components/ui/page-header';
+import { GitBranch } from 'lucide-react';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface PurchaseOrder {
     id: number;
     document_number: string;
     date: string;
     status: string;
+    source?: string;
     total: number;
     subtotal?: number;
     tax_rate?: number;
@@ -45,6 +48,11 @@ interface PurchaseOrder {
     items: Array<{
         id: number;
         description: string;
+        product?: {
+            id: number;
+            name: string;
+            code: string;
+        };
         quantity: number;
         quantity_received: number;
         unit_price: number;
@@ -59,7 +67,7 @@ interface PurchaseOrder {
     }>;
 }
 
-export default function PurchaseOrderShow({ order, workflowInstance, pendingApprovalTask }: { order: PurchaseOrder; workflowInstance: any; pendingApprovalTask: any }) {
+export default function PurchaseOrderShow({ order, workflowInstance, pendingApprovalTask, versions_count = 0 }: { order: PurchaseOrder; workflowInstance: any; pendingApprovalTask: any; versions_count?: number }) {
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
     const [approveDialogOpen, setApproveDialogOpen] = useState(false);
@@ -68,17 +76,17 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
     const [processing, setProcessing] = useState(false);
 
     const getStatusBadge = (status: string) => {
-        const variants: Record<string, { variant: any; label: string }> = {
+        const variants: Record<string, { variant: any; label: string; className?: string }> = {
             draft: { variant: 'secondary', label: 'Draft' },
-            rfq_sent: { variant: 'default', label: 'RFQ Sent' },
-            to_approve: { variant: 'default', label: 'To Approve' },
-            purchase_order: { variant: 'default', label: 'Purchase Order' },
-            locked: { variant: 'outline', label: 'Locked' },
+            to_approve: { variant: 'default', label: 'To Approve', className: 'bg-amber-600' },
+            open: { variant: 'default', label: 'Open', className: 'bg-green-600' },
+            partially_received: { variant: 'default', label: 'Partially Received', className: 'bg-blue-600' },
+            closed: { variant: 'outline', label: 'Closed' },
             cancelled: { variant: 'destructive', label: 'Cancelled' },
         };
 
         const config = variants[status] || { variant: 'secondary', label: status };
-        return <Badge variant={config.variant}>{config.label}</Badge>;
+        return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
     };
 
     const handleDelete = () => {
@@ -151,7 +159,7 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
     };
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return useCurrency().format(amount);
     };
 
     const formatDate = (date: string) => {
@@ -168,19 +176,21 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
 
             <div className="container mx-auto space-y-6">
                 <div>
-                     <Button variant="ghost" asChild className="mb-2 pl-0 hover:pl-2 transition-all">
-                        <Link href={index.url()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Purchase Orders
-                        </Link>
-                    </Button>
-
                     <PageHeader
                         title={order.document_number}
                         description={
                             <div className="flex items-center gap-2">
                                 <span>Created on {formatDate(order.created_at)}</span>
                                 <span className="text-muted-foreground">•</span>
-                                {getStatusBadge(order.status)}
+                                <div className="flex items-center gap-2">
+                        {getStatusBadge(order.status)}
+                        {versions_count > 0 && (
+                            <Badge variant="outline" className="font-mono">
+                                <GitBranch className="mr-1 h-3 w-3" />
+                                v{versions_count}
+                            </Badge>
+                        )}
+                    </div>
                             </div>
                         }
                     >
@@ -268,6 +278,13 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                     </Link>
                                 </Button>
                             )}
+                            
+                            {/* Back Button - Always visible, positioned last */}
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link href={index.url()}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                                </Link>
+                            </Button>
                         </div>
                     </PageHeader>
                 </div>
@@ -291,6 +308,28 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                     <div className="space-y-1">
                                         <dt className="text-sm font-medium text-muted-foreground">Warehouse</dt>
                                         <dd className="font-medium text-base">{order.warehouse?.name || '-'}</dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-sm font-medium text-muted-foreground">Source</dt>
+                                        <dd>
+                                            {order.source === 'direct' ? (
+                                                <Badge variant="default" className="bg-purple-600">
+                                                    Direct
+                                                </Badge>
+                                            ) : order.source === 'rfq' ? (
+                                                <Badge variant="default" className="bg-blue-600">
+                                                    RFQ
+                                                </Badge>
+                                            ) : order.source === 'pr' ? (
+                                                <Badge variant="default" className="bg-green-600">
+                                                    PR
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline">
+                                                    Manual
+                                                </Badge>
+                                            )}
+                                        </dd>
                                     </div>
                                     {order.notes && (
                                         <div className="col-span-2 space-y-1 pt-2 border-t">
@@ -318,7 +357,6 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                         <TableRow>
                                             <TableHead className="pl-6">Product</TableHead>
                                             <TableHead className="text-right">Quantity</TableHead>
-                                            <TableHead className="text-right">Received</TableHead>
                                             <TableHead className="text-right">Unit Price</TableHead>
                                             <TableHead className="text-right pr-6">Subtotal</TableHead>
                                         </TableRow>
@@ -327,20 +365,24 @@ export default function PurchaseOrderShow({ order, workflowInstance, pendingAppr
                                         {order.items && order.items.length > 0 ? (
                                             order.items.map((item) => (
                                                 <TableRow key={item.id}>
-                                                    <TableCell className="font-medium pl-6">{item.description || '-'}</TableCell>
-                                                    <TableCell className="text-right">{Number(item.quantity).toFixed(2)}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Badge variant={Number(item.quantity_received) >= Number(item.quantity) ? 'default' : 'secondary'} className="font-mono font-normal">
-                                                            {Number(item.quantity_received).toFixed(2)}
-                                                        </Badge>
+                                                    <TableCell className="font-medium pl-6">
+                                                        {item.product ? (
+                                                            <div>
+                                                                <div>{item.product.name}</div>
+                                                                <div className="text-xs text-muted-foreground">{item.product.code}</div>
+                                                            </div>
+                                                        ) : (
+                                                            item.description || '-'
+                                                        )}
                                                     </TableCell>
+                                                    <TableCell className="text-right">{Number(item.quantity).toFixed(2)}</TableCell>
                                                     <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
                                                     <TableCell className="text-right font-medium pr-6">{formatCurrency(item.subtotal)}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                                                     No items found
                                                 </TableCell>
                                             </TableRow>

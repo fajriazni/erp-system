@@ -2,6 +2,9 @@
 
 namespace App\Domain\Purchasing\Services;
 
+use App\Domain\Finance\Services\BudgetCheckService;
+use App\Domain\Workflow\Services\WorkflowEngine;
+use App\Domain\Workflow\Services\WorkflowInstanceService;
 use App\Models\Product;
 use App\Models\PurchaseRequest;
 use Illuminate\Support\Facades\DB;
@@ -9,9 +12,9 @@ use Illuminate\Support\Facades\DB;
 class CreatePurchaseRequestService
 {
     public function __construct(
-        protected \App\Domain\Workflow\Services\WorkflowEngine $workflowEngine,
-        protected \App\Domain\Workflow\Services\WorkflowInstanceService $workflowService,
-        protected \App\Domain\Finance\Services\BudgetCheckService $budgetService
+        protected WorkflowEngine $workflowEngine,
+        protected WorkflowInstanceService $workflowService,
+        protected BudgetCheckService $budgetService
     ) {}
 
     public function execute(array $data, int $requesterId): PurchaseRequest

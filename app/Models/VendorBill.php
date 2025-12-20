@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Domain\Workflow\Contracts\HasWorkflow;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VendorBill extends Model
+class VendorBill extends Model implements HasWorkflow
 {
-    use HasFactory;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory;
 
     protected $fillable = [
         'purchase_order_id',
@@ -28,6 +29,7 @@ class VendorBill extends Model
         'tax_inclusive',
         'notes',
         'attachment_path',
+        'rejection_reason',
     ];
 
     protected $casts = [
@@ -76,5 +78,30 @@ class VendorBill extends Model
     public function getBalanceDueAttribute()
     {
         return $this->total_amount - $this->amount_paid;
+    }
+
+    // Domain Methods
+    public function approve(): void
+    {
+        $this->status = 'approved';
+        $this->save();
+    }
+
+    public function reject(string $reason): void
+    {
+        $this->status = 'rejected';
+        $this->rejection_reason = $reason;
+        $this->save();
+    }
+
+    // HasWorkflow Implementation
+    public function onWorkflowApproved(): void
+    {
+        $this->approve();
+    }
+
+    public function onWorkflowRejected(string $reason): void
+    {
+        $this->reject($reason);
     }
 }

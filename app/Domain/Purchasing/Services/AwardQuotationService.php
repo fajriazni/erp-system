@@ -42,6 +42,7 @@ class AwardQuotationService
                 'vendor_id' => $quotation->vendor_id,
                 'date' => now()->toDateString(),
                 'status' => 'draft',
+                'source' => 'rfq',
                 'warehouse_id' => $warehouseId,
                 'total' => $quotation->total_amount,
                 'notes' => 'Generated from RFQ '.$rfq->document_number.' / Quote '.($quotation->reference_number ?? 'N/A'),

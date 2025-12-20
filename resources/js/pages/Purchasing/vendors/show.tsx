@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, Edit, TrendingUp, ShoppingCart, Package } from 'lucide-react';
 import VendorScorecard from './components/VendorScorecard';
 import { index, edit } from '@/routes/purchasing/vendors';
+import { useCurrency } from '@/hooks/use-currency';
 
 interface Props {
     vendor: any;
@@ -26,7 +27,7 @@ interface Props {
 
 export default function VendorShow({ vendor, recentOrders, recentReceipts, performance }: Props) {
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
+        return useCurrency().format(amount);
     };
 
     const formatDate = (date: string) => {

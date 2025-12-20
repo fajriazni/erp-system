@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Table,
     TableBody,
@@ -14,18 +14,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, MoreVertical, LayoutGrid, List as ListIcon, FileText, ShoppingCart, Filter } from 'lucide-react';
+import { Plus, Search, ChevronRight, XCircle, FileText } from 'lucide-react';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { index, create, edit, show, destroy } from '@/routes/purchasing/orders';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DeleteConfirmDialog } from '@/components/delete-confirm-dialog';
+import { index, create, show } from '@/routes/purchasing/orders';
+import { Card } from '@/components/ui/card';
 
 interface PurchaseOrder {
     id: number;
@@ -40,6 +33,7 @@ interface PurchaseOrder {
         name: string;
     };
     status: string;
+    source?: string;
     total: number;
     created_at: string;
 }
@@ -69,11 +63,15 @@ interface Props {
     filters?: {
         global?: string;
         status?: string;
+        vendor_id?: string;
         per_page?: number;
+    };
+    filterOptions?: {
+        vendors?: Array<{ id: number; name: string }>;
     };
 }
 
-export default function Index({ orders, filters = {} }: Props) {
+export default function Index({ orders, filters = {}, filterOptions }: Props) {
     // Handle missing data gracefully
     if (!orders || !orders.data) {
         return (
@@ -94,69 +92,53 @@ export default function Index({ orders, filters = {} }: Props) {
         );
     }
 
-    const [searchTerm, setSearchTerm] = useState(filters.global || '');
-    const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
-    
-    // Status tabs configuration
-    const statusTabs = [
-        { value: 'all', label: 'All Orders' },
-        { value: 'draft', label: 'Draft' },
-        { value: 'rfq_sent', label: 'RFQ Sent' },
-        { value: 'to_approve', label: 'To Approve' },
-        { value: 'purchase_order', label: 'Open' },
-        { value: 'locked', label: 'Locked' },
-        { value: 'cancelled', label: 'Cancelled' },
-    ];
+    const { data, setData, get } = useForm({
+        filter: {
+            global: filters?.global || '',
+            status: filters?.status || '',
+            vendor_id: filters?.vendor_id || '',
+        },
+        per_page: orders.per_page || 15,
+    });
 
-    // Debounce search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (searchTerm !== (filters.global || '')) {
-                router.get(
-                    index.url(),
-                    { ...filters, global: searchTerm, page: 1 }, // Reset to page 1 on search
-                    { preserveState: true, replace: true }
-                );
-            }
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
-
-    const handleStatusChange = (value: string) => {
-        setStatusFilter(value);
-        router.get(
-            index.url(),
-            { ...filters, status: value === 'all' ? null : value, page: 1 },
-            { preserveState: true, replace: true }
-        );
+    const handleClearFilters = () => {
+        setData('filter', {
+            global: '',
+            status: '',
+            vendor_id: '',
+        });
+        setData('per_page', 15);
+        
+        router.get(index.url(), {}, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
-    
-    const handlePerPageChange = (perPage: number) => {
-        router.get(
-            index.url(),
-            { ...filters, per_page: perPage, page: 1 },
-            { preserveState: true, replace: true }
-        );
-    };
-
 
     const getStatusBadge = (status: string) => {
-        const variants: Record<string, { variant: any; label: string }> = {
+        const variants: Record<string, { variant: any; label: string; className?: string }> = {
             draft: { variant: 'secondary', label: 'Draft' },
-            rfq_sent: { variant: 'default', label: 'RFQ Sent' },
-            to_approve: { variant: 'default', label: 'To Approve' },
-            purchase_order: { variant: 'default', label: 'Purchase Order' },
-            locked: { variant: 'outline', label: 'Locked' },
+            to_approve: { variant: 'default', label: 'To Approve', className: 'bg-amber-600' },
+            open: { variant: 'default', label: 'Open', className: 'bg-green-600' },
+            partially_received: { variant: 'default', label: 'Partially Received', className: 'bg-blue-600' },
+            closed: { variant: 'outline', label: 'Closed' },
             cancelled: { variant: 'destructive', label: 'Cancelled' },
         };
 
         const config = variants[status] || { variant: 'secondary', label: status };
-        return <Badge variant={config.variant}>{config.label}</Badge>;
+        return (
+            <Badge variant={config.variant} className={config.className}>
+                {config.label}
+            </Badge>
+        );
     };
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+        return new Intl.NumberFormat('id-ID', { 
+            style: 'currency', 
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(amount);
     };
 
     return (
@@ -166,7 +148,7 @@ export default function Index({ orders, filters = {} }: Props) {
         ]}>
             <Head title="Purchase Orders" />
 
-            <div className="container mx-auto space-y-6">
+            <div className="flex flex-1 flex-col gap-4 pt-0">
                 <PageHeader
                     title="Purchase Orders"
                     description="Manage your purchase orders and track their status."
@@ -179,135 +161,215 @@ export default function Index({ orders, filters = {} }: Props) {
                     </Button>
                 </PageHeader>
 
-                <Card>
-                    <CardHeader className="pb-3">
-                         <div className="flex flex-col md:flex-row justify-between gap-4">
-                            {/* Status Tabs */}
-                            <Tabs
-                                value={statusFilter}
-                                onValueChange={handleStatusChange}
-                                className="w-full md:w-auto overflow-x-auto"
-                            >
-                                <TabsList className="h-auto p-1 bg-muted/50">
-                                    {statusTabs.map((tab) => (
-                                        <TabsTrigger 
-                                            key={tab.value} 
-                                            value={tab.value}
-                                            className="text-xs px-3 py-1.5"
-                                        >
-                                            {tab.label}
-                                        </TabsTrigger>
-                                    ))}
-                                </TabsList>
-                            </Tabs>
-
-                            {/* Search */}
-                            <div className="relative w-full md:w-64">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search orders..."
-                                    className="pl-8 h-9"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
+                <Card className='p-0 gap-0'>
+                    <Tabs
+                        value={data.filter.status || 'all'}
+                        onValueChange={(value) => {
+                            const newStatus = value === 'all' ? '' : value;
+                            const newFilter = { ...data.filter, status: newStatus };
+                            setData('filter', newFilter);
+                            router.get(index.url(), { filter: newFilter, per_page: data.per_page }, {
+                                preserveState: true,
+                                preserveScroll: true,
+                            });
+                        }}
+                        className="w-full"
+                    >
+                        <div className="p-2 border-b flex justify-between items-center bg-transparent">
+                            <TabsList className="w-auto justify-start bg-transparent p-0 h-auto">
+                                <TabsTrigger
+                                    value="all"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    All Statuses
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="draft"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Draft
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="to_approve"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    To Approve
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="open"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Open
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="partially_received"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Partially Received
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="closed"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Closed
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="cancelled"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Cancelled
+                                </TabsTrigger>
+                            </TabsList>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="pl-6">Document #</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Vendor</TableHead>
-                                    <TableHead>Warehouse</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Total</TableHead>
-                                    <TableHead className="text-right pr-6">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {orders.data.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                            No purchase orders found.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    orders.data.map((order) => (
-                                        <TableRow key={order.id} className="group hover:bg-muted/40 cursor-pointer" onClick={() => router.visit(show.url(order.id))}>
-                                            <TableCell className="font-medium pl-6">
-                                                <div className="flex items-center gap-2">
-                                                    <FileText className="h-4 w-4 text-muted-foreground" />
-                                                    {order.document_number}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                                            <TableCell>
-                                                <div className="font-medium">{order.vendor?.name}</div>
-                                            </TableCell>
-                                             <TableCell>
-                                                <div className="flex items-center gap-1 text-muted-foreground">
-                                                    {order.warehouse?.name}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>{getStatusBadge(order.status)}</TableCell>
-                                            <TableCell className="text-right font-medium">
-                                                {formatCurrency(Number(order.total))}
-                                            </TableCell>
-                                            <TableCell className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem asChild>
-                                                            <Link href={show.url(order.id)}>
-                                                                View Details
-                                                            </Link>
-                                                        </DropdownMenuItem>
-                                                        {order.status === 'draft' && (
-                                                            <>
-                                                                <DropdownMenuItem asChild>
-                                                                    <Link href={edit.url(order.id)}>
-                                                                        Edit Order
-                                                                    </Link>
-                                                                </DropdownMenuItem>
-                                                                <DeleteConfirmDialog
-                                                                    trigger={
-                                                                        <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-destructive focus:bg-destructive/10">
-                                                                            Delete Order
-                                                                        </div>
-                                                                    }
-                                                                    onConfirm={() => router.delete(destroy.url(order.id))}
-                                                                    title="Delete Order"
-                                                                    description="Are you sure you want to delete this purchase order?"
-                                                                />
-                                                            </>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                )}
-                            </TableBody>
-                        </Table>
-                         <div className="border-t">
-                            <DataTablePagination 
-                                links={orders.links}
-                                from={orders.from ?? 0}
-                                to={orders.to ?? 0}
-                                total={orders.total}
-                                per_page={orders.per_page}
-                                onPageChange={(url) => router.visit(url)}
-                                onPerPageChange={handlePerPageChange}
+                    </Tabs>
+
+                    <div className="p-4 border-b flex justify-between items-center gap-4">
+                        <div className="relative max-w-sm flex-1">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search..."
+                                value={data.filter.global}
+                                onChange={(e) => setData('filter', { ...data.filter, global: e.target.value })}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        router.get(index.url(), { filter: data.filter, per_page: data.per_page }, { preserveState: true, preserveScroll: true });
+                                    }
+                                }}
+                                className="pl-8 w-full"
                             />
                         </div>
-                    </CardContent>
+                        <div className="flex gap-2 items-center">
+                            {filterOptions?.vendors && (
+                                <Select
+                                    value={data.filter.vendor_id || '_all'}
+                                    onValueChange={(value) => {
+                                        const newVal = value === '_all' ? '' : value;
+                                        const newFilter = { ...data.filter, vendor_id: newVal };
+                                        setData('filter', newFilter);
+                                        router.get(index.url(), { filter: newFilter, per_page: data.per_page }, { preserveState: true, preserveScroll: true });
+                                    }}
+                                >
+                                    <SelectTrigger className="w-[180px] h-9">
+                                        <SelectValue placeholder="Vendor" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="_all">All Vendors</SelectItem>
+                                        {filterOptions.vendors.map((vendor) => (
+                                            <SelectItem key={vendor.id} value={String(vendor.id)}>{vendor.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+
+                            {(data.filter.global || data.filter.status || data.filter.vendor_id) && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleClearFilters}
+                                    className="h-9 w-9"
+                                    title="Clear filters"
+                                >
+                                    <XCircle className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Purchase Order</TableHead>
+                                <TableHead>Vendor</TableHead>
+                                <TableHead>Warehouse</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Source</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="w-[50px]"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {orders.data.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                        No purchase orders found. Create your first order to get started.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                orders.data.map((order) => (
+                                    <TableRow
+                                        key={order.id}
+                                        className="cursor-pointer hover:bg-muted/50"
+                                        onClick={() => router.visit(show.url(order.id))}
+                                    >
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-2">
+                                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                                <span>{order.document_number}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">{order.vendor?.name}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="text-muted-foreground">{order.warehouse?.name}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Date(order.date).toLocaleDateString('id-ID', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                            })}
+                                        </TableCell>
+                                        <TableCell>
+                                            {order.source === 'direct' ? (
+                                                <Badge variant="default" className="bg-purple-600">
+                                                    Direct
+                                                </Badge>
+                                            ) : order.source === 'rfq' ? (
+                                                <Badge variant="default" className="bg-blue-600">
+                                                    RFQ
+                                                </Badge>
+                                            ) : order.source === 'pr' ? (
+                                                <Badge variant="default" className="bg-green-600">
+                                                    PR
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline">
+                                                    Manual
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            {formatCurrency(Number(order.total))}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+
+                    <DataTablePagination 
+                        links={orders.links}
+                        from={orders.from ?? 0}
+                        to={orders.to ?? 0}
+                        total={orders.total}
+                        per_page={data.per_page}
+                        onPerPageChange={(value) => {
+                            setData('per_page', value);
+                            router.get(index.url(), 
+                                { filter: data.filter, per_page: value, page: 1 }, 
+                                { preserveState: true, preserveScroll: true }
+                            );
+                        }}
+                        onPageChange={(url) => {
+                            get(url);
+                        }}
+                    />
                 </Card>
             </div>
         </AppLayout>
