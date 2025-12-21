@@ -225,7 +225,7 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Contracts & Blanket Orders',
-            badge: 'On Progress',
+            badge: 'OP',
             items: [
                 { title: "Purchase Agreements", url: "/purchasing/contracts", icon: FileSignature },
                 { title: "Blanket Orders", url: "/purchasing/blanket-orders", icon: Layers },

@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             // Workflow seeders
             ConditionalPurchaseOrderWorkflowSeeder::class,
             PurchaseOrderPermissionSeeder::class,
+            PurchaseAgreementSeeder::class,
         ]);
 
         // User::factory(10)->create();

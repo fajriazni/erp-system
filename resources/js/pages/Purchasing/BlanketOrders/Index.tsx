@@ -88,50 +88,49 @@ export default function BlanketOrdersIndex({ blanket_orders, filters }: Props) {
 
   const getStatusBadge = (status: string) => {
       const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-        active: "default",
-        closed: "secondary",
-        draft: "outline",
+        open: "default",
+        active: "default", // legacy support if needed
+        partially_delivered: "default",
+        fully_delivered: "secondary",
+        depleted: "secondary",
+        closed: "outline",
+        expired: "destructive",
+        cancelled: "destructive",
+        draft: "secondary",
+        sent: "secondary",
       }
       return (
         <Badge variant={variants[status] || "secondary"} className="capitalize">
-          {status.charAt(0).toUpperCase() + status.slice(1)}
+          {status.split('_').join(' ')}
         </Badge>
       )
   }
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title="Blanket Orders" />
-      <div className="flex flex-1 flex-col gap-4 pt-0">
-          <PageHeader
-            title="Blanket Orders"
-            description="Manage blanket purchase orders (BPO)."
-          >
-              <Button asChild>
-                <Link href={create().url}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New BPO
-                </Link>
-              </Button>
-          </PageHeader>
+      <PageHeader title="Blanket Orders">
+        <Button asChild>
+            <Link href={create().url}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create BPO
+            </Link>
+        </Button>
+      </PageHeader>
 
-          <Card className="p-0 gap-0">
+      <div className="p-6">
+        <Card>
              <Tabs
                 value={data.status}
                 onValueChange={handleStatusChange}
                 className="w-full"
             >
-                <div className="p-2 border-b flex justify-between items-center bg-transparent">
-                    <TabsList className="w-auto justify-start bg-transparent p-0 h-auto">
-                        <TabsTrigger
-                            value="all"
-                            className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
-                        >
-                            All Statuses
-                        </TabsTrigger>
-                        <TabsTrigger value="active" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Active</TabsTrigger>
-                        <TabsTrigger value="draft" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Draft</TabsTrigger>
-                        <TabsTrigger value="closed" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Closed</TabsTrigger>
+                <div className="p-2 border-b flex justify-between items-center bg-transparent overflow-x-auto">
+                    <TabsList className="w-auto justify-start bg-transparent p-0 h-auto inline-flex">
+                        <TabsTrigger value="all" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">All</TabsTrigger>
+                        <TabsTrigger value="draft" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Draft</TabsTrigger>
+                        <TabsTrigger value="pending_approval" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Pending Approval</TabsTrigger>
+                        <TabsTrigger value="active" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Active</TabsTrigger>
+                        <TabsTrigger value="closed" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Closed</TabsTrigger>
                     </TabsList>
                 </div>
             </Tabs>

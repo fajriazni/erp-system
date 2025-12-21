@@ -214,20 +214,7 @@ export default function BlanketOrdersCreate({ vendors, agreements, products, ini
                   />
                   {errors.end_date && <p className="text-sm text-red-500">{errors.end_date}</p>}
                 </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
-                   <Select value={data.status} onValueChange={(val) => setData("status", val)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
-                </div>
+
 
                  <div className="space-y-2">
                    <Label htmlFor="renewal_reminder_days">Renewal Reminder (Days)</Label>
@@ -259,12 +246,12 @@ export default function BlanketOrdersCreate({ vendors, agreements, products, ini
                   </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                  {data.lines.map((line, index) => (
+                   {data.lines.map((line, index) => (
                       <div key={index} className="flex gap-4 items-end border p-4 rounded-lg">
                            <div className="flex-1 space-y-2">
-                              <Label>Product</Label>
+                              <Label>Product <span className="text-red-500">*</span></Label>
                               <Select value={line.product_id} onValueChange={(val) => updateLine(index, 'product_id', val)}>
-                                <SelectTrigger>
+                                <SelectTrigger className={errors[`lines.${index}.product_id`] ? "border-red-500" : ""}>
                                   <SelectValue placeholder="Select Product" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -275,15 +262,18 @@ export default function BlanketOrdersCreate({ vendors, agreements, products, ini
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {errors[`lines.${index}.product_id`] && <p className="text-sm text-red-500">{errors[`lines.${index}.product_id`]}</p>}
                            </div>
                            <div className="w-32 space-y-2">
-                               <Label>Unit Price</Label>
+                               <Label>Unit Price <span className="text-red-500">*</span></Label>
                                <Input 
                                   type="number" 
                                   step="0.01" 
                                   value={line.unit_price} 
                                   onChange={(e) => updateLine(index, 'unit_price', e.target.value)} 
+                                  className={errors[`lines.${index}.unit_price`] ? "border-red-500" : ""}
                                />
+                               {errors[`lines.${index}.unit_price`] && <p className="text-sm text-red-500">{errors[`lines.${index}.unit_price`]}</p>}
                            </div>
                            <div className="w-32 space-y-2">
                                <Label>Qty (Opt)</Label>
@@ -293,7 +283,9 @@ export default function BlanketOrdersCreate({ vendors, agreements, products, ini
                                   value={line.quantity_agreed} 
                                   onChange={(e) => updateLine(index, 'quantity_agreed', e.target.value)} 
                                   placeholder="Unlimited"
+                                  className={errors[`lines.${index}.quantity_agreed`] ? "border-red-500" : ""}
                                />
+                               {errors[`lines.${index}.quantity_agreed`] && <p className="text-sm text-red-500">{errors[`lines.${index}.quantity_agreed`]}</p>}
                            </div>
                            <Button type="button" variant="ghost" size="icon" onClick={() => removeLine(index)} className="text-red-500">
                                <Trash className="h-4 w-4" />

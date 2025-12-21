@@ -193,7 +193,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::resource('orders', PurchaseOrderController::class);
         Route::resource('contracts', PurchaseAgreementController::class);
+        Route::post('contracts/{contract}/submit', [PurchaseAgreementController::class, 'submit'])->name('contracts.submit');
+        Route::post('contracts/{contract}/approve', [PurchaseAgreementController::class, 'approve'])->name('contracts.approve');
+        Route::post('contracts/{contract}/hold', [PurchaseAgreementController::class, 'hold'])->name('contracts.hold');
+        Route::post('contracts/{contract}/resume', [PurchaseAgreementController::class, 'resume'])->name('contracts.resume');
+        Route::post('contracts/{contract}/cancel', [PurchaseAgreementController::class, 'cancel'])->name('contracts.cancel');
+        Route::post('contracts/{contract}/close', [PurchaseAgreementController::class, 'close'])->name('contracts.close');
+        Route::post('contracts/{contract}/revise', [PurchaseAgreementController::class, 'revise'])->name('contracts.revise');
         Route::resource('blanket-orders', BlanketOrderController::class);
+        Route::post('/blanket-orders/{blanket_order}/send', [BlanketOrderController::class, 'send'])->name('blanket-orders.send');
+        Route::post('/blanket-orders/{blanket_order}/activate', [BlanketOrderController::class, 'activate'])->name('blanket-orders.activate');
+        Route::post('/blanket-orders/{blanket_order}/close', [BlanketOrderController::class, 'close'])->name('blanket-orders.close');
+        Route::post('/blanket-orders/{blanket_order}/revise', [BlanketOrderController::class, 'revise'])->name('blanket-orders.revise');
+        Route::post('/blanket-orders/{blanket_order}/cancel', [BlanketOrderController::class, 'cancel'])->name('blanket-orders.cancel');
 
         // Status action routes
         Route::post('orders/{order}/submit', [PurchaseOrderController::class, 'submit'])->name('orders.submit');

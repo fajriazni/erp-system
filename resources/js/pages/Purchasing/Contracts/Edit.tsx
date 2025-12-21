@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useForm, Link } from "@inertiajs/react"
-import { update, index } from "@/routes/purchasing/contracts"
-import { ArrowLeft } from "lucide-react"
+import { useForm, Link, router } from "@inertiajs/react"
+import { update, index, destroy, show } from "@/routes/purchasing/contracts"
+import { ArrowLeft, Trash2 } from "lucide-react"
 import { format } from "date-fns"
+import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
+import { useState } from "react"
 
 interface Vendor {
   id: number
@@ -50,6 +52,8 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
     is_auto_renew: !!agreement.is_auto_renew,
   })
 
+  const [deleteParams, setDeleteParams] = useState<{ id: number; title: string } | null>(null)
+
   // Using post with _method: PUT for file upload support in Laravel
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,9 +61,16 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
     post(update(agreement.id).url) 
   }
 
+  const handleDelete = () => {
+    if (agreement.status === 'draft') {
+        setDeleteParams({ id: agreement.id, title: agreement.reference_number })
+    }
+  }
+
   const breadcrumbs = [
     { title: "Purchasing", href: "/purchasing" },
     { title: "Contracts", href: "/purchasing/contracts" },
+    { title: agreement.reference_number, href: show(agreement.id).url },
     { title: "Edit", href: "#" },
   ]
 
@@ -69,12 +80,19 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
         title={`Edit Agreement: ${agreement.reference_number}`}
         description="Update contract details."
       >
-        <Button variant="outline" asChild>
-            <Link href={index().url}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-            </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+            {agreement.status === 'draft' && (
+                <Button type="button" variant="destructive" onClick={handleDelete}>
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </Button>
+            )}
+            <Button variant="outline" asChild>
+                <Link href={index().url}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                </Link>
+            </Button>
+        </div>
       </PageHeader>
 
       <div className="">
@@ -94,20 +112,6 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
                   {errors.reference_number && <p className="text-sm text-red-500">{errors.reference_number}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
-                   <Select value={data.status} onValueChange={(val) => setData("status", val)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="terminated">Terminated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -216,6 +220,7 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
                  <Button variant="outline" asChild>
                     <Link href={index().url}>Cancel</Link>
                  </Button>
+
                  <Button type="submit" disabled={processing}>
                     Save Changes
                  </Button>
@@ -225,6 +230,17 @@ export default function ContractsEdit({ agreement, vendors }: Props) {
           </Card>
         </form>
       </div>
+        <DeleteConfirmDialog
+            open={!!deleteParams}
+            onOpenChange={(open) => !open && setDeleteParams(null)}
+            onConfirm={() => {
+                if (deleteParams) {
+                    router.delete(destroy(deleteParams.id).url)
+                }
+            }}
+            title="Delete Purchase Agreement"
+            description={`Are you sure you want to delete agreement ${deleteParams?.title}? This action cannot be undone.`}
+        />
     </AppLayout>
   )
 }

@@ -156,6 +156,79 @@ class WorkflowSeeder extends Seeder
             }
         }
 
+        // Create Purchase Agreement Approval Workflow
+        $agreementWorkflow = Workflow::firstOrCreate(
+            ['name' => 'Purchase Agreement Approval'],
+            [
+                'module' => 'purchasing',
+                'entity_type' => 'App\\Models\\PurchaseAgreement',
+                'description' => 'Approval workflow for purchase agreements',
+                'is_active' => true,
+                'created_by' => $user->id,
+                'version' => 1,
+            ]
+        );
+
+        if ($agreementWorkflow->wasRecentlyCreated) {
+            $approverRoleId = $managerRoleId ?: $adminRoleId ?: $defaultRoleId;
+
+            WorkflowStep::create([
+                'workflow_id' => $agreementWorkflow->id,
+                'step_number' => 1,
+                'name' => 'Legal & Procurement Review',
+                'step_type' => 'approval',
+                'config' => [
+                    'approval_type' => 'any_one',
+                    'approvers' => [
+                        'type' => 'role',
+                        'role_ids' => [$approverRoleId],
+                    ],
+                ],
+                'sla_hours' => 48,
+            ]);
+
+            $this->command->info("✓ Purchase Agreement Workflow created (Approver: Role {$approverRoleId})");
+        } else {
+            $this->command->info('Purchase Agreement Workflow already exists.');
+        }
+
+        // Create Blanket Order Approval Workflow
+        $boWorkflow = Workflow::firstOrCreate(
+            ['name' => 'Blanket Order Approval'],
+            [
+                'module' => 'purchasing',
+                'entity_type' => 'App\\Models\\BlanketOrder',
+                'description' => 'Approval workflow for blanket orders (Master BO)',
+                'is_active' => true,
+                'created_by' => $user->id,
+                'version' => 1,
+            ]
+        );
+
+        if ($boWorkflow->wasRecentlyCreated) {
+            // Master BO requires higher level approval (Director or Manager)
+            $approverRoleId = $directorRoleId ?: $managerRoleId ?: $adminRoleId ?: $defaultRoleId;
+
+            WorkflowStep::create([
+                'workflow_id' => $boWorkflow->id,
+                'step_number' => 1,
+                'name' => 'Master Agreement Approval',
+                'step_type' => 'approval',
+                'config' => [
+                    'approval_type' => 'any_one',
+                    'approvers' => [
+                        'type' => 'role',
+                        'role_ids' => [$approverRoleId],
+                    ],
+                ],
+                'sla_hours' => 48,
+            ]);
+
+            $this->command->info("✓ Blanket Order Approval Workflow created (Approver: Role {$approverRoleId})");
+        } else {
+            $this->command->info('Blanket Order Approval Workflow already exists.');
+        }
+
         $this->command->info("\n✅ Workflow seeding completed!");
     }
 }

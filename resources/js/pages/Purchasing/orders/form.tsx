@@ -29,6 +29,7 @@ interface Props {
     products: any[];
     paymentTerms?: any[];
     order?: any;
+    blanket_orders?: any[]; // Passed from backend
     initialValues?: {
         vendor_id?: number;
         blanket_order_id?: number;
@@ -214,7 +215,14 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                 <Label htmlFor="vendor_id">Vendor <span className="text-destructive">*</span></Label>
                                 <Select 
                                     value={data.vendor_id.toString()} 
-                                    onValueChange={(value) => setData('vendor_id', Number(value))}
+                                    onValueChange={(value) => {
+                                        setData(current => ({
+                                            ...current,
+                                            vendor_id: Number(value),
+                                            // Reset BPO if vendor changes
+                                            blanket_order_id: ''
+                                        }));
+                                    }}
                                 >
                                     <SelectTrigger id="vendor_id">
                                         <SelectValue placeholder="Select vendor" />
@@ -230,6 +238,63 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                 <InputError message={errors.vendor_id} />
                             </div>
 
+                            <div className="space-y-2">
+                                <Label htmlFor="blanket_order_id">Blanket Order (Optional)</Label>
+                                <div className="flex gap-2">
+                                    <Select 
+                                        value={data.blanket_order_id.toString()} 
+                                        onValueChange={(value) => setData('blanket_order_id', Number(value))}
+                                        disabled={!data.vendor_id}
+                                    >
+                                        <SelectTrigger id="blanket_order_id" className="w-full">
+                                            <SelectValue placeholder={data.vendor_id ? "Select Blanket Order" : "Select Vendor First"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {props.blanket_orders?.filter((bpo: any) => bpo.vendor_id === data.vendor_id).map((bpo: any) => (
+                                                <SelectItem key={bpo.id} value={bpo.id.toString()}>
+                                                    {bpo.number} - {useCurrency().format(Number(bpo.amount_limit))} Limit
+                                                </SelectItem>
+                                            ))}
+                                            {(!props.blanket_orders || props.blanket_orders.filter((bpo: any) => bpo.vendor_id === data.vendor_id).length === 0) && (
+                                                <SelectItem value="none" disabled>No active BPOs for this vendor</SelectItem>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    {data.blanket_order_id && (
+                                        <Button 
+                                            type="button" 
+                                            variant="secondary" 
+                                            size="sm"
+                                            onClick={() => {
+                                                const selectedBPO = props.blanket_orders?.find((b: any) => b.id === data.blanket_order_id);
+                                                if (selectedBPO && selectedBPO.lines.length > 0) {
+                                                    const newItems = selectedBPO.lines.map((line: any) => ({
+                                                        product_id: line.product_id,
+                                                        quantity: 1, // Default to 1
+                                                        unit_price: Number(line.unit_price) // Use fixed price
+                                                    }));
+                                                    setData('items', newItems);
+                                                    toast.success("Items populated from Blanket Order!");
+                                                } else {
+                                                    toast.info("This Blanket Order has no specific lines defined.");
+                                                }
+                                            }}
+                                            title="Replace current items with BPO agreed items"
+                                        >
+                                            Populate Items
+                                        </Button>
+                                    )}
+                                </div>
+                                {errors.blanket_order_id && <InputError message={errors.blanket_order_id} />}
+                                {data.blanket_order_id && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Linked to BPO. Prices will be validated against agreed rates.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="warehouse_id">Warehouse <span className="text-destructive">*</span></Label>
                                 <Select 
@@ -249,10 +314,8 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                 </Select>
                                 <InputError message={errors.warehouse_id} />
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label htmlFor="date">Order Date <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="date"
@@ -262,7 +325,10 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                 />
                                 <InputError message={errors.date} />
                             </div>
-                            <div className="space-y-2">
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-6">
+                           <div className="space-y-2">
                                 <Label htmlFor="payment_term_id">Payment Terms</Label>
                                 <Select 
                                     value={data.payment_term_id} 
@@ -282,7 +348,7 @@ export default function PurchaseOrderForm({ vendors, warehouses, products, payme
                                 <InputError message={errors.payment_term_id} />
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="notes">Notes</Label>
                             <Textarea

@@ -86,10 +86,15 @@ export default function ContractsIndex({ agreements, filters }: Props) {
       const variants: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
         active: "default",
         expired: "destructive",
-        terminated: "destructive",
+        cancelled: "destructive",
         draft: "secondary",
-        pending_approval: "secondary",
+        pending_approval: "secondary", // or warning if available, but default badge has no warning variant in standard ui usually, unless custom
+        on_hold: "secondary", // map to appropriate color
+        fulfilled: "outline",
+        closed: "outline"
       }
+      
+      // Custom mapping for specific colors if Badge supports them, otherwise rely on variant content
       return (
         <Badge variant={variants[status] || "secondary"} className="capitalize">
           {status.split('_').join(' ')}
@@ -127,18 +132,16 @@ export default function ContractsIndex({ agreements, filters }: Props) {
                 onValueChange={handleStatusChange}
                 className="w-full"
             >
-                <div className="p-2 border-b flex justify-between items-center bg-transparent">
-                    <TabsList className="w-auto justify-start bg-transparent p-0 h-auto">
-                        <TabsTrigger
-                            value="all"
-                            className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
-                        >
-                            All Statuses
-                        </TabsTrigger>
-                        <TabsTrigger value="active" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Active</TabsTrigger>
-                        <TabsTrigger value="expired" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Expired</TabsTrigger>
-                        <TabsTrigger value="terminated" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Terminated</TabsTrigger>
-                        <TabsTrigger value="draft" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2">Draft</TabsTrigger>
+                <div className="p-2 border-b flex justify-between items-center bg-transparent overflow-x-auto">
+                    <TabsList className="w-auto justify-start bg-transparent p-0 h-auto inline-flex">
+                        <TabsTrigger value="all" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">All</TabsTrigger>
+                        <TabsTrigger value="draft" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Draft</TabsTrigger>
+                        <TabsTrigger value="pending_approval" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Pending</TabsTrigger>
+                        <TabsTrigger value="active" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Active</TabsTrigger>
+                        <TabsTrigger value="on_hold" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">On Hold</TabsTrigger>
+                        <TabsTrigger value="expired" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Expired</TabsTrigger>
+                        <TabsTrigger value="cancelled" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Cancelled</TabsTrigger>
+                        <TabsTrigger value="fulfilled" className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-3 py-1.5 text-sm">Fulfilled</TabsTrigger>
                     </TabsList>
                 </div>
             </Tabs>

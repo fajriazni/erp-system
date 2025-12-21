@@ -23,7 +23,7 @@ class BlanketOrderFactory extends Factory
             'start_date' => $this->faker->date(),
             'end_date' => $this->faker->optional()->date(),
             'amount_limit' => $this->faker->randomFloat(2, 5000, 500000),
-            'status' => 'active',
+            'status' => 'open',
         ];
     }
 }

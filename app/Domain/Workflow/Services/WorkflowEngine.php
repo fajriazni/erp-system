@@ -67,6 +67,7 @@ class WorkflowEngine
 
         // Update current step
         $instance->update(['current_step_id' => $nextStep->id]);
+        $instance->unsetRelation('currentStep'); // Clear cached relationship to prevent stale data in recursion
 
         // Create approval tasks for this step
         $this->createApprovalTasks($instance, $nextStep, $entity);

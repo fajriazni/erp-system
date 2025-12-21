@@ -26,7 +26,7 @@ export default function ContractsCreate({ vendors }: Props) {
     title: "",
     start_date: "",
     end_date: "",
-    status: "active",
+    status: "draft",
     total_value_cap: "",
     document: null as File | null,
     renewal_reminder_days: 30,
@@ -75,20 +75,7 @@ export default function ContractsCreate({ vendors }: Props) {
                   {errors.reference_number && <p className="text-sm text-red-500">{errors.reference_number}</p>}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status <span className="text-red-500">*</span></Label>
-                   <Select value={data.status} onValueChange={(val) => setData("status", val)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="terminated">Terminated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.status && <p className="text-sm text-red-500">{errors.status}</p>}
-                </div>
+
               </div>
 
               <div className="space-y-2">

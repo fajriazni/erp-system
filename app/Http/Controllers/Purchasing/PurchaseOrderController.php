@@ -66,6 +66,9 @@ class PurchaseOrderController extends Controller
             'warehouses' => Warehouse::all(),
             'products' => Product::with('uom')->orderBy('name')->get(),
             'paymentTerms' => \App\Models\PaymentTerm::where('is_active', true)->select('id', 'name', 'description')->get(),
+            'blanket_orders' => \App\Models\BlanketOrder::where('status', 'active')
+                ->with(['lines.product', 'vendor'])
+                ->get(),
             'initialValues' => $initialData,
         ]);
     }
@@ -135,6 +138,9 @@ class PurchaseOrderController extends Controller
             'warehouses' => Warehouse::all(),
             'products' => Product::with('uom')->get(),
             'paymentTerms' => \App\Models\PaymentTerm::where('is_active', true)->select('id', 'name', 'description')->get(),
+            'blanket_orders' => \App\Models\BlanketOrder::where('status', 'active')
+                ->with(['lines.product', 'vendor'])
+                ->get(),
         ]);
     }
 

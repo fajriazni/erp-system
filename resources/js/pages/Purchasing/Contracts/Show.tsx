@@ -1,16 +1,23 @@
+import { useState } from "react"
+import axios from "axios"
+import { toast } from "sonner"
 import AppLayout from "@/layouts/app-layout"
 import { PageHeader } from "@/components/ui/page-header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Download, Edit, ArrowLeft, ExternalLink, Plus } from "lucide-react"
-import { index, edit } from "@/routes/purchasing/contracts"
+import { Download, Edit, ArrowLeft, ExternalLink, Plus, Send, CheckCircle, XCircle, PauseCircle, PlayCircle, Ban } from "lucide-react"
+import { index, edit, close, revise, submit } from "@/routes/purchasing/contracts"
 import { index as bpoIndex, create as createBpo, show as showBpo } from "@/routes/purchasing/blanket-orders"
 import { show as showVendor } from "@/routes/purchasing/vendors"
-import { Link } from "@inertiajs/react"
+import { Link, router } from "@inertiajs/react"
 import { format } from "date-fns"
 import { useCurrency } from '@/hooks/use-currency';
+import WorkflowTimeline from '@/components/WorkflowTimeline'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 interface BlanketOrder {
   id: number
@@ -39,15 +46,117 @@ interface Agreement {
 
 interface Props {
   agreement: Agreement
+  workflowInstance: any
+  pendingApprovalTask?: any
 }
 
-export default function ContractsShow({ agreement }: Props) {
+const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+        case 'active': return 'default'; // primary/green usually
+        case 'draft': return 'secondary';
+        case 'pending_approval': return 'warning';
+        case 'expired': return 'destructive';
+        case 'fulfilled': return 'outline';
+        case 'on_hold': return 'warning'; // or specific caution color
+        case 'cancelled': return 'destructive';
+        default: return 'secondary';
+    }
+}
+
+const getStatusLabel = (status: string) => {
+     switch (status) {
+        case 'pending_approval': return 'Pending Approval';
+        case 'on_hold': return 'On Hold';
+        default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+    }
+}
+
+export default function ContractsShow({ agreement, workflowInstance, pendingApprovalTask }: Props) {
   const currency = useCurrency();
+  const [processing, setProcessing] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
   const breadcrumbs = [
-    { title: "Purchasing", href: "/purchasing" },
-    { title: "Contracts", href: "/purchasing/contracts" },
-    { title: agreement.reference_number, href: "#" },
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Purchasing', href: '/purchasing' },
+    { title: 'Contracts', href: index().url },
+    { title: agreement.reference_number, href: '#' },
   ]
+
+  const handleSubmit = () => {
+      router.post(submit(agreement.id).url, {}, {
+          onSuccess: () => toast.success('Agreement submitted for approval.'),
+          onError: (errors: any) => toast.error(errors.error || 'Failed to submit agreement'),
+      });
+  };
+
+  const handleHold = () => {
+      router.post(`/purchasing/contracts/${agreement.id}/hold`, {}, {
+          onSuccess: () => toast.success('Agreement put on hold.'),
+          onError: (errors: any) => toast.error(errors.error || 'Failed to hold agreement'),
+      });
+  };
+
+  const handleResume = () => {
+      router.post(`/purchasing/contracts/${agreement.id}/resume`, {}, {
+          onSuccess: () => toast.success('Agreement resumed.'),
+          onError: (errors: any) => toast.error(errors.error || 'Failed to resume agreement'),
+      });
+  };
+
+  const handleCancel = () => {
+      setProcessing(true);
+      router.post(`/purchasing/contracts/${agreement.id}/cancel`, {}, {
+          onSuccess: () => {
+              toast.success('Agreement cancelled.');
+              setCancelDialogOpen(false);
+          },
+          onError: (errors: any) => {
+              toast.error(errors.error || 'Failed to cancel agreement');
+              setProcessing(false);
+          },
+          onFinish: () => setProcessing(false),
+      });
+  };
+
+  const handleApprove = async () => {
+      setProcessing(true);
+      try {
+          await axios.post(`/api/approval-tasks/${pendingApprovalTask.id}/approve`, {});
+          toast.success('Approval task approved successfully');
+          setApproveDialogOpen(false);
+          router.reload();
+      } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Failed to approve task');
+      } finally {
+          setProcessing(false);
+      }
+  };
+
+  const handleReject = async () => {
+      if (!rejectReason.trim()) {
+          toast.error('Rejection reason is required');
+          return;
+      }
+
+      setProcessing(true);
+      try {
+          await axios.post(`/api/approval-tasks/${pendingApprovalTask.id}/reject`, {
+              reason: rejectReason
+          });
+          toast.success('Approval task rejected successfully');
+          setRejectDialogOpen(false);
+          setRejectReason('');
+          router.reload();
+      } catch (error: any) {
+          toast.error(error.response?.data?.message || 'Failed to reject task');
+      } finally {
+          setProcessing(false);
+      }
+  };
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -62,12 +171,70 @@ export default function ContractsShow({ agreement }: Props) {
                  Back
                </Link>
             </Button>
-            <Button asChild>
-               <Link href={edit(agreement.id).url}>
-                 <Edit className="mr-2 h-4 w-4" />
-                 Edit Agreement
-               </Link>
-            </Button>
+            
+            {/* Draft Actions */}
+            {agreement.status === 'draft' && (
+                <>
+                    <Button variant="outline" asChild>
+                       <Link href={edit(agreement.id).url}>
+                         <Edit className="mr-2 h-4 w-4" />
+                         Edit Agreement
+                       </Link>
+                    </Button>
+                    <Button onClick={handleSubmit}>
+                        <Send className="mr-2 h-4 w-4" />
+                        Submit
+                    </Button>
+                </>
+            )}
+
+            {/* Approval Actions */}
+            {pendingApprovalTask && (
+                <>
+                    <Button 
+                        variant="default"
+                        onClick={() => setApproveDialogOpen(true)}
+                        disabled={processing}
+                        className="bg-green-600 hover:bg-green-700"
+                    >
+                        <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                    </Button>
+                    <Button 
+                        variant="destructive"
+                        onClick={() => setRejectDialogOpen(true)}
+                        disabled={processing}
+                    >
+                        <XCircle className="mr-2 h-4 w-4" /> Reject
+                    </Button>
+                </>
+            )}
+
+            {/* Active Actions */}
+            {agreement.status === 'active' && (
+                <>
+                    <Button variant="outline" onClick={handleHold}>
+                        <PauseCircle className="mr-2 h-4 w-4" /> Hold
+                    </Button>
+                    <Button onClick={() => router.visit(createBpo({ query: { purchase_agreement_id: agreement.id, vendor_id: agreement.vendor.id } }).url)}>
+                        <Plus className="mr-2 h-4 w-4" /> Create BPO
+                    </Button>
+                </>
+            )}
+
+             {/* On Hold Actions */}
+             {agreement.status === 'on_hold' && (
+                <Button variant="outline" onClick={handleResume}>
+                    <PlayCircle className="mr-2 h-4 w-4" /> Resume
+                </Button>
+            )}
+
+             {/* Cancel Action (Available for Draft, Pending, Active, On Hold) */}
+             {['draft', 'pending_approval', 'active', 'on_hold'].includes(agreement.status) && (
+                 <Button variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setCancelDialogOpen(true)}>
+                     <Ban className="mr-2 h-4 w-4" /> Cancel
+                 </Button>
+             )}
+            
           </div>
       </PageHeader>
 
@@ -75,13 +242,18 @@ export default function ContractsShow({ agreement }: Props) {
         <div className="md:col-span-2 space-y-6">
              <Card>
                 <CardHeader>
+                  <div className="flex justify-between items-center">
                     <CardTitle>Agreement Details</CardTitle>
+                    <Badge variant={getStatusBadgeVariant(agreement.status) as any}>
+                        {getStatusLabel(agreement.status)}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <span className="text-sm text-muted-foreground">Vendor</span>
-                            <div className="font-medium text-lg text-primary">
+                            <div className="text-sm font-medium text-muted-foreground">Vendor</div>
+                            <div className="flex items-center gap-2">
                                 <Link href={showVendor(agreement.vendor.id).url} className="hover:underline flex items-center gap-1">
                                     {agreement.vendor.name} <ExternalLink className="h-3 w-3" />
                                 </Link>
@@ -91,7 +263,7 @@ export default function ContractsShow({ agreement }: Props) {
                             <span className="text-sm text-muted-foreground">Status</span>
                             <div>
                                 <Badge variant={agreement.status === 'active' ? 'default' : agreement.status === 'expired' ? 'destructive' : 'secondary'}>
-                                  {agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1)}
+                                  {agreement.status.charAt(0).toUpperCase() + agreement.status.slice(1).replace('_', ' ')}
                                 </Badge>
                             </div>
                         </div>
@@ -124,18 +296,18 @@ export default function ContractsShow({ agreement }: Props) {
              </Card>
 
              <Card>
-                 <CardHeader>
+                 <CardHeader className="flex flex-row items-center justify-between">
                      <CardTitle>Linked Blanket Orders</CardTitle>
+                     <Button variant="outline" size="sm" asChild>
+                         <Link href={createBpo({ query: { vendor_id: agreement.vendor.id, purchase_agreement_id: agreement.id } }).url}>
+                             <Plus className="mr-2 h-4 w-4" /> Create BPO
+                         </Link>
+                     </Button>
                  </CardHeader>
                  <CardContent>
                      {agreement.blanket_orders.length === 0 ? (
-                         <div className="flex flex-col gap-4 text-center py-8 text-muted-foreground">
+                         <div className="text-center py-8 text-muted-foreground">
                              <p>No Blanket Orders linked to this agreement.</p>
-                             <Button variant="outline" size="sm" asChild className="mx-auto">
-                                 <Link href={createBpo({ query: { vendor_id: agreement.vendor.id, purchase_agreement_id: agreement.id } }).url}>
-                                     <Plus className="mr-2 h-4 w-4" /> Create Linked BPO
-                                 </Link>
-                             </Button>
                          </div>
                      ) : (
                          <div className="space-y-4">
@@ -160,6 +332,22 @@ export default function ContractsShow({ agreement }: Props) {
         </div>
 
         <div className="space-y-6">
+             {/* Workflow Timeline */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Workflow Timeline</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {workflowInstance ? (
+                        <WorkflowTimeline workflowInstance={workflowInstance} />
+                    ) : (
+                        <div className="text-center py-6 text-muted-foreground text-sm">
+                            Workflow will appear after submission.
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
              <Card>
                  <CardHeader>
                      <CardTitle>Document</CardTitle>
@@ -186,6 +374,76 @@ export default function ContractsShow({ agreement }: Props) {
              </Card>
         </div>
       </div>
+
+       <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Approve Agreement</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to approve this agreement?
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setApproveDialogOpen(false)} disabled={processing}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleApprove} disabled={processing} className="bg-green-600 hover:bg-green-700">
+                        {processing ? 'Approving...' : 'Approve'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Reject Agreement</DialogTitle>
+                    <DialogDescription>
+                        Please provide a reason for rejection.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="rejectReason">Rejection Reason *</Label>
+                        <Textarea
+                            id="rejectReason"
+                            placeholder="Enter reason..."
+                            value={rejectReason}
+                            onChange={(e) => setRejectReason(e.target.value)}
+                            rows={4}
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setRejectDialogOpen(false)} disabled={processing}>
+                        Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleReject} disabled={processing || !rejectReason.trim()}>
+                        {processing ? 'Rejecting...' : 'Reject'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Cancel Agreement</DialogTitle>
+                    <DialogDescription>
+                        Are you sure you want to cancel this agreement? This action cannot be undone.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={processing}>
+                        Keep Agreement
+                    </Button>
+                    <Button variant="destructive" onClick={handleCancel} disabled={processing}>
+                        {processing ? 'Cancelling...' : 'Yes, Cancel Agreement'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </AppLayout>
   )
 }

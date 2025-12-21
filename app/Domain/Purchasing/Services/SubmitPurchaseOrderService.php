@@ -14,11 +14,22 @@ class SubmitPurchaseOrderService
 
     public function execute(int $purchaseOrderId): void
     {
-        $purchaseOrder = PurchaseOrder::with('items', 'vendor')->findOrFail($purchaseOrderId);
+        $purchaseOrder = PurchaseOrder::with('items', 'vendor', 'blanketOrder')->findOrFail($purchaseOrderId);
 
         // Validate the purchase order can be submitted
         if ($purchaseOrder->status !== 'draft') {
             throw new \InvalidArgumentException('Only draft purchase orders can be submitted');
+        }
+
+        // Check for Blanket Order Auto-Approval (Release Order)
+        if ($purchaseOrder->blanket_order_id && $purchaseOrder->blanketOrder?->status === \App\Models\BlanketOrder::STATUS_OPEN) {
+             // Auto-approve Release Orders against Active BPOs
+             // 1. Mark as submitted (RFQs sent/Internal request made)
+             $purchaseOrder->submit(); 
+             
+             // 2. Auto Approve
+             $purchaseOrder->approve();
+             return;
         }
 
         // Find active workflow for Purchase Orders
