@@ -44,4 +44,12 @@ class PurchaseOrderItem extends Model
     {
         return $this->belongsTo(Uom::class);
     }
+
+    /**
+     * Get the remaining quantity to be received (ordered - received)
+     */
+    public function getRemainingQuantityAttribute(): float
+    {
+        return max(0, (float) $this->quantity - (float) $this->quantity_received);
+    }
 }

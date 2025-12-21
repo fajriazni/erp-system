@@ -6,14 +6,14 @@ use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\ThreeWayMatch;
 use App\Models\VendorBill;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class ThreeWayMatchingService
 {
     // Tolerance configuration (in percentage)
     protected float $qtyTolerance = 5.0; // 5%
+
     protected float $priceTolerance = 2.0; // 2%
+
     protected float $amountTolerance = 3.0; // 3%
 
     /**
@@ -24,7 +24,7 @@ class ThreeWayMatchingService
         $po = $vendorBill->purchaseOrder;
         $gr = $vendorBill->purchaseOrder->goodsReceipts()->where('status', 'posted')->latest()->first();
 
-        if (!$po) {
+        if (! $po) {
             throw new \Exception('Vendor bill must be linked to a purchase order');
         }
 
@@ -64,17 +64,18 @@ class ThreeWayMatchingService
         foreach ($bill->items as $billItem) {
             $poItem = $po->items()->where('product_id', $billItem->product_id)->first();
 
-            if (!$poItem) {
+            if (! $poItem) {
                 $discrepancies[] = [
                     'product_id' => $billItem->product_id,
                     'type' => 'not_in_po',
                     'message' => 'Product in bill but not in PO',
                 ];
+
                 continue;
             }
 
             // Quantity variance (if GR exists, compare with GR, else with PO)
-            $expectedQty = $gr 
+            $expectedQty = $gr
                 ? $gr->items()->where('product_id', $billItem->product_id)->sum('quantity_received')
                 : $poItem->quantity;
 
@@ -128,6 +129,39 @@ class ThreeWayMatchingService
             'matched_at' => now(),
             'matched_by' => auth()->id(),
         ]);
+
+        // Dispatch Event
+        event(new \App\Domain\Purchasing\Events\ThreeWayMatchCompleted($match));
+    }
+
+    /**
+     * Set quantity tolerance percentage
+     */
+    public function setQtyTolerance(float $percentage): self
+    {
+        $this->qtyTolerance = $percentage;
+
+        return $this;
+    }
+
+    /**
+     * Set price tolerance percentage
+     */
+    public function setPriceTolerance(float $percentage): self
+    {
+        $this->priceTolerance = $percentage;
+
+        return $this;
+    }
+
+    /**
+     * Set amount tolerance percentage
+     */
+    public function setAmountTolerance(float $percentage): self
+    {
+        $this->amountTolerance = $percentage;
+
+        return $this;
     }
 
     /**

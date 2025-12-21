@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Purchasing;
 use App\Http\Controllers\Controller;
 use App\Models\BlanketOrder;
 use App\Models\Contact;
-use App\Models\PurchaseAgreement;
 use App\Models\Product;
+use App\Models\PurchaseAgreement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -38,15 +38,19 @@ class BlanketOrderController extends Controller
             if ($request->status === 'active') {
                 $query->whereIn('status', [
                     BlanketOrder::STATUS_OPEN,
-                    BlanketOrder::STATUS_PARTIALLY_DELIVERED,
-                    BlanketOrder::STATUS_FULLY_DELIVERED
+                    BlanketOrder::STATUS_PARTIALLY_ORDERED,
                 ]);
             } elseif ($request->status === 'closed') {
                 $query->whereIn('status', [
                     BlanketOrder::STATUS_CLOSED,
-                    BlanketOrder::STATUS_DEPLETED,
+                    BlanketOrder::STATUS_FULFILLED,
                     BlanketOrder::STATUS_EXPIRED,
-                    BlanketOrder::STATUS_CANCELLED
+                    BlanketOrder::STATUS_CANCELLED,
+                ]);
+            } elseif ($request->status === 'draft') {
+                $query->whereIn('status', [
+                    BlanketOrder::STATUS_DRAFT,
+                    BlanketOrder::STATUS_REJECTED,
                 ]);
             } else {
                 $query->where('status', $request->status);
@@ -88,17 +92,26 @@ class BlanketOrderController extends Controller
 
     public function show(BlanketOrder $blanketOrder)
     {
-        $blanketOrder->load(['vendor', 'agreement', 'lines.product', 'releases', 'latestWorkflow.steps.approvals']);
-        
+        $blanketOrder->load([
+            'vendor',
+            'agreement',
+            'lines.product',
+            'releases',
+            'latestWorkflow.workflow.steps',
+            'latestWorkflow.approvalTasks.workflowStep',
+            'latestWorkflow.approvalTasks.user',
+            'latestWorkflow.approvalTasks.role',
+        ]);
+
         $workflowInstance = $blanketOrder->latestWorkflow;
-        
+
         $pendingApprovalTask = null;
         if ($workflowInstance && $workflowInstance->status === 'in_progress') {
-             $pendingApprovalTask = \App\Models\ApprovalTask::where('workflow_instance_id', $workflowInstance->id)
+            $pendingApprovalTask = \App\Models\ApprovalTask::where('workflow_instance_id', $workflowInstance->id)
                 ->where('status', 'pending')
                 ->where(function ($query) {
                     $query->where('assigned_to_user_id', auth()->id())
-                          ->orWhereIn('assigned_to_role_id', auth()->user()->roles->pluck('id'));
+                        ->orWhereIn('assigned_to_role_id', auth()->user()->roles->pluck('id'));
                 })
                 ->first();
         }
@@ -112,9 +125,9 @@ class BlanketOrderController extends Controller
 
     public function edit(BlanketOrder $blanketOrder)
     {
-        if ($blanketOrder->status !== 'draft') {
+        if ($blanketOrder->status !== 'draft' && $blanketOrder->status !== 'rejected') {
             return redirect()->route('purchasing.blanket-orders.show', $blanketOrder)
-                ->with('error', 'Only draft blanket orders can be edited.');
+                ->with('error', 'Only draft or rejected blanket orders can be edited.');
         }
 
         return Inertia::render('Purchasing/BlanketOrders/Edit', [
@@ -127,8 +140,8 @@ class BlanketOrderController extends Controller
 
     public function update(\App\Http\Requests\Purchasing\UpdateBlanketOrderRequest $request, BlanketOrder $blanketOrder)
     {
-        if ($blanketOrder->status !== 'draft') {
-            abort(403, 'Only draft blanket orders can be edited.');
+        if ($blanketOrder->status !== 'draft' && $blanketOrder->status !== 'rejected') {
+            abort(403, 'Only draft or rejected blanket orders can be edited.');
         }
 
         $data = \App\Domain\Purchasing\Data\BlanketOrderData::fromRequest($request);
@@ -158,21 +171,23 @@ class BlanketOrderController extends Controller
         // Using "Activate" button usually means "Make it Open".
         // If workflow is enabled, it should probably be "Submit" then "Approve".
         // But for backward compatibility or direct activation if allowed:
-        
+
         try {
             // Check if can auto-approve/activate directly?
             // If it's draft, maybe we submit AND approve if user has permission?
-            // For now, let's map 'activate' to 'approve' service if status is pending, 
+            // For now, let's map 'activate' to 'approve' service if status is pending,
             // OR if it's draft/sent, assume manual legacy activation.
-            
+
             // Actually, let's just make it use the Approve Service if it's pending.
             if ($blanketOrder->status === \App\Models\BlanketOrder::STATUS_PENDING_APPROVAL) {
-                 (new \App\Domain\Purchasing\Services\ApproveBlanketOrderService())->execute($blanketOrder->id);
-                 return back()->with('success', 'Blanket Order approved and activated.');
+                (new \App\Domain\Purchasing\Services\ApproveBlanketOrderService)->execute($blanketOrder->id);
+
+                return back()->with('success', 'Blanket Order approved and activated.');
             }
 
             // Fallback for Draft/Sent (Legacy manual activation)
             $blanketOrder->activate();
+
             return back()->with('success', 'Blanket Order activated.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -183,6 +198,7 @@ class BlanketOrderController extends Controller
     {
         try {
             $service->execute($blanketOrder->id);
+
             return back()->with('success', 'Blanket Order submitted for approval.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -193,6 +209,7 @@ class BlanketOrderController extends Controller
     {
         try {
             $service->execute($blanketOrder->id);
+
             return back()->with('success', 'Blanket Order approved.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -209,6 +226,7 @@ class BlanketOrderController extends Controller
     {
         try {
             $blanketOrder->close();
+
             return back()->with('success', 'Blanket Order closed.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
@@ -219,6 +237,7 @@ class BlanketOrderController extends Controller
     {
         try {
             $blanketOrder->cancel();
+
             return back()->with('success', 'Blanket Order cancelled.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);

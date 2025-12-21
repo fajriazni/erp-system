@@ -18,14 +18,28 @@ class LandedCostService
      */
     public function allocate(GoodsReceipt $gr, array $costs): void
     {
+        // Prevent adding costs to posted receipts
+        if ($gr->status === 'posted') {
+            throw new \Exception('Cannot add landed costs to posted goods receipt. Costs must be added before posting.');
+        }
+
         $items = $gr->items()->with('product')->get();
 
         if ($items->isEmpty()) {
-            return;
+            throw new \Exception('Cannot allocate landed costs to goods receipt without items.');
         }
 
         DB::transaction(function () use ($gr, $costs, $items) {
             foreach ($costs as $costData) {
+                // Validate cost data
+                if (! isset($costData['cost_type'], $costData['description'], $costData['amount'])) {
+                    throw new \Exception('Invalid landed cost data. Missing required fields.');
+                }
+
+                if ($costData['amount'] <= 0) {
+                    throw new \Exception('Landed cost amount must be greater than zero.');
+                }
+
                 $landedCost = LandedCost::create([
                     'goods_receipt_id' => $gr->id,
                     'cost_type' => $costData['cost_type'],

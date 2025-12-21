@@ -1,11 +1,9 @@
 <?php
 
-use App\Http\Controllers\Purchasing\GoodsReceiptController;
-use App\Http\Controllers\Purchasing\PurchaseOrderController;
-use App\Http\Controllers\Purchasing\QuoteRequestController;
-use App\Http\Controllers\Purchasing\PurchaseAgreementController;
 use App\Http\Controllers\Purchasing\BlanketOrderController;
-use App\Http\Controllers\Sales\CustomerController;
+use App\Http\Controllers\Purchasing\GoodsReceiptController;
+use App\Http\Controllers\Purchasing\PurchaseAgreementController;
+use App\Http\Controllers\Purchasing\PurchaseOrderController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -111,7 +109,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('inbound')->name('inbound.')->group(function () {
             Route::get('/receipts', [\App\Http\Controllers\Inventory\InboundController::class, 'index'])->name('receipts');
             Route::get('/qc', [\App\Http\Controllers\Inventory\InboundController::class, 'qc'])->name('qc');
-            
+
             // QC Inspection Actions
             Route::get('/qc/{item}/inspect', [\App\Http\Controllers\Inventory\QcController::class, 'show'])->name('qc.show');
             Route::post('/qc/{item}/inspect', [\App\Http\Controllers\Inventory\QcController::class, 'store'])->name('qc.store');
@@ -122,9 +120,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // General Ledger
         Route::prefix('gl')->name('gl.')->group(function () {
-             Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
-             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
-             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
+            Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+            Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
+            Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
         });
 
         // Internal
@@ -186,7 +184,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Specific routes MUST come before resource routes
         // Specific routes MUST come before resource routes
         Route::get('/orders/versions', [\App\Http\Controllers\Purchasing\PurchaseOrderVersionController::class, 'index'])->name('orders.versions');
-        
+
         Route::get('/contracts/alerts', function () {
             return Inertia::render('Purchasing/Contracts/Alerts');
         })->name('contracts.alerts');
@@ -201,6 +199,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('contracts/{contract}/close', [PurchaseAgreementController::class, 'close'])->name('contracts.close');
         Route::post('contracts/{contract}/revise', [PurchaseAgreementController::class, 'revise'])->name('contracts.revise');
         Route::resource('blanket-orders', BlanketOrderController::class);
+        Route::post('/blanket-orders/{blanket_order}/submit', [BlanketOrderController::class, 'submit'])->name('blanket-orders.submit');
+        Route::post('/blanket-orders/{blanket_order}/approve', [BlanketOrderController::class, 'approve'])->name('blanket-orders.approve');
         Route::post('/blanket-orders/{blanket_order}/send', [BlanketOrderController::class, 'send'])->name('blanket-orders.send');
         Route::post('/blanket-orders/{blanket_order}/activate', [BlanketOrderController::class, 'activate'])->name('blanket-orders.activate');
         Route::post('/blanket-orders/{blanket_order}/close', [BlanketOrderController::class, 'close'])->name('blanket-orders.close');
@@ -227,7 +227,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('requests.convert');
         Route::resource('requests', \App\Http\Controllers\Purchasing\PurchaseRequestController::class);
 
-        // Vendor Onboarding Workflow - MUST come before resource route  
+        // Vendor Onboarding Workflow - MUST come before resource route
         Route::prefix('vendors/onboarding')->name('vendors.onboarding.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'index'])->name('index');
             Route::get('/{vendor}', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'show'])->name('show');
@@ -236,7 +236,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/{onboarding}/approve', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'approve'])->name('approve');
             Route::post('/{onboarding}/reject', [\App\Http\Controllers\Purchasing\VendorOnboardingController::class, 'reject'])->name('reject');
         });
-        
+
         Route::get('vendors/audits', [\App\Http\Controllers\Purchasing\VendorController::class, 'audits'])->name('vendors.audits');
         Route::post('vendors/audits', [\App\Http\Controllers\Purchasing\VendorAuditController::class, 'store'])->name('vendors.audits.store');
         Route::get('vendors/audits/{audit}', [\App\Http\Controllers\Purchasing\VendorAuditController::class, 'show'])->name('vendors.audits.show');
@@ -269,7 +269,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('rfqs/{rfq}/invite', [\App\Http\Controllers\Purchasing\RfqController::class, 'invite'])->name('rfqs.invite');
         Route::post('rfqs/{rfq}/bid', [\App\Http\Controllers\Purchasing\RfqController::class, 'recordBid'])->name('rfqs.bid'); // Added bid route which was also implicitly needed
         Route::post('quotations/{quotation}/award', [\App\Http\Controllers\Purchasing\RfqController::class, 'award'])->name('quotations.award');
-        
+
         Route::get('/', function () {
             return Inertia::render('Purchasing/Dashboard');
         })->name('dashboard');
@@ -288,38 +288,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Sourcing & SRM
         // Note: /vendors index is handled by the resource route above
 
-
-
-
         // Operations
         Route::get('/requisitions', function () {
             return Inertia::render('Purchasing/Requisitions/Index');
         })->name('requisitions.index');
-        
+
         // Receiving & QC
         Route::get('/receipts', function () {
             return Inertia::render('Purchasing/receipts/index');
         })->name('receipts.index');
-        
+
         // Three-Way Matching
         Route::get('/matching', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'index'])->name('matching.index');
         Route::get('/matching/{match}', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'show'])->name('matching.show');
         Route::post('/matching/{match}/approve', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'approve'])->name('matching.approve');
         Route::post('/matching/{match}/rematch', [\App\Http\Controllers\Purchasing\ThreeWayMatchingController::class, 'rematch'])->name('matching.rematch');
-        
+
         Route::get('/qc', [\App\Http\Controllers\Purchasing\QcController::class, 'index'])->name('qc.index');
         Route::get('/qc/{item}', [\App\Http\Controllers\Purchasing\QcController::class, 'show'])->name('qc.show');
         Route::post('/qc/{item}/record', [\App\Http\Controllers\Purchasing\QcController::class, 'record'])->name('qc.record');
-        
+
         Route::get('/landed-costs', [\App\Http\Controllers\Purchasing\LandedCostController::class, 'index'])->name('landed-costs.index');
-        
+
         Route::get('/direct', [\App\Http\Controllers\Purchasing\DirectPurchasingController::class, 'index'])->name('direct.index');
         Route::post('/direct', [\App\Http\Controllers\Purchasing\DirectPurchasingController::class, 'store'])->name('direct.store');
 
-        // Returns & Claims
-        Route::get('/returns', function () {
-            return Inertia::render('Purchasing/returns/index');
-        })->name('returns.index');
+        // Purchase Returns (RMA)
+        Route::resource('returns', \App\Http\Controllers\Purchasing\PurchaseReturnController::class);
+        Route::post('returns/{return}/authorize', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'authorize'])->name('returns.authorize');
+        Route::post('returns/{return}/ship', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'ship'])->name('returns.ship');
+        Route::post('returns/{return}/receive', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'receiveByVendor'])->name('returns.receive');
+        Route::post('returns/{return}/complete', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'complete'])->name('returns.complete');
+        Route::post('returns/{return}/cancel', [\App\Http\Controllers\Purchasing\PurchaseReturnController::class, 'cancel'])->name('returns.cancel');
+
+        // Debit Notes
+        Route::resource('debit-notes', \App\Http\Controllers\Purchasing\DebitNoteController::class);
+        Route::post('debit-notes/{debitNote}/post', [\App\Http\Controllers\Purchasing\DebitNoteController::class, 'post'])->name('debit-notes.post');
+        Route::post('debit-notes/{debitNote}/apply', [\App\Http\Controllers\Purchasing\DebitNoteController::class, 'apply'])->name('debit-notes.apply');
+        Route::post('debit-notes/{debitNote}/void', [\App\Http\Controllers\Purchasing\DebitNoteController::class, 'void'])->name('debit-notes.void');
+
+        // Vendor Claims
+        Route::resource('claims', \App\Http\Controllers\Purchasing\VendorClaimController::class);
+        Route::post('claims/{claim}/review', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'review'])->name('claims.review');
+        Route::post('claims/{claim}/approve', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'approve'])->name('claims.approve');
+        Route::post('claims/{claim}/dispute', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'dispute'])->name('claims.dispute');
+        Route::post('claims/{claim}/settle', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'settle'])->name('claims.settle');
+        Route::post('claims/{claim}/reject', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'reject'])->name('claims.reject');
+
         Route::get('/debit-notes', function () {
             return Inertia::render('Purchasing/returns/debit-notes');
         })->name('debit-notes.index');
@@ -342,7 +357,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/documentation', function () {
             return Inertia::render('Purchasing/Documentation/Index');
         })->name('documentation.index');
-        
+
         Route::get('/documentation/srm-guide', function () {
             return Inertia::render('Purchasing/Documentation/SrmGuide');
         })->name('documentation.srm-guide');
@@ -463,16 +478,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
 
         Route::prefix('gl')->name('gl.')->group(function () {
-             Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
-             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
-             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
+            Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+            Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
+            Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
         });
 
         // Accounts Receivable
         Route::get('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'index'])->name('ar.invoices');
         Route::get('/ar/invoices/create', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'create'])->name('ar.invoices.create');
         Route::post('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'store'])->name('ar.invoices.store');
-        
+
         Route::get('/ar/matching', function () {
             return Inertia::render('Accounting/Ar/Matching');
         })->name('ar.matching');

@@ -3,7 +3,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, CheckCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { index } from '@/routes/purchasing/returns';
 import { useCurrency } from '@/hooks/use-currency';
@@ -27,7 +28,9 @@ interface Props {
         status: string;
         amount: number;
         notes: string;
+        rma_number?: string;
         vendor: { name: string; email: string };
+        warehouse: { name: string };
         lines: {
             id: number;
             product: { name: string; code: string };
@@ -35,6 +38,12 @@ interface Props {
             unit_price: number;
             total: number;
         }[];
+        debitNote?: {
+            id: number;
+            debit_note_number: string;
+            total_amount: number;
+            status: string;
+        } | null;
     };
 }
 
@@ -69,24 +78,120 @@ export default function Show({ return: returnData }: Props) {
                             </span>
                         </div>
                     </div>
-                    <div>
+                    <div className="flex gap-2">
                         {returnData.status === 'draft' && (
+                            <>
+                                <Link href={`/purchasing/returns/${returnData.id}/edit`}>
+                                    <Button variant="outline">Edit</Button>
+                                </Link>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button>Authorize Return</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Authorize Return</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Enter RMA number to authorize this return for shipment.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <div className="py-4">
+                                            <Input
+                                                id="rma_number"
+                                                placeholder="RMA-2025-0001"
+                                                defaultValue={`RMA-${new Date().getFullYear()}-${String(returnData.id).padStart(4, '0')}`}
+                                            />
+                                        </div>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => {
+                                                const rmaNumber = (document.getElementById('rma_number') as HTMLInputElement)?.value;
+                                                router.post(`/purchasing/returns/${returnData.id}/authorize`, { rma_number: rmaNumber });
+                                            }}>
+                                                Authorize
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </>
+                        )}
+                        
+                        {returnData.status === 'ready_to_ship' && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button>
-                                        <CheckCircle className="mr-2 h-4 w-4" /> Post Return
-                                    </Button>
+                                    <Button>Ship Return</Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Post Purchase Return?</AlertDialogTitle>
+                                        <AlertDialogTitle>Ship Return?</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This action will post the return, reducing inventory for the selected warehouse and creating a debit note journal entry. This action cannot be undone.
+                                            Mark this return as shipped to vendor. Inventory will be adjusted.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handlePost}>Post Return</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => router.post(`/purchasing/returns/${returnData.id}/ship`)}>
+                                            Ship
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                        
+                        {returnData.status === 'shipped' && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button>Mark as Received</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirm Receipt by Vendor?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will mark the return as received by vendor and automatically create a debit note.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => router.post(`/purchasing/returns/${returnData.id}/receive`)}>
+                                            Confirm Receipt
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                        
+                        {returnData.status === 'received_by_vendor' && (
+                            <Button onClick={() => router.post(`/purchasing/returns/${returnData.id}/complete`)}>
+                                Complete Return
+                            </Button>
+                        )}
+                        
+                        {['draft', 'ready_to_ship'].includes(returnData.status) && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive">Cancel</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Cancel Return?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will cancel the return. Please provide a reason.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="py-4">
+                                        <Input
+                                            id="cancel_reason"
+                                            placeholder="Cancellation reason"
+                                        />
+                                    </div>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Back</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => {
+                                            const reason = (document.getElementById('cancel_reason') as HTMLInputElement)?.value;
+                                            router.post(`/purchasing/returns/${returnData.id}/cancel`, { reason });
+                                        }}>
+                                            Cancel Return
+                                        </AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -165,6 +270,44 @@ export default function Show({ return: returnData }: Props) {
                         )}
                     </CardContent>
                 </Card>
+
+                {returnData.debitNote && (
+                    <Card className="border-green-200 bg-green-50/50">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span>Related Debit Note</span>
+                                <Badge variant="default" className="bg-green-600">
+                                    {returnData.debitNote.status}
+                                </Badge>
+                            </CardTitle>
+                            <CardDescription>
+                                A debit note was automatically created when this return was received by vendor
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div className="text-sm text-muted-foreground">Debit Note Number</div>
+                                    <div className="text-lg font-semibold">{returnData.debitNote.debit_note_number}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-muted-foreground">Amount</div>
+                                    <div className="text-lg font-semibold text-green-600">
+                                        {useCurrency().format(returnData.debitNote.total_amount)}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-4">
+                                <Link href={`/purchasing/debit-notes/${returnData.debitNote.id}`}>
+                                    <Button variant="outline" className="w-full">
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        View Debit Note Details
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </AppLayout>
     );

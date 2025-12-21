@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BlanketOrder extends Model implements \App\Domain\Workflow\Contracts\HasWorkflow
 {
-    use HasFactory, \App\Domain\Workflow\Traits\InteractsWithWorkflow;
+    use \App\Domain\Workflow\Traits\InteractsWithWorkflow, HasFactory;
 
     protected $fillable = [
         'vendor_id',
@@ -29,14 +29,21 @@ class BlanketOrder extends Model implements \App\Domain\Workflow\Contracts\HasWo
     ];
 
     public const STATUS_DRAFT = 'draft';
-    public const STATUS_PENDING_APPROVAL = 'pending_approval'; // New status
-    // public const STATUS_SENT = 'sent'; // Deprecated/Reserved for manual send? Keeping for now to avoid break if DB has it, but workflow uses pending_approval.
-    public const STATUS_OPEN = 'open';
-    public const STATUS_PARTIALLY_DELIVERED = 'partially_delivered';
-    public const STATUS_FULLY_DELIVERED = 'fully_delivered';
-    public const STATUS_DEPLETED = 'depleted';
+
+    public const STATUS_PENDING_APPROVAL = 'pending_approval';
+
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUS_OPEN = 'open'; // Active / Running
+
+    public const STATUS_PARTIALLY_ORDERED = 'partially_ordered'; // Was partially_delivered
+
+    public const STATUS_FULFILLED = 'fulfilled'; // Was fully_delivered, effectively closed
+
     public const STATUS_EXPIRED = 'expired';
+
     public const STATUS_CLOSED = 'closed';
+
     public const STATUS_CANCELLED = 'cancelled';
 
     public function vendor()
@@ -48,106 +55,84 @@ class BlanketOrder extends Model implements \App\Domain\Workflow\Contracts\HasWo
 
     public function submit(): void
     {
-        if ($this->status !== self::STATUS_DRAFT) {
-             throw new \Exception("Only draft BPOs can be submitted.");
+        if ($this->status !== self::STATUS_DRAFT && $this->status !== self::STATUS_REJECTED) {
+            throw new \Exception('Only draft or rejected BPOs can be submitted.');
         }
         $this->update(['status' => self::STATUS_PENDING_APPROVAL]);
     }
 
     public function approve(): void
     {
-         if ($this->status !== self::STATUS_PENDING_APPROVAL) {
-             // Allow approving from 'sent' if we keep it? 
-             // For workflow, strict check.
-             throw new \Exception("Only pending BPOs can be approved.");
-         }
-         $this->update(['status' => self::STATUS_OPEN]);
-    }
-
-    public function reject(): void
-    {
-         if ($this->status !== self::STATUS_PENDING_APPROVAL) {
-             throw new \Exception("Only pending BPOs can be rejected.");
-         }
-         $this->update(['status' => self::STATUS_DRAFT]);
-    }
-
-    public function activate(): void
-    {
-        // Manual activation (bypass workflow or legacy)
-        if (!in_array($this->status, [self::STATUS_DRAFT, 'sent'])) {
-            throw new \Exception("Only draft or sent BPOs can be activated.");
+        if ($this->status !== self::STATUS_PENDING_APPROVAL) {
+            throw new \Exception('Only pending BPOs can be approved.');
         }
         $this->update(['status' => self::STATUS_OPEN]);
     }
 
-    public function markAsPendingApproval(): void
+    public function reject(): void
     {
-        $this->update(['status' => self::STATUS_PENDING_APPROVAL]);
+        if ($this->status !== self::STATUS_PENDING_APPROVAL) {
+            throw new \Exception('Only pending BPOs can be rejected.');
+        }
+        $this->update(['status' => self::STATUS_REJECTED]);
     }
 
-    public function close(): void
+    public function activate(): void
     {
-        if (in_array($this->status, [self::STATUS_CLOSED, self::STATUS_CANCELLED, self::STATUS_EXPIRED])) {
-             throw new \Exception("BPO is already closed or invalid.");
+        if (! in_array($this->status, [self::STATUS_DRAFT, self::STATUS_REJECTED])) {
+            throw new \Exception('Only draft BPOs can be activated.');
         }
-        $this->update(['status' => self::STATUS_CLOSED]);
+        $this->update(['status' => self::STATUS_OPEN]);
     }
 
-    public function cancel(): void
-    {
-        if (in_array($this->status, [self::STATUS_CLOSED, self::STATUS_CANCELLED, self::STATUS_EXPIRED])) {
-             throw new \Exception("BPO is already closed or invalid.");
-        }
-        $this->update(['status' => self::STATUS_CANCELLED]);
-    }
+    // ...
 
     public function updateRealizationStatus(): void
     {
-         // Only update if currently in a "running" state
-         if (!in_array($this->status, [self::STATUS_OPEN, self::STATUS_PARTIALLY_DELIVERED, self::STATUS_FULLY_DELIVERED, self::STATUS_DEPLETED])) {
+        // Only update if currently in a "running" state
+        if (! in_array($this->status, [self::STATUS_OPEN, self::STATUS_PARTIALLY_ORDERED])) {
             return;
-         }
+        }
 
-         $amountUsed = $this->amountUsed();
-         $limit = $this->amount_limit;
-         
-         // Check Depleted (money)
-         if ($amountUsed >= $limit) {
-             $this->update(['status' => self::STATUS_DEPLETED]);
-             return;
-         }
+        $amountUsed = $this->amountUsed();
+        $limit = $this->amount_limit;
 
-         // Check Fully Delivered (quantity) - This is more complex if mixed items. 
-         // Strategy: If ALL lines have met their agreed quantity.
-         $allLinesFulfilled = true;
-         if ($this->lines()->exists()) {
-             foreach ($this->lines as $line) {
-                 if ($line->quantity_agreed && $line->quantity_ordered < $line->quantity_agreed) {
-                     $allLinesFulfilled = false;
-                     break;
-                 }
-             }
-         } else {
-             // No lines defined? rely on amount.
-             $allLinesFulfilled = false;
-         }
+        // Check Fulfilled (Value limit reached)
+        if ($amountUsed >= $limit) {
+            $this->update(['status' => self::STATUS_FULFILLED]);
 
-         if ($allLinesFulfilled) {
-             $this->update(['status' => self::STATUS_FULLY_DELIVERED]);
-             return;
-         }
+            return;
+        }
 
-         // Check Partially Delivered
-         if ($amountUsed > 0) {
-             $this->update(['status' => self::STATUS_PARTIALLY_DELIVERED]);
-             return;
-         }
+        // Check Fulfilled (Quantity limit reached)
+        $allLinesFulfilled = true;
+        if ($this->lines()->exists()) {
+            foreach ($this->lines as $line) {
+                if ($line->quantity_agreed && $line->quantity_ordered < $line->quantity_agreed) {
+                    $allLinesFulfilled = false;
+                    break;
+                }
+            }
+        } else {
+            $allLinesFulfilled = false;
+        }
 
-         // Fallback to Open if no usage
-         $this->update(['status' => self::STATUS_OPEN]);
+        if ($allLinesFulfilled) {
+            $this->update(['status' => self::STATUS_FULFILLED]);
+
+            return;
+        }
+
+        // Check Partially Ordered
+        if ($amountUsed > 0) {
+            $this->update(['status' => self::STATUS_PARTIALLY_ORDERED]);
+
+            return;
+        }
+
+        // Fallback to Open if no usage
+        $this->update(['status' => self::STATUS_OPEN]);
     }
-
 
     public function agreement()
     {
@@ -170,7 +155,7 @@ class BlanketOrder extends Model implements \App\Domain\Workflow\Contracts\HasWo
     {
         // Calculate total from non-cancelled releases
         return $this->releases()
-            ->whereNotIn('status', ['cancelled']) // Only count committed orders (Approvals/Locked) ?? 
+            ->whereNotIn('status', ['cancelled']) // Only count committed orders (Approvals/Locked) ??
             ->where('status', '!=', 'cancelled')
             ->sum('total');
     }

@@ -17,8 +17,8 @@ class SubmitBlanketOrderService
         $blanketOrder = BlanketOrder::findOrFail($blanketOrderId);
 
         // Validate state
-        if ($blanketOrder->status !== BlanketOrder::STATUS_DRAFT) {
-            throw new \InvalidArgumentException('Only draft blanket orders can be submitted.');
+        if (! in_array($blanketOrder->status, [BlanketOrder::STATUS_DRAFT, BlanketOrder::STATUS_REJECTED])) {
+            throw new \InvalidArgumentException('Only draft or rejected blanket orders can be submitted.');
         }
 
         // Find active workflow for Blanket Orders
@@ -36,7 +36,7 @@ class SubmitBlanketOrderService
         } else {
             // No workflow configured, auto-approve/activate
             // Using activate() method which sets it to OPEN
-             // Wait, activate checks for draft/sent.
+            // Wait, activate checks for draft/sent.
             $blanketOrder->activate();
             // TODO: dispatch event?
         }

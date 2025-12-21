@@ -32,7 +32,8 @@ class QualityControlService
         int $failedQty,
         User $inspector,
         ?string $notes = null,
-        ?array $checklistResults = null
+        ?array $checklistResults = null,
+        bool $autoCreateReturn = true
     ): QcInspection {
         $totalNewInspected = $passedQty + $failedQty;
         $receivedQty = $item->quantity_received ?? 0;
@@ -43,7 +44,11 @@ class QualityControlService
             throw new Exception("Inspected qty ({$totalNewInspected}) cannot exceed remaining qty ({$remainingQty}).");
         }
 
-        return DB::transaction(function () use ($item, $passedQty, $failedQty, $inspector, $notes, $checklistResults, $receivedQty) {
+        if ($passedQty < 0 || $failedQty < 0) {
+            throw new Exception('Passed and failed quantities must be non-negative.');
+        }
+
+        return DB::transaction(function () use ($item, $passedQty, $failedQty, $inspector, $notes, $checklistResults, $receivedQty, $autoCreateReturn) {
             // Create inspection record
             $inspection = QcInspection::create([
                 'goods_receipt_item_id' => $item->id,
@@ -80,6 +85,11 @@ class QualityControlService
                 'qc_at' => now(),
             ]);
 
+            // Auto-create return for failed items if inspection is complete
+            if ($autoCreateReturn && $failedQty > 0 && $totalInspected >= $receivedQty) {
+                $this->createReturnForFailed($item);
+            }
+
             // Record Vendor Quality Performance
             $receipt = $item->goodsReceipt;
             if ($receipt && $totalInspected >= $receivedQty) {
@@ -87,6 +97,9 @@ class QualityControlService
                 app(\App\Domain\Purchasing\Services\VendorScorecardService::class)
                     ->recordQualityPerformance($receipt, $newPassedQty, $newFailedQty);
             }
+
+            // Dispatch Event
+            event(new \App\Domain\Purchasing\Events\QualityInspectionCompleted($item, $passedQty, $failedQty, $notes));
 
             return $inspection;
         });
@@ -124,6 +137,38 @@ class QualityControlService
         ]);
 
         return $return;
+    }
+
+    /**
+     * Batch inspect multiple items at once.
+     */
+    public function batchInspect(array $inspections, User $inspector): array
+    {
+        $results = [];
+
+        DB::transaction(function () use ($inspections, $inspector, &$results) {
+            foreach ($inspections as $inspection) {
+                $item = GoodsReceiptItem::findOrFail($inspection['item_id']);
+
+                $result = $this->recordInspection(
+                    $item,
+                    $inspection['passed_qty'] ?? 0,
+                    $inspection['failed_qty'] ?? 0,
+                    $inspector,
+                    $inspection['notes'] ?? null,
+                    $inspection['checklist_results'] ?? null,
+                    $inspection['auto_create_return'] ?? true
+                );
+
+                $results[] = [
+                    'item_id' => $item->id,
+                    'inspection_id' => $result->id,
+                    'qc_status' => $item->fresh()->qc_status,
+                ];
+            }
+        });
+
+        return $results;
     }
 
     /**

@@ -25,4 +25,11 @@ class ContactFactory extends Factory
             'tax_id' => $this->faker->numerify('##.###.###.#-###.###'),
         ];
     }
+
+    public function vendor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => 'vendor',
+        ]);
+    }
 }

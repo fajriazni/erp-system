@@ -25,4 +25,12 @@ trait InteractsWithWorkflow
             ->where('status', 'pending')
             ->latest();
     }
+
+    /**
+     * Get the latest workflow instance (regardless of status).
+     */
+    public function latestWorkflow(): MorphOne
+    {
+        return $this->morphOne(WorkflowInstance::class, 'entity')->latestOfMany();
+    }
 }

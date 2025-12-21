@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import InputError from '@/components/input-error';
@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { FormEvent } from 'react';
 import { index, update } from '@/routes/purchasing/receipts';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface Prodocut {
     id: number;
@@ -105,35 +106,42 @@ export default function GoodsReceiptEdit({ receipt, purchase_order }: Props) {
     return (
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' }, 
-            { title: 'Goods Receipts', href: '/purchasing/receipts' },
+            { title: 'Goods Receipts', href: index.url() },
             { title: receipt.receipt_number, href: '#' }
         ]}>
             <Head title={`Edit ${receipt.receipt_number}`} />
             
-            <div>
-                <div>
-                    <Button variant="ghost" asChild className="mb-4 pl-0 hover:pl-2 transition-all">
+            <div className="space-y-6">
+                <PageHeader
+                    title={`Edit ${receipt.receipt_number}`}
+                    description={`Update goods receipt for ${purchase_order.vendor?.name} - PO ${purchase_order.document_number}`}
+                >
+                    <Button variant="outline" asChild>
                         <Link href={index.url()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Receipts
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                         </Link>
                     </Button>
-                </div>
+                </PageHeader>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-6">
-                        <form onSubmit={submit} className="space-y-6">
+                    <div className="lg:col-span-2">
+                        <form onSubmit={submit} className="w-full">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Edit Goods Receipt</CardTitle>
-                                    <div className="flex justify-between items-center">
-                                        <CardDescription>
-                                            PO: {purchase_order.document_number}
-                                        </CardDescription>
-                                        <Badge variant="outline">{receipt.status}</Badge>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle>Receipt Details</CardTitle>
+                                            <CardDescription>
+                                                Update receipt information and quantities
+                                            </CardDescription>
+                                        </div>
+                                        <Badge variant="secondary" className="capitalize">
+                                            {receipt.status.replace('_', ' ')}
+                                        </Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                     <div className="grid grid-cols-2 gap-4">
+                                <CardContent className="space-y-6">
+                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
                                             <Input
@@ -141,6 +149,7 @@ export default function GoodsReceiptEdit({ receipt, purchase_order }: Props) {
                                                 type="date"
                                                 value={data.date}
                                                 onChange={(e) => setData('date', e.target.value)}
+                                                className="h-11"
                                             />
                                             <InputError message={errors.date} />
                                         </div>
@@ -150,6 +159,7 @@ export default function GoodsReceiptEdit({ receipt, purchase_order }: Props) {
                                                 id="receipt_number"
                                                 value={data.receipt_number}
                                                 onChange={(e) => setData('receipt_number', e.target.value)}
+                                                className="h-11"
                                             />
                                             <InputError message={errors.receipt_number} />
                                         </div>
@@ -161,79 +171,86 @@ export default function GoodsReceiptEdit({ receipt, purchase_order }: Props) {
                                             id="notes"
                                             value={data.notes}
                                             onChange={(e) => setData('notes', e.target.value)}
-                                            placeholder="Notes..."
+                                            placeholder="Delivery notes, condition of goods, etc."
+                                            rows={4}
+                                            className="resize-none"
                                         />
                                         <InputError message={errors.notes} />
                                     </div>
-                                </CardContent>
-                            </Card>
 
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Items</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        {data.items.map((item, index) => (
-                                            <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 border rounded-lg bg-card text-card-foreground">
-                                                <div className="col-span-12 md:col-span-5 space-y-1">
-                                                    <Label className="text-xs text-muted-foreground">Product</Label>
-                                                    <div className="font-medium">{item.product_name}</div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        Max: {item.max_quantity} {item.uom_name}
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <div>
+                                            <h3 className="text-lg font-semibold">Items to Receive</h3>
+                                            <p className="text-sm text-muted-foreground">Adjust quantities and notes for each item</p>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {data.items.map((item, index) => (
+                                                <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 border rounded-lg bg-card text-card-foreground">
+                                                    <div className="col-span-5 space-y-2">
+                                                        <Label>Product</Label>
+                                                        <div className="font-medium">{item.product_name}</div>
+                                                        <div className="text-sm text-muted-foreground">
+                                                            Max: {item.max_quantity} {item.uom_name}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="col-span-3 space-y-2">
+                                                        <Label>Qty Received <span className="text-destructive">*</span></Label>
+                                                        <Input
+                                                            type="number"
+                                                            min="0.01"
+                                                            step="0.01"
+                                                            max={item.max_quantity * 1.5}
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                                            className="h-11"
+                                                        />
+                                                         {errors[`items.${index}.quantity` as keyof typeof errors] && (
+                                                            <InputError message={errors[`items.${index}.quantity` as keyof typeof errors]} />
+                                                        )}
+                                                    </div>
+
+                                                    <div className="col-span-3 space-y-2">
+                                                        <Label>Notes</Label>
+                                                         <Input
+                                                            className="h-11"
+                                                            value={item.notes}
+                                                            onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                                                            placeholder="Condition, batch, etc."
+                                                        />
+                                                    </div>
+
+                                                    <div className="col-span-1 flex items-end pt-8">
+                                                         <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => removeItem(index)}
+                                                            className="text-destructive hover:text-destructive"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
                                                 </div>
-
-                                                <div className="col-span-6 md:col-span-3 space-y-1">
-                                                    <Label className="text-xs">Qty Received</Label>
-                                                    <Input
-                                                        type="number"
-                                                        min="0.01"
-                                                        step="0.01"
-                                                        max={item.max_quantity * 1.5}
-                                                        value={item.quantity}
-                                                        onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                                    />
-                                                     {errors[`items.${index}.quantity` as keyof typeof errors] && (
-                                                        <InputError message={errors[`items.${index}.quantity` as keyof typeof errors]} />
-                                                    )}
+                                            ))}
+                                            {data.items.length === 0 && (
+                                                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                                                    No items in this receipt.
                                                 </div>
-
-                                                <div className="col-span-5 md:col-span-3 space-y-1">
-                                                    <Label className="text-xs">Notes</Label>
-                                                     <Input
-                                                        className="h-9"
-                                                        value={item.notes}
-                                                        onChange={(e) => updateItem(index, 'notes', e.target.value)}
-                                                        placeholder="Notes"
-                                                    />
-                                                </div>
-
-                                                <div className="col-span-1 flex justify-end pt-6">
-                                                     <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeItem(index)}
-                                                        className="text-destructive hover:text-destructive h-8 w-8"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )}
+                                        </div>
                                     </div>
                                 </CardContent>
+                                <CardFooter className="flex justify-between border-t px-6 pt-5">
+                                    <Button type="button" variant="outline" asChild>
+                                        <Link href={index.url()}>Cancel</Link>
+                                    </Button>
+                                    <Button type="submit" disabled={processing}>
+                                        {processing ? 'Saving...' : 'Update Receipt'}
+                                    </Button>
+                                </CardFooter>
                             </Card>
-
-                            <div className="flex justify-end gap-4">
-                                <Button type="button" variant="outline" asChild>
-                                    <Link href={index.url()}>Cancel</Link>
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    {processing ? 'Saving...' : 'Save Changes'}
-                                </Button>
-                            </div>
                         </form>
                     </div>
 

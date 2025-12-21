@@ -7,6 +7,7 @@ use App\Domain\Inventory\Services\CalculateMovingAverageService;
 use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class CreateGoodsReceiptService
@@ -20,6 +21,19 @@ class CreateGoodsReceiptService
     {
         return DB::transaction(function () use ($data) {
             $purchaseOrder = PurchaseOrder::with('items')->findOrFail($data['purchase_order_id']);
+
+            // Validate PO Status - only allow receiving from approved/locked/partial POs
+            if (! in_array($purchaseOrder->status, ['purchase_order', 'locked', 'partial_received'])) {
+                throw new InvalidArgumentException(
+                    "Cannot create receipt for PO with status '{$purchaseOrder->status}'. ".
+                    "PO must be 'purchase_order', 'locked', or 'partial_received'."
+                );
+            }
+
+            // Check if PO is already fully received
+            if ($purchaseOrder->status === 'fully_received') {
+                throw new InvalidArgumentException('This Purchase Order has already been fully received.');
+            }
 
             // 1. Create Goods Receipt
             $gr = GoodsReceipt::create([
@@ -41,10 +55,22 @@ class CreateGoodsReceiptService
                     throw new InvalidArgumentException("Product ID {$itemData['product_id']} is not in this Purchase Order.");
                 }
 
-                // Check for over-receiving (optional depending on business rule, for now strict warning or just allow but tracked)
-                // We will allow over-receiving but logic elsewhere might flag it.
-                // Tracking is updated when POSTED, not created (Draft).
-                // So here we simply create the GR lines.
+                // Check for over-receiving
+                $remainingQty = $poItem->quantity - $poItem->quantity_received;
+                $receivingQty = $itemData['quantity'];
+
+                if ($receivingQty > $remainingQty) {
+                    $overQty = $receivingQty - $remainingQty;
+                    Log::warning("Over-receiving detected for Product ID {$itemData['product_id']}", [
+                        'po_id' => $purchaseOrder->id,
+                        'remaining' => $remainingQty,
+                        'receiving' => $receivingQty,
+                        'over_amount' => $overQty,
+                    ]);
+
+                    // You can optionally throw exception here if strict mode:
+                    // throw new InvalidArgumentException("Cannot receive {$receivingQty} - only {$remainingQty} remaining for this item.");
+                }
 
                 $gr->items()->create([
                     'product_id' => $itemData['product_id'],
@@ -54,6 +80,8 @@ class CreateGoodsReceiptService
                 ]);
             }
 
+            event(new \App\Domain\Purchasing\Events\GoodsReceiptCreated($gr));
+
             return $gr;
         });
     }
@@ -61,12 +89,30 @@ class CreateGoodsReceiptService
     public function post(GoodsReceipt $receipt): void
     {
         if ($receipt->status !== 'draft') {
-            throw new InvalidArgumentException('Only draft receipts can be posted.');
+            throw new InvalidArgumentException("Only draft receipts can be posted. Current status: {$receipt->status}");
+        }
+
+        if ($receipt->items()->count() === 0) {
+            throw new InvalidArgumentException('Cannot post goods receipt without items.');
+        }
+
+        // Validate PO is still in valid state
+        $purchaseOrder = $receipt->purchaseOrder;
+        if (in_array($purchaseOrder->status, ['cancelled', 'draft'])) {
+            throw new InvalidArgumentException(
+                "Cannot post receipt - Purchase Order is {$purchaseOrder->status}."
+            );
         }
 
         DB::transaction(function () use ($receipt) {
+            $oldStatus = $receipt->status;
+
             // 1. Update Status
-            $receipt->update(['status' => 'posted']);
+            $receipt->update([
+                'status' => 'posted',
+                'posted_at' => now(),
+                'posted_by' => auth()->id(),
+            ]);
 
             $purchaseOrder = $receipt->purchaseOrder;
             // Ensure relationships are loaded
@@ -134,6 +180,10 @@ class CreateGoodsReceiptService
 
             // 5. Record Vendor Delivery Performance
             app(VendorScorecardService::class)->recordDeliveryPerformance($purchaseOrder, $receipt);
+
+            // 6. Dispatch Events
+            event(new \App\Domain\Purchasing\Events\GoodsReceiptStatusChanged($receipt, $oldStatus, 'posted'));
+            event(new \App\Domain\Purchasing\Events\GoodsReceiptPosted($receipt));
         });
     }
 
@@ -180,7 +230,7 @@ class CreateGoodsReceiptService
         }
 
         if ($allReceived) {
-            $purchaseOrder->update(['status' => 'completed']); // Or 'received' if that is the status name
+            $purchaseOrder->update(['status' => 'fully_received']);
         } elseif ($anyReceived) {
             $purchaseOrder->update(['status' => 'partial_received']);
         }

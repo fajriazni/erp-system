@@ -151,8 +151,8 @@ class GoodsReceiptTest extends TestCase
 
         $this->post(route('purchasing.receipts.post', $gr2));
 
-        // 7. Verify PO Status (Completed)
-        $this->assertEquals('completed', $this->po->fresh()->status);
+        // 7. Verify PO Status (Fully Received)
+        $this->assertEquals('fully_received', $this->po->fresh()->status);
 
         // 8. Verify Inventory increases
         $stock = DB::table('product_warehouse')

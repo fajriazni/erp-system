@@ -19,7 +19,7 @@ class EmployeeFactory extends Factory
         return [
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
-            'employee_id' => 'EMP-' . $this->faker->unique()->numberBetween(1000, 9999),
+            'employee_id' => 'EMP-'.$this->faker->unique()->numberBetween(1000, 9999),
             'email' => $this->faker->unique()->safeEmail(),
             'phone' => $this->faker->phoneNumber(),
             'job_title' => $this->faker->jobTitle(),

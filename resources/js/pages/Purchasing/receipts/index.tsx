@@ -49,7 +49,7 @@ interface PaginationLink {
 }
 
 interface Props {
-    receipts: {
+    receipts?: {
         data: GoodsReceipt[];
         current_page: number;
         first_page_url: string | null;
@@ -77,7 +77,7 @@ export default function Index({ receipts, filters = {} }: Props) {
             global: filters?.global || '',
             status: filters?.status || '',
         },
-        per_page: receipts.per_page || 15,
+        per_page: receipts?.per_page || 15,
     });
 
     const handleClearFilters = () => {
@@ -96,6 +96,7 @@ export default function Index({ receipts, filters = {} }: Props) {
     const getStatusBadge = (status: string) => {
         const variants: Record<string, { variant: any; label: string; className?: string }> = {
             draft: { variant: 'secondary', label: 'Draft' },
+            received: { variant: 'default', label: 'Received', className: 'bg-blue-600' },
             posted: { variant: 'default', label: 'Posted', className: 'bg-green-600' },
             cancelled: { variant: 'destructive', label: 'Cancelled' },
         };
@@ -157,6 +158,12 @@ export default function Index({ receipts, filters = {} }: Props) {
                                     Draft
                                 </TabsTrigger>
                                 <TabsTrigger
+                                    value="received"
+                                    className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
+                                >
+                                    Received
+                                </TabsTrigger>
+                                <TabsTrigger
                                     value="posted"
                                     className="data-[state=active]:bg-muted data-[state=active]:shadow-none rounded-md px-4 py-2"
                                 >
@@ -215,7 +222,7 @@ export default function Index({ receipts, filters = {} }: Props) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {receipts.data.length === 0 ? (
+                            {!receipts?.data || receipts.data.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                         No goods receipts found. Create a receipt from a purchase order to get started.
@@ -261,10 +268,10 @@ export default function Index({ receipts, filters = {} }: Props) {
                     </Table>
 
                     <DataTablePagination 
-                        links={receipts.links}
-                        from={receipts.from ?? 0}
-                        to={receipts.to ?? 0}
-                        total={receipts.total}
+                        links={receipts?.links || []}
+                        from={receipts?.from ?? 0}
+                        to={receipts?.to ?? 0}
+                        total={receipts?.total ?? 0}
                         per_page={data.per_page}
                         onPerPageChange={(value) => {
                             setData('per_page', value);

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Purchasing;
 use App\Http\Controllers\Controller;
 use App\Models\GoodsReceiptItem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class QcController extends Controller
@@ -18,10 +17,10 @@ class QcController extends Controller
             'goodsReceipt.purchaseOrder.vendor',
             'product',
         ])
-        ->whereHas('goodsReceipt', function ($q) {
-            $q->where('status', 'posted');
-        })
-        ->latest();
+            ->whereHas('goodsReceipt', function ($q) {
+                $q->where('status', 'posted');
+            })
+            ->latest();
 
         // Search
         if ($request->has('filter.global') && $request->input('filter.global') !== '') {
@@ -30,10 +29,10 @@ class QcController extends Controller
                 $q->whereHas('goodsReceipt', function ($q) use ($search) {
                     $q->where('receipt_number', 'like', "%{$search}%");
                 })
-                ->orWhereHas('product', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('sku', 'like', "%{$search}%");
-                });
+                    ->orWhereHas('product', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -44,7 +43,7 @@ class QcController extends Controller
 
         // Transform data to match frontend interface
         $items = $query->paginate($request->input('per_page', 15))->withQueryString();
-        
+
         $inspections = [
             'data' => $items->getCollection()->map(function ($item) {
                 return [
@@ -66,12 +65,12 @@ class QcController extends Controller
                         ],
                         'quantity_received' => $item->quantity_received,
                     ],
-                    'qty_inspected' => $item->qty_inspected ?? 0,
-                    'qty_passed' => $item->qty_passed ?? 0,
-                    'qty_failed' => $item->qty_failed ?? 0,
+                    'qty_inspected' => ($item->qc_passed_qty ?? 0) + ($item->qc_failed_qty ?? 0),
+                    'qty_passed' => $item->qc_passed_qty ?? 0,
+                    'qty_failed' => $item->qc_failed_qty ?? 0,
                     'status' => $item->qc_status ?? 'pending',
-                    'inspector' => $item->inspectedBy ? ['name' => $item->inspectedBy->name] : null,
-                    'inspection_date' => $item->inspection_date,
+                    'inspector' => $item->qcBy ? ['name' => $item->qcBy->name] : null,
+                    'inspection_date' => $item->qc_at,
                     'created_at' => $item->created_at,
                 ];
             })->toArray(),
@@ -84,14 +83,16 @@ class QcController extends Controller
         ];
 
         // Statistics
-        $totalInspected = GoodsReceiptItem::whereNotNull('qty_inspected')->count();
+        $totalPassed = GoodsReceiptItem::whereNotNull('qc_passed_qty')->sum('qc_passed_qty');
+        $totalFailed = GoodsReceiptItem::whereNotNull('qc_failed_qty')->sum('qc_failed_qty');
+        $totalInspected = $totalPassed + $totalFailed;
+
         $stats = [
             'pending' => GoodsReceiptItem::where('qc_status', 'pending')->count(),
-            'in_progress' => GoodsReceiptItem::where('qc_status', 'in_progress')->count(),
-            'completed' => GoodsReceiptItem::where('qc_status', 'completed')->count(),
+            'in_progress' => GoodsReceiptItem::where('qc_status', 'in_qa')->count(),
+            'completed' => GoodsReceiptItem::whereIn('qc_status', ['passed', 'failed', 'partial'])->count(),
             'pass_rate' => $totalInspected > 0
-                ? (GoodsReceiptItem::whereNotNull('qty_passed')->sum('qty_passed') / 
-                   GoodsReceiptItem::whereNotNull('qty_inspected')->sum('qty_inspected')) * 100
+                ? ($totalPassed / $totalInspected) * 100
                 : 0,
         ];
 
@@ -107,7 +108,7 @@ class QcController extends Controller
         $item->load([
             'goodsReceipt.purchaseOrder.vendor',
             'product',
-            'inspectedBy',
+            'qcBy',
         ]);
 
         return Inertia::render('Purchasing/Operations/QcDetail', [
@@ -124,15 +125,13 @@ class QcController extends Controller
         ]);
 
         try {
-            $item->update([
-                'qty_inspected' => $validated['qty_passed'] + $validated['qty_failed'],
-                'qty_passed' => $validated['qty_passed'],
-                'qty_failed' => $validated['qty_failed'],
-                'qc_status' => 'completed',
-                'qc_notes' => $validated['notes'] ?? null,
-                'inspected_by' => auth()->id(),
-                'inspection_date' => now(),
-            ]);
+            // Use the model method for proper QC recording
+            $item->recordQc(
+                $validated['qty_passed'],
+                $validated['qty_failed'],
+                auth()->user(),
+                $validated['notes'] ?? null
+            );
 
             return back()->with('success', 'QC inspection recorded successfully.');
         } catch (\Exception $e) {

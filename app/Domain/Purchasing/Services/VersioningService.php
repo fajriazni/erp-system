@@ -17,9 +17,21 @@ class VersioningService
         ?array $changes = null
     ): PurchaseOrderVersion {
         return DB::transaction(function () use ($po, $changeType, $changes) {
-            // Get next version number
-            $lastVersion = $po->versions()->latest('version_number')->first();
+            // Get next version number with lock to prevent race conditions
+            $lastVersion = $po->versions()
+                ->lockForUpdate()
+                ->latest('version_number')
+                ->first();
             $versionNumber = $lastVersion ? $lastVersion->version_number + 1 : 1;
+
+            // Check if this exact version already exists (idempotent)
+            $existingVersion = PurchaseOrderVersion::where('purchase_order_id', $po->id)
+                ->where('version_number', $versionNumber)
+                ->first();
+
+            if ($existingVersion) {
+                return $existingVersion;
+            }
 
             // Create snapshot of current state
             $snapshot = $this->createSnapshot($po);
@@ -98,12 +110,12 @@ class VersioningService
 
             // Handle different field types
             $summary = match ($field) {
-                'vendor_id' => "Changed vendor",
-                'warehouse_id' => "Changed warehouse",
+                'vendor_id' => 'Changed vendor',
+                'warehouse_id' => 'Changed warehouse',
                 'status' => "Status changed from '{$old}' to '{$new}'",
-                'total' => "Total amount changed",
-                'date' => "Changed PO date",
-                'notes' => $old ? "Updated notes" : "Added notes",
+                'total' => 'Total amount changed',
+                'date' => 'Changed PO date',
+                'notes' => $old ? 'Updated notes' : 'Added notes',
                 default => "Changed {$field}",
             };
 
@@ -148,7 +160,7 @@ class VersioningService
         $differences = [];
 
         foreach ($arr1 as $key => $value) {
-            if (!isset($arr2[$key]) || $arr2[$key] !== $value) {
+            if (! isset($arr2[$key]) || $arr2[$key] !== $value) {
                 $differences[$key] = [
                     'old' => $value,
                     'new' => $arr2[$key] ?? null,
@@ -167,14 +179,14 @@ class VersioningService
     {
         return [
             'added' => collect($items2)->filter(function ($item2) use ($items1) {
-                return !collect($items1)->contains('id', $item2['id']);
+                return ! collect($items1)->contains('id', $item2['id']);
             })->values()->toArray(),
             'removed' => collect($items1)->filter(function ($item1) use ($items2) {
-                return !collect($items2)->contains('id', $item1['id']);
+                return ! collect($items2)->contains('id', $item1['id']);
             })->values()->toArray(),
             'modified' => collect($items1)->map(function ($item1) use ($items2) {
                 $item2 = collect($items2)->firstWhere('id', $item1['id']);
-                if (!$item2) {
+                if (! $item2) {
                     return null;
                 }
 

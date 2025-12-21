@@ -27,6 +27,10 @@ class DatabaseSeeder extends Seeder
             ConditionalPurchaseOrderWorkflowSeeder::class,
             PurchaseOrderPermissionSeeder::class,
             PurchaseAgreementSeeder::class,
+            VendorOnboardingWorkflowSeeder::class,
+            PurchaseReturnWorkflowSeeder::class,
+            VendorAuditWorkflowSeeder::class,
+            VendorClaimWorkflowSeeder::class,
         ]);
 
         // User::factory(10)->create();

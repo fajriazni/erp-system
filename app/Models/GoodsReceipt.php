@@ -19,6 +19,9 @@ class GoodsReceipt extends Model
         'status',
         'notes',
         'received_by',
+        'received_at',
+        'delivery_note_number',
+        'physical_condition',
         'posted_at',
         'posted_by',
         'cancelled_at',
@@ -28,6 +31,7 @@ class GoodsReceipt extends Model
 
     protected $casts = [
         'date' => 'date',
+        'received_at' => 'datetime',
         'posted_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
@@ -72,13 +76,19 @@ class GoodsReceipt extends Model
         return $this->belongsTo(Contact::class, 'vendor_id');
     }
 
+    public function threeWayMatches(): HasMany
+    {
+        return $this->hasMany(ThreeWayMatch::class);
+    }
+
     // Domain Methods
     public function confirm(\App\Models\User $user): void
     {
         if ($this->status !== 'draft') {
-            throw new \Exception("Only draft receipts can be confirmed. Current status: {$this->status}");
+            throw new \Exception("Only draft receipts can be posted. Current status: {$this->status}");
         }
 
+        $oldStatus = $this->status;
         $this->status = 'posted';
         $this->posted_at = now();
         $this->posted_by = $user->id;
@@ -86,6 +96,8 @@ class GoodsReceipt extends Model
 
         // Update PO received quantities
         $this->updatePurchaseOrderQuantities();
+
+        event(new \App\Domain\Purchasing\Events\GoodsReceiptStatusChanged($this, $oldStatus, 'posted'));
     }
 
     public function cancel(\App\Models\User $user, string $reason): void
@@ -103,12 +115,14 @@ class GoodsReceipt extends Model
         $this->cancelled_by = $user->id;
         $this->cancellation_reason = $reason;
         $this->save();
+
+        event(new \App\Domain\Purchasing\Events\GoodsReceiptCancelled($this, $reason));
     }
 
     protected function updatePurchaseOrderQuantities(): void
     {
         $po = $this->purchaseOrder;
-        if (!$po) {
+        if (! $po) {
             return;
         }
 
@@ -127,6 +141,9 @@ class GoodsReceipt extends Model
                 $poItem->save();
             }
         }
+
+        // Reload items to get fresh quantity_received values
+        $po->load('items');
 
         // Update PO status
         $allFullyReceived = $po->items->every(function ($item) {

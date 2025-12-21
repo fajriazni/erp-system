@@ -245,6 +245,7 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Receiving & QC',
+            badge: 'Ready',
             items: [
                 { title: "Goods Receipt (GR)", url: "/purchasing/receipts", icon: PackageCheck },
                 { title: "Three-Way Match", icon: RefreshCcw, url: "/purchasing/matching" },
@@ -1116,7 +1117,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                                 {group.items.map((item) => (
                                     <SidebarMenuItem key={item.title}>
                                         <SidebarMenuButton asChild tooltip={item.title} isActive={url === item.url}>
-                                            <Link href={item.url}>
+                                            <Link href={item.url} preserveScroll>
                                                 <item.icon />
                                                 <span>{item.title}</span>
                                                 {item.badge && (
@@ -1137,7 +1138,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild tooltip="Settings" isActive={url.startsWith('/settings')}>
-                            <Link href="/settings/company">
+                            <Link href="/settings/company" preserveScroll>
                                 <Settings />
                                 <span>Settings</span>
                             </Link>

@@ -75,11 +75,10 @@ const getStatusBadgeVariant = (status: string) => {
     switch (status) {
         case 'open': return 'default';
         case 'active': return 'default';
-        case 'partially_delivered': return 'default';
-        case 'fully_delivered': return 'secondary';
-        case 'depleted': return 'secondary';
+        case 'partially_ordered': return 'default';
+        case 'fulfilled': return 'secondary';
         case 'pending_approval': return 'secondary';
-        case 'sent': return 'secondary';
+        case 'rejected': return 'destructive';
         case 'draft': return 'secondary';
         case 'closed': return 'outline';
         case 'expired': return 'destructive';
@@ -97,7 +96,6 @@ export default function BlanketOrdersShow({ blanket_order, workflowInstance, pen
   const [rejectReason, setRejectReason] = useState('');
 
   const breadcrumbs = [
-    { title: 'Dashboard', href: '/dashboard' },
     { title: 'Purchasing', href: '/purchasing' },
     { title: 'Blanket Orders', href: index().url },
     { title: blanket_order.number, href: '#' },
@@ -178,8 +176,8 @@ export default function BlanketOrdersShow({ blanket_order, workflowInstance, pen
                </Link>
             </Button>
             
-            {/* Draft Actions */}
-            {blanket_order.status === 'draft' && (
+            {/* Draft/Rejected Actions */}
+            {(blanket_order.status === 'draft' || blanket_order.status === 'rejected') && (
                 <>
                     <Button variant="outline" asChild>
                        <Link href={edit(blanket_order.id).url}>
@@ -187,11 +185,12 @@ export default function BlanketOrdersShow({ blanket_order, workflowInstance, pen
                          Edit BPO
                        </Link>
                     </Button>
-                    <Button onClick={handleSubmit}>
-                        <Send className="mr-2 h-4 w-4" />
-                        Submit
-                    </Button>
-                    {/* Send to Vendor legacy button removed or mapped to submit */}
+                    {blanket_order.status === 'draft' && (
+                        <Button onClick={handleSubmit}>
+                            <Send className="mr-2 h-4 w-4" />
+                            Submit
+                        </Button>
+                    )}
                 </>
             )}
 

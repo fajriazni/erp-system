@@ -73,10 +73,11 @@ class GoodsReceiptController extends Controller
         }
 
         return Inertia::render('Purchasing/receipts/create', [
-            'purchase_orders' => PurchaseOrder::whereIn('status', ['purchase_order', 'partial_received'])
+            'purchase_orders' => PurchaseOrder::whereIn('status', ['purchase_order', 'partial_received', 'locked'])
                 ->whereDoesntHave('goodsReceipts', function ($query) {
                     $query->where('status', 'draft');
                 })
+                ->with('vendor')
                 ->get(),
             'initial_po' => $po,
         ]);
@@ -117,6 +118,7 @@ class GoodsReceiptController extends Controller
             'items.uom',
             'receivedBy',
             'landedCosts',
+            'purchaseReturns', // Added for Returns & Claims integration
         ]);
 
         return Inertia::render('Purchasing/receipts/show', [

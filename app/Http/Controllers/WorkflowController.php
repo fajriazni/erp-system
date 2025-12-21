@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Workflow;
-use App\Models\WorkflowStep;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
@@ -15,6 +13,7 @@ class WorkflowController extends Controller
         $roles = Role::all();
         $users = \App\Models\User::select('id', 'name', 'email')->get();
 
+        // Create method workflow types
         $workflowTypes = [
             [
                 'id' => 'purchasing',
@@ -51,6 +50,49 @@ class WorkflowController extends Controller
                         'id' => 'App\\Models\\PurchaseReturn',
                         'label' => 'Purchase Return',
                         'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'total_amount', 'label' => 'Total Amount', 'type' => 'number'],
+                            ['value' => 'vendor.id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'reason', 'label' => 'Return Reason', 'type' => 'string'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorOnboarding',
+                        'label' => 'Vendor Onboarding',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'type', 'label' => 'Vendor Type', 'type' => 'string'],
+                            ['value' => 'credit_limit', 'label' => 'Credit Limit', 'type' => 'number'],
+                            ['value' => 'is_high_risk', 'label' => 'High Risk Vendor', 'type' => 'boolean'],
+                            ['value' => 'payment_terms', 'label' => 'Payment Terms', 'type' => 'string'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorAudit',
+                        'label' => 'Vendor Audit',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'vendor_id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'audit_type', 'label' => 'Audit Type', 'type' => 'string'],
+                            ['value' => 'score', 'label' => 'Audit Score', 'type' => 'number'],
+                            ['value' => 'has_critical_findings', 'label' => 'Has Critical Findings', 'type' => 'boolean'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorClaim',
+                        'label' => 'Vendor Claims',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'vendor_id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'claim_type', 'label' => 'Claim Type', 'type' => 'string'],
+                            ['value' => 'claim_amount', 'label' => 'Claim Amount', 'type' => 'number'],
+                            ['value' => 'is_high_risk', 'label' => 'High Risk', 'type' => 'boolean'],
+                            ['value' => 'affects_reputation', 'label' => 'Affects Reputation', 'type' => 'boolean'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
                     ],
                 ],
             ],
@@ -87,7 +129,7 @@ class WorkflowController extends Controller
     public function store(\App\Http\Requests\StoreWorkflowRequest $request)
     {
         $service = app(\App\Domain\Workflow\Services\CreateWorkflowService::class);
-        
+
         $workflow = $service->execute($request->validated());
 
         return redirect()->route('workflows.management')->with('success', 'Workflow created successfully!');
@@ -99,6 +141,7 @@ class WorkflowController extends Controller
         $roles = Role::all();
         $users = \App\Models\User::select('id', 'name', 'email')->get();
 
+        // Edit method workflow types
         $workflowTypes = [
             [
                 'id' => 'purchasing',
@@ -135,6 +178,49 @@ class WorkflowController extends Controller
                         'id' => 'App\\Models\\PurchaseReturn',
                         'label' => 'Purchase Return',
                         'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'total_amount', 'label' => 'Total Amount', 'type' => 'number'],
+                            ['value' => 'vendor.id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'reason', 'label' => 'Return Reason', 'type' => 'string'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorOnboarding',
+                        'label' => 'Vendor Onboarding',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'type', 'label' => 'Vendor Type', 'type' => 'string'],
+                            ['value' => 'credit_limit', 'label' => 'Credit Limit', 'type' => 'number'],
+                            ['value' => 'is_high_risk', 'label' => 'High Risk Vendor', 'type' => 'boolean'],
+                            ['value' => 'payment_terms', 'label' => 'Payment Terms', 'type' => 'string'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorAudit',
+                        'label' => 'Vendor Audit',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'vendor_id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'audit_type', 'label' => 'Audit Type', 'type' => 'string'],
+                            ['value' => 'score', 'label' => 'Audit Score', 'type' => 'number'],
+                            ['value' => 'has_critical_findings', 'label' => 'Has Critical Findings', 'type' => 'boolean'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
+                    ],
+                    [
+                        'id' => 'App\\Models\\VendorClaim',
+                        'label' => 'Vendor Claims',
+                        'module' => 'purchasing',
+                        'fields' => [
+                            ['value' => 'vendor_id', 'label' => 'Vendor ID', 'type' => 'number'],
+                            ['value' => 'claim_type', 'label' => 'Claim Type', 'type' => 'string'],
+                            ['value' => 'claim_amount', 'label' => 'Claim Amount', 'type' => 'number'],
+                            ['value' => 'is_high_risk', 'label' => 'High Risk', 'type' => 'boolean'],
+                            ['value' => 'affects_reputation', 'label' => 'Affects Reputation', 'type' => 'boolean'],
+                            ['value' => 'status', 'label' => 'Status', 'type' => 'string'],
+                        ],
                     ],
                 ],
             ],
@@ -172,7 +258,7 @@ class WorkflowController extends Controller
     public function update(\App\Http\Requests\StoreWorkflowRequest $request, Workflow $workflow)
     {
         $service = app(\App\Domain\Workflow\Services\UpdateWorkflowService::class);
-        
+
         $workflow = $service->execute($workflow, $request->validated());
 
         return redirect()->route('workflows.management')->with('success', 'Workflow updated successfully!');
