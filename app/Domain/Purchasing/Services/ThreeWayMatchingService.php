@@ -43,6 +43,13 @@ class ThreeWayMatchingService
         // Perform matching logic
         $this->calculateVariances($match, $po, $gr, $vendorBill);
 
+        // Sync status to Vendor Bill for easier querying
+        $vendorBill->update([
+            'match_status' => $match->status,
+             // We can also store exceptions JSON if we want to keep that column usage, but the relation is better.
+             // 'match_exceptions' => $match->discrepancies 
+        ]);
+
         return $match;
     }
 

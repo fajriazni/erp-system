@@ -64,11 +64,11 @@ export default function Index({ debitNotes }: Props) {
             { title: 'Debit Notes' }
         ]}>
             <Head title="Debit Notes" />
-            <div className="container mx-auto p-6 space-y-6">
+            <div className="container mx-auto space-y-6">
                 <PageHeader
                     title="Debit Notes"
                     description="Manage vendor debit notes and applications"
-                    action={
+                    actions={
                         <Link href="/purchasing/debit-notes/create">
                             <Button>
                                 <Plus className="mr-2 h-4 w-4" />

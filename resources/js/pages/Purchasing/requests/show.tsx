@@ -18,6 +18,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { create } from '@/actions/App/Http/Controllers/Purchasing/RfqController';
 import { index, destroy, submit } from '@/actions/App/Http/Controllers/Purchasing/PurchaseRequestController';
 import { useCurrency } from '@/hooks/use-currency';
+import DocumentFlow from '@/components/DocumentFlow';
 
 // Manual routes placeholders until Wayfinder fully propagated or used directly
 const convertUrl = (id: number) => `/purchasing/requests/${id}/convert`;
@@ -160,208 +161,214 @@ export default function PurchaseRequestShow({ request, vendors, workflowInstance
         ]}>
             <Head title={request.document_number} />
 
-            <PageHeader
-                title={request.document_number}
-                description={
-                    <div className="flex items-center gap-2">
-                        <span>Requested by {request.requester?.name}</span>
-                        <span>•</span>
-                        {getStatusBadge(request.status)}
-                    </div>
-                }
-                actions={
-                    <div className="flex items-center gap-2">
-                         {request.status === 'draft' && (
-                            <>
-                                <Button variant="outline" asChild>
-                                    <Link href={`/purchasing/requests/${request.id}/edit`}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </Link>
-                                </Button>
-                                
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete
+            <div className="container mx-auto space-y-6">
+                <div>
+                    <PageHeader
+                        title={request.document_number}
+                        description={
+                            <div className="flex items-center gap-2">
+                                <span>Requested by {request.requester?.name}</span>
+                                <span>•</span>
+                                {getStatusBadge(request.status)}
+                            </div>
+                        }
+                        actions={
+                            <div className="flex items-center gap-2">
+                                {request.status === 'draft' && (
+                                    <>
+                                        <Button variant="outline" asChild>
+                                            <Link href={`/purchasing/requests/${request.id}/edit`}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </Link>
                                         </Button>
-                                    }
-                                    onConfirm={handleDelete}
-                                    title="Delete Purchase Request"
-                                    description="Are you sure you want to delete this? This action cannot be undone."
-                                />
+                                        
+                                        <DeleteConfirmDialog
+                                            trigger={
+                                                <Button variant="destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </Button>
+                                            }
+                                            onConfirm={handleDelete}
+                                            title="Delete Purchase Request"
+                                            description="Are you sure you want to delete this? This action cannot be undone."
+                                        />
 
-                                <Button onClick={handleSubmit}>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Submit
-                                </Button>
-                            </>
-                        )}
-                        
-                        {/* Approval Task: Approve/Reject */}
-                        {pendingApprovalTask && (
-                            <>
-                                <Button 
-                                    variant="default"
-                                    onClick={() => setApproveDialogOpen(true)}
-                                    disabled={processing}
-                                >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Approve
-                                </Button>
-                                <Button 
-                                    variant="destructive"
-                                    onClick={() => setRejectDialogOpen(true)}
-                                    disabled={processing}
-                                >
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    Reject
-                                </Button>
-                            </>
-                        )}
+                                        <Button onClick={handleSubmit}>
+                                            <Send className="mr-2 h-4 w-4" />
+                                            Submit
+                                        </Button>
+                                    </>
+                                )}
+                                
+                                {/* Approval Task: Approve/Reject */}
+                                {pendingApprovalTask && (
+                                    <>
+                                        <Button 
+                                            variant="default"
+                                            onClick={() => setApproveDialogOpen(true)}
+                                            disabled={processing}
+                                        >
+                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                            Approve
+                                        </Button>
+                                        <Button 
+                                            variant="destructive"
+                                            onClick={() => setRejectDialogOpen(true)}
+                                            disabled={processing}
+                                        >
+                                            <XCircle className="mr-2 h-4 w-4" />
+                                            Reject
+                                        </Button>
+                                    </>
+                                )}
 
-                        {request.status === 'approved' && (
-                            <>
-                                <Button variant="secondary" asChild>
-                                    <Link href={`${create.url()}?pr_id=${request.id}`}>
-                                        <FileText className="mr-2 h-4 w-4" />
-                                        Create RFQ
+                                {request.status === 'approved' && (
+                                    <>
+                                        <Button variant="secondary" asChild>
+                                            <Link href={`${create.url()}?pr_id=${request.id}`}>
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Create RFQ
+                                            </Link>
+                                        </Button>
+                                        <Button onClick={() => setConvertDialogOpen(true)}>
+                                            <ShoppingCart className="mr-2 h-4 w-4" />
+                                            Convert to PO
+                                        </Button>
+                                    </>
+                                )}
+                                
+                                {/* Back Button - Always visible, positioned last */}
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href={index.url()}>
+                                        <ArrowLeft className="mr-2 h-4 w-4" /> Back
                                     </Link>
                                 </Button>
-                                <Button onClick={() => setConvertDialogOpen(true)}>
-                                    <ShoppingCart className="mr-2 h-4 w-4" />
-                                    Convert to PO
-                                </Button>
-                            </>
-                        )}
-                        
-                        {/* Back Button - Always visible, positioned last */}
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={index.url()}>
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                            </Link>
-                        </Button>
-                    </div>
-                }
-            />
-
-            <div className="grid gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Request Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2">
-                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Date</p>
-                                <p className="mt-1">{new Date(request.date).toLocaleDateString()}</p>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Required Date</p>
-                                <p className="mt-1">{request.required_date ? new Date(request.required_date).toLocaleDateString() : '-'}</p>
-                            </div>
-                            {request.notes && (
-                                <div className="sm:col-span-2">
-                                    <p className="text-sm font-medium text-muted-foreground">Notes</p>
-                                    <p className="mt-1 whitespace-pre-wrap text-sm">{request.notes}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                        }
+                    />
+                </div>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Items</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Product</TableHead>
-                                        <TableHead className="text-center">UOM</TableHead>
-                                        <TableHead className="text-right">Quantity</TableHead>
-                                        <TableHead className="text-right">Est. Price</TableHead>
-                                        <TableHead className="text-right">Est. Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {request.items.map((item) => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>
-                                                <div className="font-medium">{item.product.name}</div>
-                                                <div className="text-xs text-muted-foreground">{item.product.code}</div>
-                                            </TableCell>
-                                            <TableCell className="text-center">{item.product.uom?.name}</TableCell>
-                                            <TableCell className="text-right">{item.quantity}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(item.estimated_unit_price)}</TableCell>
-                                            <TableCell className="text-right font-medium">{formatCurrency(item.estimated_total)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                <DocumentFlow type="pr" id={request.id} />
 
-                    {/* Linked RFQs Section */}
-                    {request.rfqs && request.rfqs.length > 0 && (
+                <div className="grid gap-6 lg:grid-cols-3">
+                    <div className="lg:col-span-2 space-y-6">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Related RFQs</CardTitle>
+                                <CardTitle>Request Details</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Date</p>
+                                    <p className="mt-1">{new Date(request.date).toLocaleDateString()}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Required Date</p>
+                                    <p className="mt-1">{request.required_date ? new Date(request.required_date).toLocaleDateString() : '-'}</p>
+                                </div>
+                                {request.notes && (
+                                    <div className="sm:col-span-2">
+                                        <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                                        <p className="mt-1 whitespace-pre-wrap text-sm">{request.notes}</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Items</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>RFQ #</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Created At</TableHead>
+                                            <TableHead>Product</TableHead>
+                                            <TableHead className="text-center">UOM</TableHead>
+                                            <TableHead className="text-right">Quantity</TableHead>
+                                            <TableHead className="text-right">Est. Price</TableHead>
+                                            <TableHead className="text-right">Est. Total</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {request.rfqs.map((rfq) => (
-                                            <TableRow key={rfq.id}>
+                                        {request.items.map((item) => (
+                                            <TableRow key={item.id}>
                                                 <TableCell>
-                                                    <Link href={`/purchasing/rfqs/${rfq.id}`} className="hover:underline font-medium text-primary">
-                                                        {rfq.document_number}
-                                                    </Link>
+                                                    <div className="font-medium">{item.product.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{item.product.code}</div>
                                                 </TableCell>
-                                                <TableCell>
-                                                     <Badge variant="outline" className="capitalize">{rfq.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {new Date(rfq.created_at).toLocaleDateString()}
-                                                </TableCell>
+                                                <TableCell className="text-center">{item.product.uom?.name}</TableCell>
+                                                <TableCell className="text-right">{item.quantity}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(item.estimated_unit_price)}</TableCell>
+                                                <TableCell className="text-right font-medium">{formatCurrency(item.estimated_total)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
                             </CardContent>
                         </Card>
-                    )}
-                </div>
 
-                <div className="lg:col-span-1">
-                    {workflowInstance ? (
-                        <WorkflowTimeline workflowInstance={workflowInstance} />
-                    ) : (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Approval Workflow</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground space-y-2">
-                                    <div className="p-3 bg-muted rounded-full">
-                                        <Send className="h-4 w-4" />
+                        {/* Linked RFQs Section */}
+                        {request.rfqs && request.rfqs.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Related RFQs</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>RFQ #</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead className="text-right">Created At</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {request.rfqs.map((rfq) => (
+                                                <TableRow key={rfq.id}>
+                                                    <TableCell>
+                                                        <Link href={`/purchasing/rfqs/${rfq.id}`} className="hover:underline font-medium text-primary">
+                                                            {rfq.document_number}
+                                                        </Link>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline" className="capitalize">{rfq.status}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        {new Date(rfq.created_at).toLocaleDateString()}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    <div className="lg:col-span-1">
+                        {workflowInstance ? (
+                            <WorkflowTimeline workflowInstance={workflowInstance} />
+                        ) : (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Approval Workflow</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground space-y-2">
+                                        <div className="p-3 bg-muted rounded-full">
+                                            <Send className="h-4 w-4" />
+                                        </div>
+                                        <p className="text-sm font-medium">Not Started</p>
+                                        <p className="text-xs">
+                                            Submit this request to initiate the approval workflow.
+                                        </p>
                                     </div>
-                                    <p className="text-sm font-medium">Not Started</p>
-                                    <p className="text-xs">
-                                        Submit this request to initiate the approval workflow.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 </div>
             </div>
 

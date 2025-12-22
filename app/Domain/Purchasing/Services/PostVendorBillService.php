@@ -12,7 +12,7 @@ class PostVendorBillService
 {
     public function __construct(
         protected CreateJournalEntryService $createJournalEntryService,
-        protected ThreeWayMatchService $matchService
+        protected ThreeWayMatchingService $matchingService
     ) {}
 
     public function execute(VendorBill $bill): void
@@ -23,8 +23,7 @@ class PostVendorBillService
 
         DB::transaction(function () use ($bill) {
             // Run 3-Way Match
-            $matchResult = $this->matchService->match($bill);
-            $this->matchService->applyResult($bill, $matchResult);
+            $this->matchingService->performMatching($bill);
 
             $bill->update(['status' => 'posted']);
 

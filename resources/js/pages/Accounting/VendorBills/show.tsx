@@ -40,6 +40,7 @@ import {
 import { index, post, edit } from '@/routes/accounting/bills';
 import { create as createPayment } from '@/routes/accounting/vendor-payments';
 import MatchStatusBadge from './components/MatchStatusBadge';
+import DocumentFlow from '@/components/DocumentFlow';
 import { toast } from 'sonner';
 
 interface MatchException {
@@ -215,6 +216,8 @@ export default function Show({ bill }: Props) {
                         )}
                     </div>
                 </div>
+
+                <DocumentFlow type="bill" id={bill.id} />
 
                 {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

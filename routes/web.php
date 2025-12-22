@@ -263,6 +263,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pricelists/get-price', [\App\Http\Controllers\Purchasing\PricelistController::class, 'getPrice'])->name('pricelists.get-price');
         Route::resource('pricelists', \App\Http\Controllers\Purchasing\PricelistController::class);
 
+        // Document Flow Visualization
+        Route::get('/document-flow/{type}/{id}', [\App\Http\Controllers\Purchasing\DocumentFlowController::class, 'show'])->name('document-flow.show');
+
         // RFQs
         Route::resource('rfqs', \App\Http\Controllers\Purchasing\RfqController::class);
         Route::get('/reports/tax', \App\Http\Controllers\Accounting\TaxReportController::class)->name('reports.tax');
@@ -270,20 +273,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('rfqs/{rfq}/bid', [\App\Http\Controllers\Purchasing\RfqController::class, 'recordBid'])->name('rfqs.bid'); // Added bid route which was also implicitly needed
         Route::post('quotations/{quotation}/award', [\App\Http\Controllers\Purchasing\RfqController::class, 'award'])->name('quotations.award');
 
-        Route::get('/', function () {
-            return Inertia::render('Purchasing/Dashboard');
-        })->name('dashboard');
+        Route::get('/', [\App\Http\Controllers\Purchasing\StrategyController::class, 'index'])->name('dashboard');
 
         // Strategy & Analytics
-        Route::get('/analytics/spend', function () {
-            return Inertia::render('Purchasing/Analytics/Spend');
-        })->name('analytics.spend');
-        Route::get('/analytics/compliance', function () {
-            return Inertia::render('Purchasing/Analytics/Compliance');
-        })->name('analytics.compliance');
-        Route::get('/analytics/pr-monitor', function () {
-            return Inertia::render('Purchasing/Analytics/PrMonitor');
-        })->name('analytics.pr-monitor');
+        Route::get('/analytics/spend', [\App\Http\Controllers\Purchasing\StrategyController::class, 'spend'])->name('analytics.spend');
+        Route::get('/analytics/compliance', [\App\Http\Controllers\Purchasing\StrategyController::class, 'compliance'])->name('analytics.compliance');
+        Route::get('/analytics/pr-monitor', [\App\Http\Controllers\Purchasing\StrategyController::class, 'prMonitor'])->name('analytics.pr-monitor');
 
         // Sourcing & SRM
         // Note: /vendors index is handled by the resource route above
@@ -335,23 +330,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('claims/{claim}/settle', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'settle'])->name('claims.settle');
         Route::post('claims/{claim}/reject', [\App\Http\Controllers\Purchasing\VendorClaimController::class, 'reject'])->name('claims.reject');
 
-        Route::get('/debit-notes', function () {
-            return Inertia::render('Purchasing/returns/debit-notes');
-        })->name('debit-notes.index');
-        Route::get('/claims', function () {
-            return Inertia::render('Purchasing/returns/claims');
-        })->name('claims.index');
-
-        // Reporting
-        Route::get('/reports/variance', function () {
-            return Inertia::render('Purchasing/reports/variance');
-        })->name('reports.variance');
-        Route::get('/reports/aging', function () {
-            return Inertia::render('Purchasing/reports/aging');
-        })->name('reports.aging');
-        Route::get('/reports/history', function () {
-            return Inertia::render('Purchasing/reports/history');
-        })->name('reports.history');
+        // Strategic Reporting
+        Route::get('/reports/variance', [\App\Http\Controllers\Purchasing\ReportController::class, 'priceVariance'])->name('reports.variance');
+        Route::get('/reports/aging', [\App\Http\Controllers\Purchasing\ReportController::class, 'openPoAging'])->name('reports.aging');
+        Route::get('/reports/history', [\App\Http\Controllers\Purchasing\ReportController::class, 'historyAnalytics'])->name('reports.history');
 
         // Documentation
         Route::get('/documentation', function () {

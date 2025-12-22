@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
 import LandedCostPanel from './components/LandedCostPanel';
 import QcInspectionPanel from './components/QcInspectionPanel';
+import DocumentFlow from '@/components/DocumentFlow';
 
 interface Props {
     receipt: any;
@@ -84,6 +85,8 @@ export default function GoodsReceiptShow({ receipt, qc_summary }: Props) {
                     )}
                 </div>
             </PageHeader>
+
+            <DocumentFlow type="gr" id={receipt.id} />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="md:col-span-2 space-y-6">

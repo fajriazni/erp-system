@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/components/ui/page-header';
+import DocumentFlow from '@/components/DocumentFlow';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm, router } from '@inertiajs/react'; // Add router import
 import { Button } from '@/components/ui/button';
@@ -144,6 +145,8 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
                         </Link>
                     </Button>
                 </PageHeader>
+
+                <DocumentFlow type="rfq" id={rfq.id} />
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* LEFT COLUMN: Overview & Items */}
