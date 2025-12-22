@@ -340,13 +340,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Purchasing/Documentation/Index');
         })->name('documentation.index');
 
-        Route::get('/documentation/srm-guide', function () {
-            return Inertia::render('Purchasing/Documentation/SrmGuide');
-        })->name('documentation.srm-guide');
+        Route::get('/documentation/rfq-guide', function () {
+        return Inertia::render('Purchasing/Documentation/RfqGuide');
+    })->name('purchasing.documentation.rfq-guide');
 
-        Route::get('/documentation/ops-guide', function () {
-            return Inertia::render('Purchasing/Documentation/PurchasingOperationsGuide');
-        })->name('documentation.ops-guide');
+    Route::get('/documentation/returns-guide', function () {
+        return Inertia::render('Purchasing/Documentation/ReturnsClaimsGuide');
+    })->name('purchasing.documentation.returns-guide');
+
+    Route::get('/documentation/operations-guide', function () {
+        return Inertia::render('Purchasing/Documentation/PurchasingOperationsGuide');
+    })->name('purchasing.documentation.operations-guide');
+
+        Route::get('/documentation/contracts-guide', function () {
+            return Inertia::render('Purchasing/Documentation/ContractsGuide');
+        })->name('documentation.contracts-guide');
+
+        Route::get('/documentation/receiving-guide', function () {
+            return Inertia::render('Purchasing/Documentation/ReceivingGuide');
+        })->name('documentation.receiving-guide');
+
+        Route::get('/documentation/analytics-guide', function () {
+            return Inertia::render('Purchasing/Documentation/AnalyticsGuide');
+        })->name('documentation.analytics-guide');
+
+        Route::get('/documentation/rfq-guide', function () {
+            return Inertia::render('Purchasing/Documentation/RfqGuide');
+        })->name('documentation.rfq-guide');
     });
 
     Route::prefix('sales')->name('sales.')->group(function () {

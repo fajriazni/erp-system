@@ -24,9 +24,7 @@ class CheckBlanketOrderExpiryJob implements ShouldQueue
         // Expire BPOs where end_date is past and status is in a running state
         $expiredCount = BlanketOrder::whereIn('status', [
                 BlanketOrder::STATUS_OPEN, 
-                BlanketOrder::STATUS_PARTIALLY_DELIVERED,
-                BlanketOrder::STATUS_FULLY_DELIVERED,
-                BlanketOrder::STATUS_DEPLETED
+                BlanketOrder::STATUS_PARTIALLY_ORDERED,
             ])
             ->where('end_date', '<', now()->startOfDay())
             ->update(['status' => BlanketOrder::STATUS_EXPIRED]);

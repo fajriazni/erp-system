@@ -20,7 +20,7 @@ class TempResetSeeder extends Seeder
         BlanketOrderLine::truncate();
         PurchaseOrder::query()->update(['blanket_order_id' => null]);
         BlanketOrder::truncate();
-        PurchaseAgreementLine::truncate();
+        // PurchaseAgreementLine::truncate(); // Model does not exist
         PurchaseAgreement::truncate();
         Schema::enableForeignKeyConstraints();
 

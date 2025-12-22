@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
     Award, BookOpen, Calculator, FileCheck, FileSignature, 
-    BarChart, ShoppingCart, PackageCheck, Users, ArrowRight, Zap
+    BarChart, ShoppingCart, PackageCheck, Users, ArrowRight, Zap,
+    Undo2, Activity
 } from 'lucide-react';
 
 export default function DocumentationIndex() {
@@ -26,8 +27,8 @@ export default function DocumentationIndex() {
             description: 'Managing purchase agreements, blanket orders, and contract renewals',
             icon: FileSignature,
             url: '/purchasing/documentation/contracts-guide',
-            badge: 'Coming Soon',
-            badgeVariant: 'secondary' as const,
+            badge: 'Available',
+            badgeVariant: 'default' as const,
             topics: ['Purchase Agreements', 'Blanket Orders', 'Renewal Alerts', 'Contract Templates']
         },
         {
@@ -36,8 +37,8 @@ export default function DocumentationIndex() {
             description: 'Day-to-day purchasing workflows including requisitions and purchase orders',
             icon: ShoppingCart,
             url: '/purchasing/documentation/operations-guide',
-            badge: 'Coming Soon',
-            badgeVariant: 'secondary' as const,
+            badge: 'Available',
+            badgeVariant: 'default' as const,
             topics: ['Purchase Requisitions', 'Purchase Orders', 'Direct Purchasing', 'PO Revisions']
         },
         {
@@ -46,9 +47,19 @@ export default function DocumentationIndex() {
             description: 'Goods receipt processes, quality inspection, and landed cost allocation',
             icon: PackageCheck,
             url: '/purchasing/documentation/receiving-guide',
-            badge: 'Coming Soon',
-            badgeVariant: 'secondary' as const,
+            badge: 'Available',
+            badgeVariant: 'default' as const,
             topics: ['Goods Receipt (GR)', 'Three-Way Matching', 'Quality Inspection', 'Landed Costs']
+        },
+        {
+            id: 'returns',
+            title: 'Returns & Claims',
+            description: 'Handling RMAs, Debit Notes, and Vendor Claims',
+            icon: Undo2,
+            url: '/purchasing/documentation/returns-guide',
+            badge: 'Available',
+            badgeVariant: 'default' as const,
+            topics: ['Purchase Returns', 'Debit Notes', 'Vendor Claims', 'Disputes']
         },
         {
             id: 'analytics',
@@ -56,8 +67,8 @@ export default function DocumentationIndex() {
             description: 'Performance monitoring, spend analysis, and strategic reporting',
             icon: BarChart,
             url: '/purchasing/documentation/analytics-guide',
-            badge: 'Coming Soon',
-            badgeVariant: 'secondary' as const,
+            badge: 'Available',
+            badgeVariant: 'default' as const,
             topics: ['Spend Analysis', 'Price Variance', 'PO Aging Reports', 'History Analytics']
         },
         {
@@ -66,8 +77,8 @@ export default function DocumentationIndex() {
             description: 'Request for Quotation process and vendor quotation comparison',
             icon: Users,
             url: '/purchasing/documentation/rfq-guide',
-            badge: 'Coming Soon',
-            badgeVariant: 'secondary' as const,
+            badge: 'Available',
+            badgeVariant: 'default' as const,
             topics: ['Creating RFQs', 'Inviting Vendors', 'Quotation Comparison', 'Awarding Contracts']
         },
     ];
@@ -87,61 +98,12 @@ export default function DocumentationIndex() {
                             <BookOpen className="h-8 w-8 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Purchasing Documentation</h1>
-                            <p className="text-muted-foreground text-lg">
+                            <h1 className="text-xl font-bold tracking-tight">Purchasing Documentation</h1>
+                            <p className="text-muted-foreground text-sm">
                                 Comprehensive guides and resources for all Purchasing module features
                             </p>
                         </div>
                     </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-100 rounded">
-                                    <FileCheck className="h-5 w-5 text-green-600" />
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold">
-                                        {documentationItems.filter(d => d.badge === 'Available').length}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">Available Guides</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-100 rounded">
-                                    <Zap className="h-5 w-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold">
-                                        {documentationItems.filter(d => d.badge === 'Coming Soon').length}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">Coming Soon</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-purple-100 rounded">
-                                    <BookOpen className="h-5 w-5 text-purple-600" />
-                                </div>
-                                <div>
-                                    <div className="text-2xl font-bold">{documentationItems.length}</div>
-                                    <p className="text-sm text-muted-foreground">Total Topics</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
 
                 {/* Documentation Cards Grid */}

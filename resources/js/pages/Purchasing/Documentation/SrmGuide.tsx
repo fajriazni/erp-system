@@ -13,7 +13,7 @@ export default function UserGuide() {
     return (
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' },
-            { title: 'Documentation', href: '#' },
+            { title: 'Documentation', href: '/purchasing/documentation' },
             { title: 'SRM User Guide', href: '#' }
         ]}>
             <Head title="SRM User Guide - Sourcing & Supplier Relationship Management" />

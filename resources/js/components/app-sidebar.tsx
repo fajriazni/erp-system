@@ -214,18 +214,15 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Sourcing & SRM',
-            badge: 'Ready',
             items: [
                 { title: "Supplier Registry", url: "/purchasing/vendors", icon: Users },
                 { title: "Vendor Onboarding", url: "/purchasing/vendors/onboarding", icon: UserPlus },
                 { title: "Qualification & Audit", url: "/purchasing/vendors/audits", icon: FileCheck },
                 { title: "Supplier Scorecard", url: "/purchasing/vendors/scorecards", icon: Award },
-
             ]
         },
         {
             group: 'Contracts & Blanket Orders',
-            badge: 'OP',
             items: [
                 { title: "Purchase Agreements", url: "/purchasing/contracts", icon: FileSignature },
                 { title: "Blanket Orders", url: "/purchasing/blanket-orders", icon: Layers },
@@ -234,7 +231,6 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Purchasing Operations',
-            badge: 'Ready',
             items: [
                 { title: "Purchase Requisitions", url: "/purchasing/requests", icon: ClipboardList },
                 { title: "RFQ & Tenders", url: "/purchasing/rfqs", icon: Gavel },
@@ -245,7 +241,6 @@ const menuMap: Record<string, MenuGroup[]> = {
         },
         {
             group: 'Receiving & QC',
-            badge: 'Ready',
             items: [
                 { title: "Goods Receipt (GR)", url: "/purchasing/receipts", icon: PackageCheck },
                 { title: "Three-Way Match", icon: RefreshCcw, url: "/purchasing/matching" },
@@ -270,10 +265,9 @@ const menuMap: Record<string, MenuGroup[]> = {
             ]
         },
         {
-            group: 'Documentation',
+            group: 'Supports',
             items: [
-                { title: "Sourcing & SRM Guide", url: "/purchasing/documentation/srm-guide", icon: BookOpen },
-                { title: "Purchasing Ops Guide", url: "/purchasing/documentation/ops-guide", icon: ClipboardList },
+                { title: "User Guide", url: "/purchasing/documentation", icon: BookOpen },
             ]
         }
     ],
