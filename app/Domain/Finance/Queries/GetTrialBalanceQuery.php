@@ -36,7 +36,8 @@ class GetTrialBalanceQuery
             })
             ->groupBy('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_accounts.type')
             ->orderBy('chart_of_accounts.code')
-            ->setBindings([$asOfDate, $asOfDate]) // Bind date twice for the two SUMs
+            ->addBinding($asOfDate, 'select') // Bind for first CASE WHEN
+            ->addBinding($asOfDate, 'select') //  Bind for second CASE WHEN
             ->get()
             ->map(function ($account) {
                 return [

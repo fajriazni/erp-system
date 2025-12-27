@@ -2,8 +2,12 @@
 
 namespace App\Domain\Finance\Services;
 
+use App\Domain\Finance\Events\JournalEntryCreated;
+use App\Domain\Finance\ValueObjects\JournalEntryNumber;
+use App\Domain\Finance\ValueObjects\Money;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -14,28 +18,34 @@ class CreateJournalEntryService
      *
      * @param  array  $lines  Array of ['chart_of_account_id' => int, 'debit' => float, 'credit' => float]
      */
-    public function execute(string $date, string $referenceNumber, ?string $description, array $lines, string $currencyCode = 'USD', float $exchangeRate = 1.0): JournalEntry
-    {
-        return DB::transaction(function () use ($date, $referenceNumber, $description, $lines, $currencyCode, $exchangeRate) {
-            // Validate Balance (in base currency, but input might be foreign?)
-            // Assumption: 'debit' and 'credit' in $lines are already in BASE currency value for GL purposes?
-            // OR are they in foreign currency?
-            // Standard Practice: GL stores Base Currency.
-            // If the user inputs Foreign Currency, the Controller/Frontend should convert it OR we do it here.
-            // Let's assume $lines contain the BASE CURRENCY amounts.
-            // The currency_code and exchange_rate are just informational metadata for now on the Header.
-
-            $totalDebit = 0;
-            $totalCredit = 0;
-
-            foreach ($lines as $line) {
-                $totalDebit += $line['debit'] ?? 0;
-                $totalCredit += $line['credit'] ?? 0;
+    public function execute(
+        string $date,
+        ?string $referenceNumber,
+        ?string $description,
+        array $lines,
+        User $user,
+        string $currencyCode = 'USD',
+        float $exchangeRate = 1.0
+    ): JournalEntry {
+        return DB::transaction(function () use ($date, $referenceNumber, $description, $lines, $user, $currencyCode, $exchangeRate) {
+            // Generate reference number if not provided
+            if (! $referenceNumber) {
+                $referenceNumber = (string) JournalEntryNumber::generate();
             }
 
-            // Allow small floating point differences
-            if (abs($totalDebit - $totalCredit) > 0.01) {
-                throw new InvalidArgumentException("Journal Entry must be balanced. Debits: {$totalDebit}, Credits: {$totalCredit}");
+            // Validate balance using Money value object
+            $totalDebit = Money::zero($currencyCode);
+            $totalCredit = Money::zero($currencyCode);
+
+            foreach ($lines as $line) {
+                $totalDebit = $totalDebit->add(Money::from($line['debit'] ?? 0, $currencyCode));
+                $totalCredit = $totalCredit->add(Money::from($line['credit'] ?? 0, $currencyCode));
+            }
+
+            if (! $totalDebit->equals($totalCredit)) {
+                throw new InvalidArgumentException(
+                    "Journal Entry must be balanced. Debits: {$totalDebit->format()}, Credits: {$totalCredit->format()}"
+                );
             }
 
             // Create Header
@@ -55,10 +65,14 @@ class CreateJournalEntryService
                     'chart_of_account_id' => $line['chart_of_account_id'],
                     'debit' => $line['debit'] ?? 0,
                     'credit' => $line['credit'] ?? 0,
+                    'description' => $line['description'] ?? null,
                 ]);
             }
 
-            return $journalEntry;
+            // Dispatch event
+            event(new JournalEntryCreated($journalEntry->fresh(), $user));
+
+            return $journalEntry->fresh();
         });
     }
 }

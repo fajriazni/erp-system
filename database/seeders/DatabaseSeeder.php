@@ -31,6 +31,14 @@ class DatabaseSeeder extends Seeder
             PurchaseReturnWorkflowSeeder::class,
             VendorAuditWorkflowSeeder::class,
             VendorClaimWorkflowSeeder::class,
+
+            // Accounting seeders - Phase 1: Setup & Configuration
+            AccountingSeeder::class,            // Chart of Accounts
+            AccountingPeriodSeeder::class,      // Accounting Periods
+            PostingRuleSeeder::class,           // Posting Rules
+            JournalTemplateSeeder::class,       // Journal Templates
+            GLFeatureSeeder::class,             // Beginning Balance & Additional GL features
+            BeginningBalanceSeeder::class,      // Sample Beginning Balance
         ]);
 
         // User::factory(10)->create();

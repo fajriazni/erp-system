@@ -1,6 +1,7 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import * as COA from '@/actions/App/Http/Controllers/Accounting/ChartOfAccountController';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +15,9 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PageHeader } from '@/components/ui/page-header';
 
 interface Props {
     parents: any[];
@@ -22,18 +25,26 @@ interface Props {
 }
 
 export default function Create({ parents, types }: Props) {
+    // Detect parent_id from URL (for "Add Sub-account" quick action)
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialParentId = urlParams.get('parent_id') || '';
+    
+    // Find parent to pre-fill type
+    const parentAccount = parents.find(p => String(p.id) === initialParentId);
+    const initialType = parentAccount?.type || '';
+
     const { data, setData, post, processing, errors } = useForm({
         code: '',
         name: '',
-        type: '',
-        parent_id: '',
+        type: initialType,
+        parent_id: initialParentId,
         description: '',
         is_active: true,
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/accounting/coa');
+        post(COA.store.url());
     };
 
     return (
@@ -46,18 +57,27 @@ export default function Create({ parents, types }: Props) {
         >
             <Head title="Create Account" />
 
-            <div className="max-w-2xl mx-auto">
-                <div className="mb-6">
-                    <Button variant="ghost" asChild className="-ml-4">
-                        <Link href="/accounting/coa">
+            <div className="w-full">
+                <PageHeader
+                    title="New Account"
+                    description="Add a new account to your chart of accounts."
+                    className="mb-6"
+                >
+                    <Button variant="outline" asChild>
+                        <Link href={COA.index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                         </Link>
                     </Button>
-                    <h1 className="text-3xl font-bold tracking-tight mt-2">New Account</h1>
-                    <p className="text-muted-foreground">Add a new account to your chart of accounts.</p>
-                </div>
+                </PageHeader>
 
                 <form onSubmit={submit}>
+                    {(errors as any).error && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{(errors as any).error}</AlertDescription>
+                        </Alert>
+                    )}
                     <Card>
                         <CardHeader>
                             <CardTitle>Account Details</CardTitle>
@@ -111,7 +131,7 @@ export default function Create({ parents, types }: Props) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">-- No Parent --</SelectItem>
-                                        {parents.map(p => (
+                                        {Array.isArray(parents) && parents.map(p => (
                                             <SelectItem key={p.id} value={String(p.id)}>
                                                 {p.code} - {p.name}
                                             </SelectItem>
@@ -143,7 +163,7 @@ export default function Create({ parents, types }: Props) {
                         </CardContent>
                         <CardFooter className="flex justify-between border-t p-6 bg-muted/50">
                              <Button variant="outline" asChild>
-                                <Link href="/accounting/coa">Cancel</Link>
+                                <Link href={COA.index.url()}>Cancel</Link>
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 {processing ? 'Creating...' : 'Create Account'}

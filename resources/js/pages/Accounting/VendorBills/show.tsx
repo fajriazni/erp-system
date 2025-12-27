@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/ui/page-header';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -29,7 +30,6 @@ import {
     CheckCircle, 
     AlertTriangle, 
     FileText, 
-    Calendar, 
     Building2, 
     CreditCard,
     Printer,
@@ -95,7 +95,6 @@ interface Props {
             payment?: {
                 id: number;
                 payment_number: string;
-                date: string;
             };
         }[];
     };
@@ -130,7 +129,7 @@ export default function Show({ bill }: Props) {
             draft: { className: 'bg-gray-100 text-gray-800 border-gray-200', label: 'Draft', icon: <FileText className="w-3 h-3 mr-1" /> },
             posted: { className: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Posted', icon: <CheckCircle className="w-3 h-3 mr-1" /> },
             partial: { className: 'bg-orange-100 text-orange-800 border-orange-200', label: 'Partial', icon: <Wallet className="w-3 h-3 mr-1" /> },
-            paid: { className: 'bg-green-100 text-green-800 border-green-200 show-icon', label: 'Paid', icon: <CreditCard className="w-3 h-3 mr-1" /> },
+            paid: { className: 'bg-green-100 text-green-800 border-green-200', label: 'Paid', icon: <CreditCard className="w-3 h-3 mr-1" /> },
             cancelled: { className: 'bg-red-100 text-red-800 border-red-200', label: 'Cancelled', icon: <AlertTriangle className="w-3 h-3 mr-1" /> },
         };
         return variants[status] || { className: 'bg-gray-100', label: status, icon: null };
@@ -151,7 +150,7 @@ export default function Show({ bill }: Props) {
         });
     };
 
-    const statusInfo = getStatusInfo(bill.status);
+    const statusInfo = getStatusInfo(bill.status); // Determine status styles before return
 
     return (
         <AppLayout
@@ -164,15 +163,25 @@ export default function Show({ bill }: Props) {
             <Head title={`Bill ${bill.bill_number}`} />
 
             <div className="space-y-6">
-                {/* Header Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <Button variant="ghost" size="sm" asChild className="-ml-2 text-muted-foreground">
-                        <Link href={index.url()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-                        </Link>
-                    </Button>
+                <PageHeader 
+                    title={
+                        <div className="flex items-center gap-2">
+                            {bill.bill_number}
+                            <Badge variant="outline" className={statusInfo.className}>
+                                {statusInfo.icon}
+                                {statusInfo.label}
+                            </Badge>
+                        </div>
+                    }
+                    description={`Created on ${formatDate(bill.date)}`}
+                >
                     <div className="flex items-center gap-2">
-                         <Button variant="outline" size="sm" asChild>
+                        <Button variant="ghost" size="sm" asChild>
+                             <Link href={index.url()}>
+                                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+                             </Link>
+                         </Button>
+                        <Button variant="outline" size="sm" asChild>
                             <a href={`/accounting/bills/${bill.id}/print`} target="_blank" rel="noopener noreferrer">
                                 <Printer className="mr-2 h-4 w-4" /> Print
                             </a>
@@ -215,7 +224,7 @@ export default function Show({ bill }: Props) {
                             </Button>
                         )}
                     </div>
-                </div>
+                </PageHeader>
 
                 <DocumentFlow type="bill" id={bill.id} />
 
@@ -225,46 +234,23 @@ export default function Show({ bill }: Props) {
                     {/* Left Column: Main Bill Details */}
                     <div className="lg:col-span-2 space-y-6">
                         
-                        {/* Header Card */}
+                        {/* Summary Card */}
                         <Card className="border-l-4 border-l-primary">
-                            <CardHeader className="pb-4">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h1 className="text-2xl font-bold tracking-tight">{bill.bill_number}</h1>
-                                            <Badge variant="outline" className={statusInfo.className}>
-                                                {statusInfo.icon}
-                                                {statusInfo.label}
-                                            </Badge>
-                                        </div>
-                                        <CardDescription>
-                                            Created on {formatDate(bill.date)}
-                                        </CardDescription>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
-                                        <p className="text-3xl font-bold text-primary">{formatCurrency(bill.total_amount)}</p>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
+                            <CardContent className="pt-6">
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                                     <div>
                                         <p className="text-muted-foreground">Reference</p>
-                                        <p className="font-medium">{bill.reference_number || '-'}</p>
+                                        <p className="font-medium text-base">{bill.reference_number || '-'}</p>
                                     </div>
                                     <div>
                                         <p className="text-muted-foreground">Due Date</p>
-                                        <p className={`font-medium ${new Date(bill.due_date) < new Date() && bill.status !== 'paid' ? 'text-red-600' : ''}`}>
+                                        <p className={`font-medium text-base ${new Date(bill.due_date) < new Date() && bill.status !== 'paid' ? 'text-red-600' : ''}`}>
                                             {formatDate(bill.due_date)}
                                         </p>
                                     </div>
-                                    <div className="sm:col-span-2">
-                                        <p className="text-muted-foreground">Vendor</p>
-                                        <div className="font-medium flex items-center gap-2">
-                                            <Building2 className="w-3 h-3 text-muted-foreground" />
-                                            {bill.vendor?.name || 'Unknown Vendor'}
-                                        </div>
+                                    <div className="sm:col-span-2 text-right">
+                                        <p className="text-sm font-medium text-muted-foreground">Total Amount</p>
+                                        <p className="text-3xl font-bold text-primary">{formatCurrency(bill.total_amount)}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -414,16 +400,19 @@ export default function Show({ bill }: Props) {
                             </CardHeader>
                              <CardContent className="space-y-4 text-sm">
                                 <div>
-                                    <div className="font-medium">{bill.vendor?.name || 'Unknown Vendor'}</div>
-                                    <div className="text-muted-foreground">{bill.vendor?.address || '-'}</div>
+                                    <div className="font-medium flex items-center gap-2">
+                                        <Building2 className="w-4 h-4 text-muted-foreground" />
+                                        {bill.vendor?.name || 'Unknown Vendor'}
+                                    </div>
+                                    <div className="text-muted-foreground ml-6">{bill.vendor?.address || '-'}</div>
                                 </div>
                                 <Separator />
-                                <div className="grid gap-2">
-                                    <div className="flex justify-between">
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Email</span>
                                         <span className="font-medium">{bill.vendor?.email || '-'}</span>
                                     </div>
-                                    <div className="flex justify-between">
+                                    <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground">Phone</span>
                                         <span className="font-medium">{bill.vendor?.phone || '-'}</span>
                                     </div>

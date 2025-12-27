@@ -49,6 +49,7 @@ class UpdateJournalEntryService
                     'chart_of_account_id' => $line['chart_of_account_id'],
                     'debit' => $line['debit'] ?? 0,
                     'credit' => $line['credit'] ?? 0,
+                    'description' => $line['description'] ?? null,
                 ]);
             }
 

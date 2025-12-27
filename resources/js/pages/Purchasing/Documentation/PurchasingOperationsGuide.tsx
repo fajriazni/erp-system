@@ -13,7 +13,7 @@ export default function PurchasingOperationsGuide() {
     return (
         <AppLayout breadcrumbs={[
             { title: 'Purchasing', href: '/purchasing' },
-            { title: 'Documentation', href: '#' },
+            { title: 'Documentation', href: '/purchasing/documentation' },
             { title: 'Operations User Guide', href: '#' }
         ]}>
             <Head title="Purchasing Operations User Guide" />

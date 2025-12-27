@@ -3,23 +3,11 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChartOfAccount;
 use App\Models\JournalEntryLine;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class GlController extends Controller
 {
-    /**
-     * Account Hierarchy / Chart of Accounts View.
-     */
-    public function hierarchy()
-    {
-        return Inertia::render('Accounting/GL/Hierarchy', [
-            'accounts' => ChartOfAccount::orderBy('code')->get()->toTree(),
-        ]);
-    }
-
     /**
      * Audit Trail (All Journal Lines).
      */
@@ -38,7 +26,7 @@ class GlController extends Controller
     public function templates()
     {
         return Inertia::render('Accounting/GL/Templates', [
-             'templates' => [],
+            'templates' => [],
         ]);
     }
 }

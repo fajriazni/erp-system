@@ -32,7 +32,7 @@
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
-use App\Models\Rfq;
+use App\Models\PurchaseRfq;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Workflow;
@@ -42,6 +42,15 @@ use Database\Seeders\AccountingSeeder;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\seed;
 
+/**
+ * @property User $user
+ * @property User $approver
+ * @property Contact $vendor
+ * @property Contact $vendor2
+ * @property Warehouse $warehouse
+ * @property Product $product
+ * @property \App\Models\Uom $uom
+ */
 beforeEach(function () {
     seed(AccountingSeeder::class);
 
@@ -65,7 +74,7 @@ beforeEach(function () {
 
 it('completes RFQ workflow from creation to PO conversion', function () {
     // 1. Create RFQ via backend
-    $rfq = Rfq::create([
+    $rfq = PurchaseRfq::create([
         'document_number' => 'RFQ-WF-001',
         'title' => 'Office Supplies RFQ',
         'issue_date' => now(),
@@ -420,7 +429,7 @@ it('executes complete procurement cycle across all phases', function () {
      */
 
     // PHASE 1: RFQ & Vendor Selection
-    $rfq = Rfq::create([
+    $rfq = PurchaseRfq::create([
         'document_number' => 'RFQ-E2E-001',
         'title' => 'Complete E2E Test',
         'issue_date' => now(),

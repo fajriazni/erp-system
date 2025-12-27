@@ -285,8 +285,8 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'CRM (Customer Management)',
             items: [
-                { title: "Leads Management", url: "/sales/leads", icon: UserPlus, badge: 'Ready' },
-                { title: "Deals", url: "/sales/deals", icon: Target, badge: 'Ready' },
+                { title: "Leads Management", url: "/sales/leads", icon: UserPlus },
+                { title: "Deals", url: "/sales/deals", icon: Target },
                 { title: "Customer 360 View", url: "/sales/customers", icon: UserCircle },
                 { title: "Marketing Campaigns", url: "/sales/campaigns", icon: Megaphone },
                 { title: "Contact Management", url: "/sales/contacts", icon: Users },
@@ -295,10 +295,10 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'Sales Operations (CPQ)',
             items: [
-                { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText, badge: 'Ready' },
-                { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart, badge: 'Ready' },
+                { title: "Quotations (CPQ)", url: "/sales/quotations", icon: FileText },
+                { title: "Sales Orders (SO)", url: "/sales/orders", icon: ShoppingCart },
                 { title: "Contract Management", url: "/sales/contracts", icon: FileSignature },
-                { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags, badge: 'Ready' },
+                { title: "Master Price Lists", url: "/sales/price-lists", icon: Tags },
                 { title: "Upsell/Cross-sell", url: "/sales/suggestions", icon: Sparkles },
             ]
         },
@@ -336,117 +336,87 @@ const menuMap: Record<string, MenuGroup[]> = {
                 { title: "Executive Dashboard", url: "/accounting", icon: LayoutDashboard },
                 { title: "Financial Ratios", url: "/accounting/analytics/ratios", icon: BarChart },
                 { title: "P&L Analytics", url: "/accounting/analytics/pl", icon: FilePieChart },
-                { title: "Cash Flow Forecast", url: "/accounting/analytics/cashflow", icon: TrendingUp },
-                { title: "Budget vs Actual", url: "/accounting/analytics/budget", icon: Target },
             ]
         },
         {
             group: 'General Ledger',
             items: [
-                { title: "Chart of Accounts", url: "/accounting/coa", icon: ListTree, badge: 'Ready' },
-                { title: "Journal Entries", url: "/accounting/journal-entries", icon: FileText, badge: 'Ready' },
-                { title: "Journal Templates", url: "/accounting/templates", icon: ClipboardList, badge: 'Ready' },
-                { title: "Account Hierarchy", url: "/accounting/hierarchy", icon: Layers, badge: 'Ready' },
-                { title: "Audit Trail", url: "/accounting/audit", icon: History, badge: 'Ready' },
+                { title: "Chart of Accounts", url: "/accounting/coa", icon: ListTree },
+                { title: "Journal Entries", url: "/accounting/journal-entries", icon: FileText },
+                { title: "Journal Templates", url: "/accounting/templates", icon: ClipboardList },
+                { title: "Posting Rules", url: "/accounting/posting-rules", icon: Settings },
             ]
         },
         {
-            group: 'Accounts Receivable (AR)',
+            group: 'Financial Reports',
             items: [
-                { title: "Customer Invoices", url: "/accounting/ar/invoices", icon: Receipt, badge: 'Ready' },
-                { title: "Payment Matching", url: "/accounting/ar/matching", icon: CheckCircle2 },
-                { title: "AR Aging Report", url: "/accounting/ar/aging", icon: Hourglass },
-                { title: "Dunning Mgmt", url: "/accounting/ar/dunning", icon: Bell },
-                { title: "Credit Control", url: "/accounting/ar/credit", icon: ShieldCheck },
+                { title: "General Ledger", url: "/accounting/reports/general-ledger", icon: BookOpen },
+                { title: "Trial Balance", url: "/accounting/reports/trial-balance", icon: Scale },
+                { title: "Balance Sheet", url: "/accounting/reports/balance-sheet", icon: FileSpreadsheet },
+                { title: "Profit & Loss", url: "/accounting/reports/profit-loss", icon: TrendingUp },
+                { title: "Cash Flow Statement", url: "/accounting/reports/cash-flow", icon: ArrowRightLeft },
+                { title: "Tax Reports", url: "/accounting/tax/periods", icon: FileText },
             ]
         },
         {
-            group: 'Accounts Payable (AP)',
+            group: 'Closing & Period Management',
             items: [
-                { title: "Vendor Bills", url: "/accounting/ap/bills", icon: Receipt, badge: 'Ready' },
-                { title: "Payment Runs", url: "/accounting/ap/payments", icon: Banknote },
-                { title: "AP Aging Report", url: "/accounting/ap/aging", icon: Hourglass },
-                { title: "Debit Notes", url: "/accounting/ap/debit-notes", icon: Undo },
-            ]
-        },
-        {
-            group: 'Consolidation & Consol',
-            items: [
-                { title: "Inter-Company", url: "/accounting/consol/intercompany", icon: ArrowUpDown },
-                { title: "Financial Consolidation", url: "/accounting/consol/reports", icon: Gem },
-                { title: "Currency Revaluation", url: "/accounting/consol/revaluation", icon: RefreshCcw },
-            ]
-        },
-        {
-            group: 'Asset & Tax Mgmt',
-            items: [
-                { title: "Asset Depreciation", url: "/accounting/assets/depreciation", icon: Calculator },
-                { title: "Tax Management", url: "/accounting/tax", icon: Gavel },
-                { title: "Deferred Rev/Exp", url: "/accounting/deferred", icon: Timer },
-            ]
-        },
-        {
-            group: 'Bank & Cash',
-            items: [
-                { title: "Bank Sync", url: "/accounting/bank/sync", icon: Landmark },
-                { title: "Reconciliation", url: "/accounting/bank/reconciliation", icon: Scale },
-                { title: "Petty Cash", url: "/accounting/bank/petty-cash", icon: Wallet },
-            ]
-        },
-        {
-            group: 'Closing & Reporting',
-            items: [
-                { title: "Period End Closing", url: "/accounting/closing", icon: Lock },
-                { title: "Standard Reports", url: "/accounting/reports", icon: FileSpreadsheet },
-                { title: "Analytical Reports", url: "/accounting/reports/analytical", icon: PieChart },
-                { title: "Audit Export", url: "/accounting/audit/export", icon: HardDriveDownload },
+                { title: "Accounting Periods", url: "/accounting/periods", icon: Lock },
+                { title: "Beginning Balance", url: "/accounting/beginning-balance/create", icon: Calculator },
+                { title: "Deferred Revenue/Expense", url: "/accounting/deferred", icon: Timer },
+                { title: "Audit Trail", url: "/accounting/audit", icon: History },
             ]
         }
     ],
     '/finance': [
         {
-            group: 'Financial Strategy & Dashboard',
+            group: 'Strategic Dashboard',
             items: [
+                { title: "Financial Health", url: "/finance/dashboard", icon: LayoutDashboard },
                 { title: "Cash Flow Forecast", url: "/finance/forecast", icon: TrendingUp },
-                { title: "Liquidity Ratio", url: "/finance/ratios", icon: Activity },
+                { title: "Liquidity Ratios", url: "/finance/ratios", icon: Activity },
                 { title: "Spend Analysis", url: "/finance/spend", icon: PieChart },
-                { title: "Financial Health", url: "/finance/health", icon: ClipboardCheck },
             ]
         },
         {
-            group: 'Accounts Receivable (AR)',
+            group: 'Receivables (AR)',
             items: [
-                { title: "Customer Invoicing", url: "/finance/ar/invoices", icon: Receipt },
+                { title: "Customer Invoices", url: "/accounting/ar/invoices", icon: Receipt },
                 { title: "Payment Collection", url: "/finance/ar/collections", icon: HandCoins },
                 { title: "AR Aging Analysis", url: "/finance/ar/aging", icon: Hourglass },
                 { title: "Dunning Management", url: "/finance/ar/dunning", icon: Bell },
-                { title: "Credit Limit Mgmt", url: "/finance/ar/credit-limit", icon: ShieldAlert },
+                { title: "Credit Limit Management", url: "/finance/ar/credit-limit", icon: ShieldAlert },
+                { title: "Credit Notes (Returns)", url: "/accounting/notes?type=credit", icon: Undo2 },
             ]
         },
         {
-            group: 'Accounts Payable (AP)',
+            group: 'Payables (AP)',
             items: [
-                { title: "Vendor Bill Verification", url: "/finance/ap/verification", icon: FileCheck },
+                { title: "Vendor Bills", url: "/accounting/bills", icon: Receipt },
                 { title: "Payment Scheduling", url: "/finance/ap/scheduling", icon: CalendarDays },
+                { title: "Payment Runs", url: "/finance/ap/payment-runs", icon: Banknote },
                 { title: "AP Aging Analysis", url: "/finance/ap/aging", icon: Hourglass },
-                { title: "Debit Notes", url: "/finance/ap/debit-notes", icon: Undo2 },
+                { title: "Vendor Payment Verification", url: "/finance/ap/verification", icon: FileCheck },
+                { title: "Debit Notes (Returns)", url: "/accounting/notes?type=debit", icon: FileText },
             ]
         },
         {
-            group: 'Cash & Bank Management',
+            group: 'Cash & Treasury',
             items: [
+                { title: "Bank Accounts", url: "/finance/cash/accounts", icon: Landmark },
                 { title: "Bank Reconciliation", url: "/finance/cash/reconciliation", icon: Scale },
                 { title: "Petty Cash", url: "/finance/cash/petty-cash", icon: Wallet },
                 { title: "Fund Transfer", url: "/finance/cash/transfer", icon: ArrowRightLeft },
-                { title: "Multi-Currency Reval", url: "/finance/cash/revaluation", icon: RefreshCw },
+                { title: "Multi-Currency Management", url: "/finance/cash/currency", icon: RefreshCw },
             ]
         },
         {
-            group: 'Budgeting & Control',
+            group: 'Budgeting & Planning',
             items: [
                 { title: "Budget Planning", url: "/finance/budget/planning", icon: Target },
                 { title: "Budget Allocation", url: "/finance/budget/allocation", icon: PieChart },
-                { title: "Budget vs Actual", url: "/finance/budget/monitoring", icon: Activity },
+                { title: "Budget Monitoring", url: "/finance/budget/monitoring", icon: Activity },
+                { title: "Variance Analysis", url: "/finance/budget/variance", icon: BarChart },
             ]
         },
         {
@@ -455,14 +425,6 @@ const menuMap: Record<string, MenuGroup[]> = {
                 { title: "Employee Reimbursements", url: "/finance/expenses/reimbursements", icon: Receipt },
                 { title: "Travel Expenses", url: "/finance/expenses/travel", icon: Briefcase },
                 { title: "Corporate Cards", url: "/finance/expenses/cards", icon: CreditCard },
-            ]
-        },
-        {
-            group: 'Tax & Compliance',
-            items: [
-                { title: "VAT/PPN Tracking", url: "/finance/tax/vat", icon: Percent },
-                { title: "Withholding Tax (PPh)", url: "/finance/tax/withholding", icon: FileSpreadsheet },
-                { title: "Tax Reporting", url: "/finance/tax/reporting", icon: FileText },
             ]
         }
     ],
@@ -481,7 +443,7 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'Personnel Data',
             items: [
-                { title: "Employee Directory", url: "/hrm/employees", icon: UserCircle, badge: 'Ready' },
+                { title: "Employee Directory", url: "/hrm/employees", icon: UserCircle },
                 { title: "Contract Mgmt", url: "/hrm/contracts", icon: FileText },
                 { title: "Org Chart", url: "/hrm/org-chart", icon: Network },
                 { title: "Employee Assets", url: "/hrm/assets", icon: Package },
@@ -490,16 +452,16 @@ const menuMap: Record<string, MenuGroup[]> = {
         {
             group: 'Time & Attendance',
             items: [
-                { title: "Attendance Tracking", url: "/hrm/attendance", icon: Clock, badge: 'Ready' },
+                { title: "Attendance Tracking", url: "/hrm/attendance", icon: Clock },
                 { title: "Shift & Roster", url: "/hrm/shifts", icon: CalendarDays },
                 { title: "Overtime Mgmt", url: "/hrm/overtime", icon: Timer },
-                { title: "Leave & Time-off", url: "/hrm/leave", icon: Calendar, badge: 'Ready' },
+                { title: "Leave & Time-off", url: "/hrm/leave", icon: Calendar },
             ]
         },
         {
             group: 'Payroll & Benefits',
             items: [
-                { title: "Payroll Processing", url: "/hrm/payroll", icon: Receipt, badge: 'Ready' },
+                { title: "Payroll Processing", url: "/hrm/payroll", icon: Receipt },
                 { title: "Tax (PPh 21)", url: "/hrm/payroll/tax", icon: Gavel },
                 { title: "Social Security", url: "/hrm/payroll/bpjs", icon: Stethoscope },
                 { title: "Benefit & Loan", url: "/hrm/payroll/benefits", icon: HandCoins },

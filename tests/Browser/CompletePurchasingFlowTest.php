@@ -21,6 +21,13 @@ use Database\Seeders\AccountingSeeder;
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\seed;
 
+/**
+ * @property User $user
+ * @property Contact $vendor
+ * @property Warehouse $warehouse
+ * @property Product $product
+ * @property \App\Models\Uom $uom
+ */
 beforeEach(function () {
     // Seed chart of accounts
     seed(AccountingSeeder::class);

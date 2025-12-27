@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Accounting\PeriodController;
 use App\Http\Controllers\Purchasing\BlanketOrderController;
 use App\Http\Controllers\Purchasing\GoodsReceiptController;
 use App\Http\Controllers\Purchasing\PurchaseAgreementController;
@@ -120,7 +121,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // General Ledger
         Route::prefix('gl')->name('gl.')->group(function () {
-            Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+
             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
         });
@@ -268,8 +269,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // RFQs
         Route::resource('rfqs', \App\Http\Controllers\Purchasing\RfqController::class);
-        Route::get('/reports/tax', \App\Http\Controllers\Accounting\TaxReportController::class)->name('reports.tax');
-        Route::post('rfqs/{rfq}/invite', [\App\Http\Controllers\Purchasing\RfqController::class, 'invite'])->name('rfqs.invite');
+
         Route::post('rfqs/{rfq}/bid', [\App\Http\Controllers\Purchasing\RfqController::class, 'recordBid'])->name('rfqs.bid'); // Added bid route which was also implicitly needed
         Route::post('quotations/{quotation}/award', [\App\Http\Controllers\Purchasing\RfqController::class, 'award'])->name('quotations.award');
 
@@ -341,16 +341,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('documentation.index');
 
         Route::get('/documentation/rfq-guide', function () {
-        return Inertia::render('Purchasing/Documentation/RfqGuide');
-    })->name('purchasing.documentation.rfq-guide');
+            return Inertia::render('Purchasing/Documentation/RfqGuide');
+        })->name('purchasing.documentation.rfq-guide');
 
-    Route::get('/documentation/returns-guide', function () {
-        return Inertia::render('Purchasing/Documentation/ReturnsClaimsGuide');
-    })->name('purchasing.documentation.returns-guide');
+        Route::get('/documentation/returns-guide', function () {
+            return Inertia::render('Purchasing/Documentation/ReturnsClaimsGuide');
+        })->name('purchasing.documentation.returns-guide');
 
-    Route::get('/documentation/operations-guide', function () {
-        return Inertia::render('Purchasing/Documentation/PurchasingOperationsGuide');
-    })->name('purchasing.documentation.operations-guide');
+        Route::get('/documentation/operations-guide', function () {
+            return Inertia::render('Purchasing/Documentation/PurchasingOperationsGuide');
+        })->name('purchasing.documentation.operations-guide');
 
         Route::get('/documentation/contracts-guide', function () {
             return Inertia::render('Purchasing/Documentation/ContractsGuide');
@@ -457,17 +457,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('accounting')->name('accounting.')->group(function () {
-        Route::get('/', function () {
-            return Inertia::render('Accounting/Dashboard');
-        })->name('dashboard');
+        // Financial Intelligence (Phase 1)
+        Route::get('/', [\App\Http\Controllers\Accounting\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/analytics/ratios', [\App\Http\Controllers\Accounting\Analytics\RatioController::class, 'index'])->name('analytics.ratios');
+        Route::get('/analytics/pl', [\App\Http\Controllers\Accounting\Analytics\PLAnalyticsController::class, 'index'])->name('analytics.pl');
 
-        // Financial Intelligence
-        Route::get('/analytics/ratios', function () {
-            return Inertia::render('Accounting/Analytics/Ratios');
-        })->name('analytics.ratios');
-        Route::get('/analytics/pl', function () {
-            return Inertia::render('Accounting/Analytics/Pl');
-        })->name('analytics.pl');
+        // Legacy analytics routes (to be deprecated or reorganized)
         Route::get('/analytics/cashflow', function () {
             return Inertia::render('Accounting/Analytics/CashFlow');
         })->name('analytics.cashflow');
@@ -475,20 +470,74 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Accounting/Analytics/Budget');
         })->name('analytics.budget');
 
-        // General Ledger
-        Route::get('/coa', [\App\Http\Controllers\Accounting\ChartOfAccountController::class, 'index'])->name('coa.index');
+        // General Ledger (Phase 2)
+
+        Route::resource('coa', \App\Http\Controllers\Accounting\ChartOfAccountController::class);
         Route::resource('journal-entries', \App\Http\Controllers\Accounting\JournalEntryController::class);
 
+        // Journal Templates
+        Route::resource('templates', \App\Http\Controllers\Accounting\JournalTemplateController::class);
+        Route::resource('posting-rules', \App\Http\Controllers\Accounting\PostingRuleController::class);
+
+        // Opening Balances
+        Route::get('beginning-balance/create', [\App\Http\Controllers\Accounting\BeginningBalanceController::class, 'create'])->name('beginning-balance.create');
+        Route::post('beginning-balance', [\App\Http\Controllers\Accounting\BeginningBalanceController::class, 'store'])->name('beginning-balance.store');
+
+        // Credit/Debit Notes
+        Route::resource('notes', \App\Http\Controllers\Accounting\CreditDebitNoteController::class);
+        Route::post('/notes/{note}/post', [\App\Http\Controllers\Accounting\CreditDebitNoteController::class, 'post'])->name('notes.post');
+        Route::post('/notes/{note}/void', [\App\Http\Controllers\Accounting\CreditDebitNoteController::class, 'void'])->name('notes.void');
+        Route::get('/audit', function () {
+            // For now, return static data. In production, implement proper audit logging
+            return Inertia::render('Accounting/Audit/Index', [
+                'auditLogs' => [
+                    'data' => [],
+                    'links' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                ],
+                'filters' => request()->only(['search', 'action', 'date_from', 'date_to']),
+            ]);
+        })->name('audit.index');
+
+        // Closing & Reporting
+        Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
+        Route::post('/periods', [PeriodController::class, 'store'])->name('periods.store');
+        Route::patch('/periods/{period}', [PeriodController::class, 'update'])->name('periods.update');
+        Route::delete('/periods/{period}', [PeriodController::class, 'destroy'])->name('periods.destroy');
+        Route::post('/periods/{period}/lock', [PeriodController::class, 'lock'])->name('periods.lock');
+        Route::post('/periods/{period}/unlock', [PeriodController::class, 'unlock'])->name('periods.unlock');
+
         Route::prefix('gl')->name('gl.')->group(function () {
-            Route::get('/hierarchy', [\App\Http\Controllers\Accounting\GlController::class, 'hierarchy'])->name('hierarchy');
+
             Route::get('/audit', [\App\Http\Controllers\Accounting\GlController::class, 'audit'])->name('audit');
             Route::get('/templates', [\App\Http\Controllers\Accounting\GlController::class, 'templates'])->name('templates');
         });
 
+        // Financial Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/general-ledger', [\App\Http\Controllers\Accounting\Reports\GeneralLedgerController::class, 'index'])->name('general-ledger');
+            Route::get('/general-ledger/export', [\App\Http\Controllers\Accounting\Reports\GeneralLedgerController::class, 'export'])->name('general-ledger.export');
+
+            Route::get('/trial-balance', [\App\Http\Controllers\Accounting\Reports\TrialBalanceController::class, 'index'])->name('trial-balance');
+            Route::get('/trial-balance/export', [\App\Http\Controllers\Accounting\Reports\TrialBalanceController::class, 'export'])->name('trial-balance.export');
+
+            Route::get('/balance-sheet', [\App\Http\Controllers\Accounting\Reports\BalanceSheetController::class, 'index'])->name('balance-sheet');
+            Route::get('/balance-sheet/export', [\App\Http\Controllers\Accounting\Reports\BalanceSheetController::class, 'export'])->name('balance-sheet.export');
+
+            Route::get('/profit-loss', [\App\Http\Controllers\Accounting\Reports\ProfitLossController::class, 'index'])->name('profit-loss');
+            Route::get('/profit-loss/export', [\App\Http\Controllers\Accounting\Reports\ProfitLossController::class, 'export'])->name('profit-loss.export');
+
+            Route::get('/cash-flow', [\App\Http\Controllers\Accounting\Reports\CashFlowController::class, 'index'])->name('cash-flow');
+            Route::get('/cash-flow/export', [\App\Http\Controllers\Accounting\Reports\CashFlowController::class, 'export'])->name('cash-flow.export');
+        });
+
         // Accounts Receivable
-        Route::get('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'index'])->name('ar.invoices');
-        Route::get('/ar/invoices/create', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'create'])->name('ar.invoices.create');
-        Route::post('/ar/invoices', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'store'])->name('ar.invoices.store');
+        Route::post('/ar/invoices/{invoice}/post', [\App\Http\Controllers\Accounting\CustomerInvoiceController::class, 'post'])->name('ar.invoices.post');
+        Route::resource('/ar/invoices', \App\Http\Controllers\Accounting\CustomerInvoiceController::class, ['as' => 'ar']);
+
+        Route::post('/ar/payments/{payment}/post', [\App\Http\Controllers\Accounting\CustomerPaymentController::class, 'post'])->name('ar.payments.post');
+        Route::resource('/ar/payments', \App\Http\Controllers\Accounting\CustomerPaymentController::class, ['as' => 'ar']);
 
         Route::get('/ar/matching', function () {
             return Inertia::render('Accounting/Ar/Matching');
@@ -528,6 +577,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Accounting/Consol/Revaluation');
         })->name('consol.revaluation');
 
+        // Tax Reports (SPT Masa PPN)
+        Route::get('/tax/periods', [\App\Http\Controllers\Accounting\TaxReportController::class, 'index'])->name('tax.periods');
+        Route::get('/tax/periods/{period}', [\App\Http\Controllers\Accounting\TaxReportController::class, 'show'])->name('tax.periods.show');
+        Route::post('/tax/generate', [\App\Http\Controllers\Accounting\TaxReportController::class, 'generate'])->name('tax.generate');
+        Route::post('/tax/periods/{period}/submit', [\App\Http\Controllers\Accounting\TaxReportController::class, 'submit'])->name('tax.periods.submit');
+        Route::get('/tax/periods/{period}/export/{format}', [\App\Http\Controllers\Accounting\TaxReportController::class, 'export'])->name('tax.periods.export');
+
         // Asset & Tax
         Route::get('/assets/depreciation', function () {
             return Inertia::render('Accounting/Assets/Depreciation');
@@ -535,9 +591,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/tax', function () {
             return Inertia::render('Accounting/Tax/Index');
         })->name('tax.index');
-        Route::get('/deferred', function () {
-            return Inertia::render('Accounting/Deferred/Index');
-        })->name('deferred.index');
+        Route::get('/deferred', [\App\Http\Controllers\Accounting\DeferredScheduleController::class, 'index'])->name('deferred.index');
+        Route::get('/deferred/create', [\App\Http\Controllers\Accounting\DeferredScheduleController::class, 'create'])->name('deferred.create');
+        Route::post('/deferred', [\App\Http\Controllers\Accounting\DeferredScheduleController::class, 'store'])->name('deferred.store');
+        Route::get('/deferred/{schedule}', [\App\Http\Controllers\Accounting\DeferredScheduleController::class, 'show'])->name('deferred.show');
+        Route::post('/deferred/items/{item}/process', [\App\Http\Controllers\Accounting\DeferredScheduleController::class, 'processItem'])->name('deferred.process-item');
 
         // Bank & Cash
         Route::get('/bank/sync', function () {
@@ -551,9 +609,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         })->name('bank.petty-cash');
 
         // Closing & Reporting
+        // Period Management
+        Route::resource('periods', \App\Http\Controllers\Accounting\PeriodController::class)->only(['index', 'store']);
+        Route::post('periods/{period}/lock', [\App\Http\Controllers\Accounting\PeriodController::class, 'lock'])->name('periods.lock');
+        Route::post('periods/{period}/unlock', [\App\Http\Controllers\Accounting\PeriodController::class, 'unlock'])
+            ->name('periods.unlock');
+
         Route::get('/closing', function () {
             return Inertia::render('Accounting/Closing/Index');
         })->name('closing.index');
+
         Route::get('/reports', function () {
             return Inertia::render('Accounting/Reports/Index');
         })->name('reports.index');
@@ -574,11 +639,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('vendor-payments/vendor/{vendor}/bills', [\App\Http\Controllers\Accounting\VendorPaymentController::class, 'getUnpaidBills'])
             ->name('vendor-payments.get-unpaid-bills');
 
-        Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/trial-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'trialBalance'])->name('tb');
-            Route::get('/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitLoss'])->name('pl');
-            Route::get('/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('bs');
-        });
+
+        // OLD REPORT ROUTES - REPLACED by dedicated controllers in line 517-533
+        // Route::prefix('reports')->name('reports.')->group(function () {
+        //     Route::get('/trial-balance', [\App\Http\Controllers\Accounting\ReportController::class, 'trialBalance'])->name('tb');
+        //     Route::get('/profit-loss', [\App\Http\Controllers\Accounting\ReportController::class, 'profitLoss'])->name('pl');
+        //     Route::get('/balance-sheet', [\App\Http\Controllers\Accounting\ReportController::class, 'balanceSheet'])->name('bs');
+        // });
     });
 
     // Finance Module (Budgets, etc.)

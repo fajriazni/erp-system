@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-    title: string;
     description?: React.ReactNode;
     actions?: React.ReactNode;
 }
@@ -24,8 +23,12 @@ export function PageHeader({
                     </div>
                 )}
             </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
-            {children}
+            {(actions || children) && (
+                <div className="flex items-center gap-2">
+                    {actions}
+                    {children}
+                </div>
+            )}
         </div>
     );
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JournalEntryLine extends Model
 {
@@ -14,6 +15,7 @@ class JournalEntryLine extends Model
         'chart_of_account_id',
         'debit',
         'credit',
+        'description',
     ];
 
     protected $casts = [
@@ -21,13 +23,22 @@ class JournalEntryLine extends Model
         'credit' => 'decimal:2',
     ];
 
-    public function journalEntry()
+    public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
     }
 
-    public function chartOfAccount()
+    public function chartOfAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class);
+    }
+
+    /**
+     * Alias for chartOfAccount relationship
+     * For backward compatibility
+     */
+    public function account(): BelongsTo
+    {
+        return $this->chartOfAccount();
     }
 }

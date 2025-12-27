@@ -541,3 +541,310 @@ Fortify is a headless authentication backend that provides authentication routes
 - `Features::updatePasswords()` to let users change their passwords.
 - `Features::resetPasswords()` for password reset via email.
 </laravel-boost-guidelines>
+# Project Architecture Knowledge Base
+
+## 🏗️ Architectural Overview
+**Style**: Modular Monolith with Domain-Driven Design (DDD) principles.
+**Framework**: Laravel 12 (Backend) + Inertia.js / React (Frontend).
+**State**: Hybird of vertical slice modules and shared infrastructure.
+
+---
+
+## 🧩 Module Structure
+The application is organized into distinct business domains located in `app/Domain`.
+
+### 1. Core Modules (Business Logic)
+| UI Module | Backend Domain | Description |
+| :--- | :--- | :--- |
+| **Accounting** | `app/Domain/Finance` | General Ledger, COA, Journals |
+| **Finance** | `app/Domain/Finance` | Cash Management, AR/AP, Banking |
+| **Purchasing** | `app/Domain/Purchasing` | procurement, RFQs, POs, Vendors |
+| **Sales** | `app/Domain/Sales` | Orders, Invoices, Customers |
+| **Inventory** | `app/Domain/Inventory` | Stock, Warehouses (Assumed) |
+
+### 2. Operations & Assets
+| UI Module | Backend Domain | Description |
+| :--- | :--- | :--- |
+| **Assets** | `app/Domain/Assets` | Fixed Asset Management |
+| **Projects** | `app/Domain/` (TBD) | *Domain folder not yet verified* |
+| **Manufacturing** | `app/Domain/` (TBD) | *Domain folder not yet verified* |
+
+### 3. Support & Infrastructure
+| UI Module | Backend Domain | Description |
+| :--- | :--- | :--- |
+| **Workflows** | `app/Domain/Workflow` | Approval chains, BP automation |
+| **Approval** | `app/Domain/Approval` | Generic approval logic |
+
+### Directory Pattern
+Each module in `app/Domain` typically follows this structure:
+```text
+app/Domain/{DomainName}/
+├── Actions/        # Single-responsibility actions
+├── Contracts/      # Interfaces (Repositories, Services)
+├── DataTransferObjects/ # DTOs
+├── Enums/          # Domain-specific Enums
+├── Events/         # Domain Events
+├── Listeners/      # Event Listeners
+├── Models/         # (Optional) Domain-specific models if strictly separated
+├── Repositories/   # Repository Implementations
+├── Services/       # Domain Services (Business Logic)
+└── ValueObjects/   # Immutable value objects
+```
+
+---
+
+## 🛠️ Infrastructure & Application Layer
+
+### HTTP Layer (`app/Http`)
+- **Controllers**: Organized by Module (`app/Http/Controllers/{Module}`).
+- **Requests**: Form Requests for validation (`app/Http/Requests/{Module}`).
+- **Resources**: API Resources for JSON responses.
+- **Middleware**: Application-wide and route-specific middleware.
+
+### Database
+- **Migrations**: Standard Laravel migrations.
+- **Seeds**: Database seeders for initial state.
+- **Models**: Eloquent models located in `app/Models`.
+  - *Note*: Models are currently centralized in `app/Models`, but logically belong to domains.
+
+### Routing
+- **Web Routes**: `routes/web.php` (Main entry)
+- **Dedicated Routes**: `routes/accounting.php`, `routes/purchasing.php` (included in web.php)
+- **Wayfinder**: Used for type-safe route generation for frontend.
+
+---
+
+## 💻 Frontend Architecture
+
+### Stack
+- **Library**: React 19 + TypeScript
+- **Glue**: Inertia.js v2
+- **Styling**: Tailwind CSS v4 + Shadcn UI
+- **Build Tool**: Vite
+
+### Directory Structure (`resources/js`)
+```text
+resources/js/
+├── actions/        # Wayfinder generated route actions
+├── components/     # Reusable UI components (Shadcn)
+│   └── ui/         # Base UI primitives
+├── layouts/        # Page layouts (AppLayout, GuestLayout)
+├── pages/          # Inertia Pages (Map to Controllers)
+│   ├── Accounting/
+│   ├── Purchasing/
+│   └── ...
+├── types/          # TypeScript definitions
+└── utils/          # Helper functions
+```
+
+### Key Libraries
+- **Wayfinder**: For route handling (`@/actions/...`).
+- **Lucide React**: Icon set.
+- **TanStack Table**: (Likely used for DataTables).
+- **Zod**: (Likely used for schema validation if complex).
+
+---
+
+## 📏 Development Conventions
+
+### Domain-Driven Design (DDD) rules
+1.  **Services**: Encapsulate business logic. Controllers should be thin and delegate to Services.
+2.  **Repositories**: Abstract data access. Controllers inject Repository Interfaces.
+3.  **Events**: Use Domain Events for side effects and loose coupling (e.g., `ChartOfAccountCreated`).
+4.  **Value Objects**: Use for complex attributes (e.g., `Money`, `AccountCode`).
+
+### Code Style
+- **Formatting**: Laravel Pint (PHP), Prettier (JS/TS).
+- **Type Safety**:
+  - PHP: Strict types `declare(strict_types=1);`, Return type hints.
+  - TS: strict mode, interfaces for Props and Models.
+
+### Routing
+- **Backend**: Use `routes/{module}.php` for organization.
+- **Frontend**: **ALWAYS** use Wayfinder generated actions (`import * as Module from '@/actions/...'`). Avoid hardcoded strings.
+
+### Testing
+- **Framework**: Pest PHP v4.
+- **Types**:
+  - `Feature`: HTTP tests (Controllers, End-to-end flows).
+  - `Unit`: Domain logic tests (Services, Value Objects).
+  - `Browser`: **Pest 4 Browser Testing** (via `pestphp/pest-plugin-browser`).
+
+---
+
+## 🚀 Antigravity Integration Ideas
+*Insights for AI Agent interaction*
+1.  **Context Awareness**: When asked about "Accounting", refer to `app/Domain/Finance` and `app/Http/Controllers/Accounting`.
+2.  **Code Generation**:
+    - When creating a new feature, prompt for: Service, Controller, Request, Route, and Page.
+    - Always generate Wayfinder types after route changes (`php artisan wayfinder:generate`).
+3.  **Refactoring**: Look for "Fat Controllers" and suggest moving logic to Domain Services.
+
+
+# --- DETAILED DOMAIN KNOWLEDGE ITEMS ---
+
+# Knowledge Item: Purchasing Domain Architecture
+
+## 🎯 Domain Scope
+The Purchasing domain (`app/Domain/Purchasing`) handles the end-to-end procurement process, from sourcing and vendor management to purchase order fulfillment and receiving.
+
+---
+
+## 🏗️ Core Entities & Relationships
+1. **Vendor**: Central registry for suppliers.
+   - *Onboarding*: Specialized workflow for qualifying new vendors.
+2. **Purchase Requisition (PR)**: Internal requests for goods/services.
+3. **RFQ (Request for Quotation)**: Sourcing process to invite vendor bids.
+4. **Purchase Agreement (PA)**: Master contracts with vendors.
+5. **Blanket Order (BPO)**: Continuous orders with quota management.
+6. **Purchase Order (PO)**: The final commitment to buy.
+7. **Goods Receipt (GR)**: Verification of received items.
+
+---
+
+## 🔄 Blanket Order (BPO) Lifecycle
+BPOs are "living" contracts that are realized over time through "Call-offs".
+
+### Status Transitions:
+- **Drafting**: Initial creation.
+- **Approval**: Pending managerial sign-off.
+- **Call-offs (Active)**: Open for realization. POs are created against this BPO.
+- **Monitoring**: Active tracking of quotas.
+- **Fulfilled**: All quantities/amounts delivered.
+- **Depleted**: Quota exhausted but not necessarily fully delivered.
+- **Closed**: Manual or automatic termination of the agreement.
+
+### Quota Logic:
+- Each BPO has a `total_quota`.
+- `realized_amount` is updated whenever a related PO is `confirmed` or `received`.
+- Prevents over-ordering beyond the contract limit.
+
+---
+
+## 📑 RFQ & Tendering Process
+- **Draft**: Preparing requirements.
+- **Open**: Invitations sent to vendors.
+- **Comparison**: Analyzing bids side-by-side.
+- **Awarded**: Vendor(s) selected; transitions to PO or Agreement.
+
+---
+
+## 📏 Business Rules
+1. **Three-Way Match**: Verification between PO, Goods Receipt, and Vendor Invoice before payment.
+2. **Vendor Qualification**: Vendors must pass onboarding/audits before they can be invited to RFQs.
+3. **Approval Chains**: Transactions above certain thresholds require multi-level approval via the `Workflow` domain.
+
+---
+
+## 🛠️ Technical Implementation
+- **Services**: All creation/status transitions are handled in `app/Domain/Purchasing/Services`.
+- **Events**: Dispatches events like `BlanketOrderFulfilled` to trigger downstream notifications or status updates.
+- **Value Objects**: Uses `Money` and `Quantity` for precise calculations.
+
+
+---
+
+# Knowledge Item: Finance & Accounting Domain Architecture
+
+## 🎯 Domain Scope
+The Finance domain (`app/Domain/Finance`) manages the financial integrity of the ERP system, centered around a Double-Entry Bookkeeping system and the General Ledger.
+
+---
+
+## 🏗️ Core Entities
+1. **Chart of Accounts (COA)**: The backbone of the system.
+   - *Hierarchy*: Supports parent-child relationships (e.g., "Cash" parent of "Petty Cash").
+   - *Types*: Asset, Liability, Equity, Revenue, Expense.
+2. **Journal Entry**: Individual accounting transactions.
+3. **Journal Entry Line**: The specific debits and credits within an entry.
+4. **Financial Period**: Defines open/closed periods for accounting.
+
+---
+
+## ⚖️ Double-Entry Principles
+The system strictly enforces the accounting equation: `Assets = Liabilities + Equity`.
+
+### Validation Rules:
+- **Balanced Check**: A Journal Entry must have `Total Debits = Total Credits`.
+- **Status Control**: Only `posted` entries affect account balances. `draft` entries are for preparation.
+- **Integrity**: Deleting an account is forbidden if it has transactions (Journal Entry Lines).
+
+---
+
+## 🌳 COA Hierarchy & Roll-up
+- Balances are often viewed at the "Summary" level.
+- **Leaf Accounts**: Accounts without children where transactions are actually posted.
+- **Group Accounts**: Summary accounts that aggregate balances from their children for reporting.
+
+---
+
+## 🔄 Journal Entry Lifecycle
+1. **Draft**: Entry is being prepared.
+2. **Review**: (Optional) Pending approval if threshold met.
+3. **Posted**: Transaction is finalized and reflected in the Ledger.
+4. **Reversed**: To correct errors, a new reversing entry is created; the original remains for audit.
+
+---
+
+## 📊 Reporting Architecture
+Reports are generated by querying `journal_entry_lines` and grouping by `chart_of_account_id`.
+- **Trial Balance**: Sum of debits and credits for all accounts.
+- **Balance Sheet**: Snapshot of Assets, Liabilities, and Equity.
+- **Profit & Loss**: Aggregate of Revenue and Expenses over a period.
+
+---
+
+## 📏 Development Guidelines
+1. **Immutability**: Once a Journal Entry is `posted`, it cannot be modified. It must be reversed.
+2. **Strict Typing**: Use the `AccountCode` value object to ensure consistent COA formatting (e.g., `1110-001`).
+3. **Lazy Loading**: Avoid N+1 issues by eager-loading `children` and `parent` for COA tree views.
+
+
+---
+
+# Knowledge Item: Workflow & Approvals Architecture
+
+## 🎯 Domain Scope
+The Workflow domain (`app/Domain/Workflow`) provides a generic framework for automating business processes and approval chains across all ERP modules.
+
+---
+
+## 🏗️ Core Entities
+1. **Workflow**: The master definition for a process (e.g., "Purchase Order Approval").
+2. **WorkflowStep**: A single level in the approval chain.
+   - *Approvers*: Can be specific users, roles, or dynamic roles (e.g., "Department Head").
+3. **WorkflowCondition**: Logical rules that determine if a step is triggered (e.g., "Amount > $10,000").
+4. **WorkflowInstance**: The actual execution of a workflow for a specific record.
+5. **WorkflowLog**: The audit trail of approvals, rejections, and comments.
+
+---
+
+## 🔄 Lifecycle of an Approval
+1. **Trigger**: A transaction (e.g., PO) is "Submitted for Review".
+2. **Initialization**: The system finds the matching Workflow definition and creates a `WorkflowInstance`.
+3. **Queueing**: The current `WorkflowStep` is identified, and notifications are sent to approvers.
+4. **Action**: 
+   - **Approve**: Move to the next step.
+   - **Reject**: Transition the transaction to `rejected` status.
+   - **Request Changes**: Move back to `draft`.
+5. **Completion**: All steps approved; transaction transitions to `confirmed` or `open`.
+
+---
+
+## 📏 Business Rules
+1. **Sequential vs Parallel**: Steps can be configured to require one or all approvers to sign off.
+2. **Dynamic Conditions**: Supports complex logic like multi-currency conversion for threshold checks.
+3. **Delegation**: Approvers can delegate their authority to others during leave (Assumed/Future).
+
+---
+
+## 🛠️ Integration Pattern
+Transacting models (like `PurchaseOrder`) use a trait or contract to link with `WorkflowInstance`.
+- The `WorkflowService` acts as the orchestrator.
+- Dispatches `WorkflowStepApproved` events to update original model statuses.
+
+---
+
+## 💻 Frontend Builder
+- **ConditionBuilder**: Specialized component in `resources/js/pages/Workflow` for visual logic construction.
+- **WorkflowPreview**: Visualization of the approval flow (Sequential/Branching).

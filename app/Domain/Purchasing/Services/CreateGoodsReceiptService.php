@@ -14,7 +14,8 @@ class CreateGoodsReceiptService
 {
     public function __construct(
         protected CreateJournalEntryService $createJournalEntryService,
-        protected CalculateMovingAverageService $calculateMovingAverageService
+        protected CalculateMovingAverageService $calculateMovingAverageService,
+        protected \App\Domain\Finance\Services\PostStockMoveService $postStockMoveService
     ) {}
 
     public function execute(array $data): GoodsReceipt
@@ -150,7 +151,7 @@ class CreateGoodsReceiptService
             }
 
             // 3. Post Journal Entry (Inventory vs Unbilled Payables)
-            $inventoryAccount = \App\Models\ChartOfAccount::where('code', '1400')->first();
+            $inventoryAccount = \App\Models\ChartOfAccount::where('code', '1130')->first();
             $clearingAccount = \App\Models\ChartOfAccount::where('code', '2110')->first();
 
             if ($inventoryAccount && $clearingAccount && $totalReceiptValue > 0) {
@@ -171,7 +172,8 @@ class CreateGoodsReceiptService
                     \Carbon\Carbon::parse($receipt->date)->format('Y-m-d'),
                     $receipt->receipt_number,
                     "Goods Receipt #{$receipt->receipt_number} - PO #{$purchaseOrder->document_number}",
-                    $lines
+                    $lines,
+                    auth()->user()
                 );
             }
 
@@ -181,7 +183,11 @@ class CreateGoodsReceiptService
             // 5. Record Vendor Delivery Performance
             app(VendorScorecardService::class)->recordDeliveryPerformance($purchaseOrder, $receipt);
 
-            // 6. Dispatch Events
+            // 6. Post stock moves to accounting
+            // Note: Stock moves are created separately (not shown in this service)
+            // This is a placeholder - actual integration depends on stock move creation flow
+
+            // 7. Dispatch Events
             event(new \App\Domain\Purchasing\Events\GoodsReceiptStatusChanged($receipt, $oldStatus, 'posted'));
             event(new \App\Domain\Purchasing\Events\GoodsReceiptPosted($receipt));
         });

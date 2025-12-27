@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Accounting;
 
-use App\Domain\Finance\Services\CreateJournalEntryService;
-use App\Domain\Finance\Services\UpdateJournalEntryService;
 use App\Http\Controllers\Controller;
 use App\Models\JournalEntry;
 use Illuminate\Http\Request;
@@ -12,16 +10,31 @@ use Inertia\Inertia;
 class JournalEntryController extends Controller
 {
     public function __construct(
-        protected CreateJournalEntryService $createService,
-        protected UpdateJournalEntryService $updateService
+        protected \App\Application\Commands\CreateJournalEntryService $createService,
+        protected \App\Application\Commands\UpdateJournalEntryService $updateService,
+        protected \App\Domain\Accounting\Repositories\JournalEntryRepositoryInterface $journalRepository
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
+        $query = JournalEntry::withCount('lines')
+            ->when($request->input('filter.global'), function ($q, $search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('reference_number', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->input('filter.status'), function ($q, $status) {
+                $q->where('status', $status);
+            })
+            ->latest('date');
+
         return Inertia::render('Accounting/JournalEntries/Index', [
-            'entries' => JournalEntry::withCount('lines')
-                ->latest('date')
-                ->paginate(15),
+            'entries' => $query->paginate($request->input('per_page', 15))->withQueryString(),
+            'filters' => $request->only(['filter', 'per_page']),
+            'filterOptions' => [
+                'statuses' => ['draft', 'posted'],
+            ],
         ]);
     }
 
@@ -34,8 +47,27 @@ class JournalEntryController extends Controller
                 ->map(function ($account) {
                     return [
                         'id' => $account->id,
-                        'name' => $account->code.' - '.$account->name,
+                        'code' => $account->code,
+                        'name' => $account->name,
                         'type' => $account->type,
+                    ];
+                }),
+            'journalTemplates' => \App\Models\JournalTemplate::with('lines')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->map(function ($template) {
+                    return [
+                        'id' => $template->id,
+                        'name' => $template->name,
+                        'description' => $template->description,
+                        'lines' => $template->lines->map(function ($line) {
+                            return [
+                                'chart_of_account_id' => $line->chart_of_account_id,
+                                'debit_credit' => $line->debit_credit,
+                                'description' => $line->description,
+                            ];
+                        }),
                     ];
                 }),
         ]);
@@ -52,26 +84,36 @@ class JournalEntryController extends Controller
             'lines.*.chart_of_account_id' => 'required|exists:chart_of_accounts,id',
             'lines.*.debit' => 'required|numeric|min:0',
             'lines.*.credit' => 'required|numeric|min:0',
+            'lines.*.description' => 'nullable|string',
         ]);
 
-        // Generate a temporary reference or let the service handle it (if updated)
-        // For now, let's generate it here or pass a placeholder if service requires it
-        // The service signature is: execute(string $date, string $referenceNumber, ?string $description, array $lines)
+        // Map lines to the format expected by the new service
+        $lines = array_map(function ($line) use ($validated) {
+            $amount = $line['debit'] > 0 ? $line['debit'] : $line['credit'];
+            $type = $line['debit'] > 0 ? 'debit' : 'credit';
 
-        // We really should move generation to service, but for now let's do it here to match existing service signature
-        $referenceNumber = 'JE-'.date('Ym', strtotime($validated['date'])).'-'.uniqid();
+            return [
+                'account_id' => $line['chart_of_account_id'],
+                'amount' => (float) $amount,
+                'type' => $type,
+                'description' => $line['description'] ?? null,
+                'currency' => $validated['currency_code'],
+            ];
+        }, $validated['lines']);
 
-        $this->createService->execute(
-            $validated['date'],
-            $referenceNumber, // Service requires this
-            $validated['description'],
-            $validated['lines'],
-            $validated['currency_code'] ?? 'USD',
-            $validated['exchange_rate'] ?? 1.0,
-        );
+        try {
+            $this->createService->execute(
+                $validated['date'],
+                $validated['description'] ?? '',
+                $lines,
+                $validated['currency_code']
+            );
 
-        return redirect()->route('accounting.journal-entries.index')
-            ->with('success', 'Journal Entry created successfully.');
+            return redirect()->route('accounting.journal-entries.index')
+                ->with('success', 'Journal Entry created successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
     public function show(JournalEntry $journalEntry)
@@ -100,14 +142,15 @@ class JournalEntryController extends Controller
                 ->map(function ($account) {
                     return [
                         'id' => $account->id,
-                        'name' => $account->code.' - '.$account->name,
+                        'code' => $account->code,
+                        'name' => $account->name,
                         'type' => $account->type,
                     ];
                 }),
         ]);
     }
 
-    public function update(Request $request, JournalEntry $journalEntry)
+    public function update(Request $request, int $id)
     {
         $validated = $request->validate([
             'date' => 'required|date',
@@ -118,18 +161,35 @@ class JournalEntryController extends Controller
             'lines.*.chart_of_account_id' => 'required|exists:chart_of_accounts,id',
             'lines.*.debit' => 'required|numeric|min:0',
             'lines.*.credit' => 'required|numeric|min:0',
+            'lines.*.description' => 'nullable|string',
         ]);
 
-        $this->updateService->execute(
-            $journalEntry,
-            $validated['date'],
-            $validated['description'],
-            $validated['lines'],
-            $validated['currency_code'] ?? 'USD',
-            $validated['exchange_rate'] ?? 1.0,
-        );
+        // Map lines to the format expected by the new service
+        $lines = array_map(function ($line) {
+            $amount = $line['debit'] > 0 ? $line['debit'] : $line['credit'];
+            $type = $line['debit'] > 0 ? 'debit' : 'credit';
 
-        return redirect()->route('accounting.journal-entries.index')
-            ->with('success', 'Journal Entry updated successfully.');
+            return [
+                'account_id' => $line['chart_of_account_id'],
+                'amount' => (float) $amount,
+                'type' => $type,
+                'description' => $line['description'] ?? null,
+            ];
+        }, $validated['lines']);
+
+        try {
+            $this->updateService->execute(
+                $id,
+                $validated['date'],
+                $validated['description'] ?? '',
+                $lines,
+                $validated['currency_code']
+            );
+
+            return redirect()->route('accounting.journal-entries.index')
+                ->with('success', 'Journal Entry updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 }

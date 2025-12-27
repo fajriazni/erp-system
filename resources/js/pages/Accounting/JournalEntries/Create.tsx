@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Trash2, Plus, ArrowLeft, Save } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Trash2, Plus, ArrowLeft, Save, AlertCircle, CheckCircle2, Info } from "lucide-react"
 import {
     Command,
     CommandEmpty,
@@ -23,36 +24,61 @@ import {
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { PageHeader } from "@/components/ui/page-header"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface JournalEntryLine {
     id?: number
     chart_of_account_id: string
-    debit: number
-    credit: number
+    debit: string | number
+    credit: string | number
+    description?: string
 }
 
 interface ChartOfAccount {
     id: number
     name: string
+    code: string
+    description?: string
+}
+
+interface JournalTemplate {
+    id: number
+    name: string
+    description: string
+    lines: {
+        chart_of_account_id: number
+        debit_credit: 'debit' | 'credit'
+        description: string | null
+    }[]
+}
+
+interface ChartOfAccount {
+    id: number
+    name: string
+    code: string
     type: string
 }
 
-export default function Create({ chartOfAccounts }: { chartOfAccounts: ChartOfAccount[] }) {
+export default function Create({ chartOfAccounts, journalTemplates = [] }: { chartOfAccounts: ChartOfAccount[], journalTemplates?: JournalTemplate[] }) {
     const { data, setData, post, processing, errors } = useForm({
         date: new Date().toISOString().split('T')[0],
         description: '',
         currency_code: 'USD',
         exchange_rate: 1.0,
         lines: [
-            { chart_of_account_id: '', debit: 0, credit: 0 },
-            { chart_of_account_id: '', debit: 0, credit: 0 },
+            { chart_of_account_id: '', debit: 0, credit: 0, description: '' },
+            { chart_of_account_id: '', debit: 0, credit: 0, description: '' },
         ] as JournalEntryLine[],
     })
+
+    const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null)
 
     const addLine = () => {
         setData('lines', [
             ...data.lines,
-            { chart_of_account_id: '', debit: 0, credit: 0 },
+            { chart_of_account_id: '', debit: 0, credit: 0, description: '' },
         ])
     }
 
@@ -74,10 +100,37 @@ export default function Create({ chartOfAccounts }: { chartOfAccounts: ChartOfAc
 
     const totalDebit = data.lines.reduce((sum, line) => sum + Number(line.debit || 0), 0)
     const totalCredit = data.lines.reduce((sum, line) => sum + Number(line.credit || 0), 0)
-    const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01
+    const difference = Math.abs(totalDebit - totalCredit)
+    const isBalanced = difference < 0.01 && (totalDebit > 0 || totalCredit > 0)
+
+    const handleLoadTemplate = (templateId: string) => {
+        const template = journalTemplates?.find(t => String(t.id) === templateId)
+        if (!template) return
+
+        const newLines = template.lines.map(line => ({
+            chart_of_account_id: String(line.chart_of_account_id),
+            debit: 0,
+            credit: 0,
+            description: line.description || '',
+            // We could logic here to set debit/credit based on line.debit_credit later if we had amounts
+        }))
+        
+        setData(data => ({
+            ...data,
+            description: template.description || data.description,
+            lines: newLines
+        }))
+        
+        setSelectedTemplateName(template.name)
+        toast.success(`Template "${template.name}" loaded. Please enter amounts.`)
+    }
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault()
+        if (totalDebit === 0 && totalCredit === 0) {
+            toast.error("Journal Entry cannot be empty.")
+            return
+        }
         if (!isBalanced) {
             toast.error("Journal Entry is not balanced.")
             return
@@ -90,180 +143,222 @@ export default function Create({ chartOfAccounts }: { chartOfAccounts: ChartOfAc
             breadcrumbs={[
                 { title: "Accounting", href: "/accounting" },
                 { title: "Journal Entries", href: "/accounting/journal-entries" },
-                { title: "Create", href: "/accounting/journal-entries/create" },
+                { title: "Create", href: "#" },
             ]}
         >
             <Head title="Create Journal Entry" />
 
-            <form onSubmit={submit} className="space-y-6 max-w-5xl mx-auto">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight">New Journal Entry</h2>
-                        <p className="text-muted-foreground">
-                            Create a new manual journal entry.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href="/accounting/journal-entries">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Cancel
-                            </Link>
-                        </Button>
-                        <Button type="submit" disabled={processing}>
-                            <Save className="mr-2 h-4 w-4" />
-                            Save Draft
-                        </Button>
-                    </div>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Details</CardTitle>
-                        <CardDescription>
-                            General information about the transaction.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
-                            <Input
-                                id="date"
-                                type="date"
-                                value={data.date}
-                                onChange={e => setData('date', e.target.value)}
-                                required
+            <div className="flex flex-1 flex-col gap-6 pt-0">
+                <form onSubmit={submit} className="space-y-6">
+                    <PageHeader
+                        title="New Journal Entry"
+                        description="Record manual financial transactions with multiple lines."
+                        className="mb-8"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" asChild size="sm">
+                                <Link href="/accounting/journal-entries">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Back to List
+                                </Link>
+                            </Button>
+                            {journalTemplates && journalTemplates.length > 0 && (
+                                <TemplateSelect 
+                                templates={journalTemplates} 
+                                onSelect={handleLoadTemplate} 
+                                value={selectedTemplateName}
                             />
-                            {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+                            )}
+                            <Button type="submit" disabled={processing} size="sm">
+                                <Save className="mr-2 h-4 w-4" />
+                                Save Entry
+                            </Button>
                         </div>
-                        <div className="space-y-2">
-                             <Label htmlFor="currency_code">Currency</Label>
-                             <div className="flex space-x-2">
+                    </PageHeader>
+
+                    {Object.keys(errors).length > 0 && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>
+                                Please check the form for errors. Ensure all lines have an account and are balanced.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <Card className="shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-base">General Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-6 md:grid-cols-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="date" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Posting Date</Label>
+                                <Input
+                                    id="date"
+                                    type="date"
+                                    value={data.date}
+                                    onChange={e => setData('date', e.target.value)}
+                                    required
+                                    className=""
+                                />
+                                {errors.date && <p className="text-xs text-destructive">{errors.date}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="currency_code" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Currency</Label>
                                 <Input
                                     id="currency_code"
                                     value={data.currency_code}
                                     onChange={e => setData('currency_code', e.target.value.toUpperCase())}
                                     placeholder="USD"
                                     maxLength={3}
-                                    className="w-24"
+                                    className="uppercase font-mono"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="exchange_rate" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rate</Label>
                                 <Input
+                                    id="exchange_rate"
                                     type="number"
                                     step="0.000001"
                                     value={data.exchange_rate}
                                     onChange={e => setData('exchange_rate', parseFloat(e.target.value) || 0)}
-                                    placeholder="Rate"
-                                    className="flex-1"
+                                    className="font-mono"
                                 />
-                             </div>
-                             {errors.currency_code && <p className="text-sm text-red-500">{errors.currency_code}</p>}
-                             {errors.exchange_rate && <p className="text-sm text-red-500">{errors.exchange_rate}</p>}
-                        </div>
-                        <div className="space-y-2 md:col-span-2">
-                            <Label htmlFor="description">Description (Optional)</Label>
-                            <Input
-                                id="description"
-                                value={data.description}
-                                onChange={e => setData('description', e.target.value)}
-                                placeholder="e.g. Monthly Accrual"
-                            />
-                            {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="space-y-1">
-                            <CardTitle>Journal Lines</CardTitle>
-                            <CardDescription>
-                                Add debit and credit lines.
-                            </CardDescription>
-                        </div>
-                        <Button type="button" variant="outline" size="sm" onClick={addLine}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Line
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="rounded-md border">
-                            <div className="grid grid-cols-12 gap-4 p-4 text-sm font-medium text-muted-foreground bg-muted/50 border-b">
-                                <div className="col-span-6">Account</div>
-                                <div className="col-span-2 text-right">Debit</div>
-                                <div className="col-span-2 text-right">Credit</div>
-                                <div className="col-span-2"></div>
                             </div>
-                            {data.lines.map((line, index) => (
-                                <div key={index} className="grid grid-cols-12 gap-4 p-4 items-start border-b last:border-0 hover:bg-muted/10 transition-colors">
-                                    <div className="col-span-6 space-y-1">
-                                         <AccountSelect
-                                            accounts={chartOfAccounts}
-                                            value={line.chart_of_account_id}
-                                            onChange={(val) => updateLine(index, 'chart_of_account_id', val)}
-                                        />
-                                        {errors[`lines.${index}.chart_of_account_id`] && (
-                                            <p className="text-xs text-red-500">
-                                                {errors[`lines.${index}.chart_of_account_id`]}
-                                            </p>
-                                        )}
+
+                             <div className="space-y-2">
+                                <Label htmlFor="description" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Header Narration</Label>
+                                <Input
+                                    id="description"
+                                    value={data.description}
+                                    onChange={e => setData('description', e.target.value)}
+                                    placeholder="Overall purpose or summary..."
+                                    className=""
+                                />
+                                {errors.description && <p className="text-xs text-destructive">{errors.description}</p>}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm overflow-hidden">
+                        <CardHeader className="bg-muted/30 pb-4 flex flex-row items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="h-8 w-1 bg-primary rounded-full" />
+                                <div>
+                                    <CardTitle className="text-lg">Journal Lines</CardTitle>
+                                    <CardDescription>Select accounts and enter amounts.</CardDescription>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                {isBalanced ? (
+                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                        <CheckCircle2 className="mr-1 h-3 w-3" /> Balanced
+                                    </Badge>
+                                ) : (
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                        <Info className="mr-1 h-3 w-3" /> Unbalanced: {difference.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/10">
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="w-[45%] pl-6">Account & Narration</TableHead>
+                                        <TableHead className="w-[20%] text-right">Debit</TableHead>
+                                        <TableHead className="w-[20%] text-right">Credit</TableHead>
+                                        <TableHead className="w-[10%]"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {data.lines.map((line, index) => (
+                                        <TableRow key={index} className="group align-top hover:bg-muted/5 border-muted/40">
+                                            <TableCell className="pl-6 py-4">
+                                                <div className="space-y-2">
+                                                    <AccountSelect
+                                                        accounts={chartOfAccounts}
+                                                        value={line.chart_of_account_id}
+                                                        onChange={(val) => updateLine(index, 'chart_of_account_id', val)}
+                                                    />
+                                                    <Input
+                                                        placeholder="Line description (optional)"
+                                                        value={line.description}
+                                                        onChange={(e) => updateLine(index, 'description', e.target.value)}
+                                                        className="h-9 text-sm"
+                                                    />
+                                                    {errors[`lines.${index}.chart_of_account_id`] && (
+                                                        <p className="text-[10px] text-destructive font-medium uppercase tracking-tight">
+                                                            Required field
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={line.debit}
+                                                    onChange={e => updateLine(index, 'debit', e.target.value)}
+                                                    className="text-right font-mono"
+                                                    onFocus={(e) => e.target.select()}
+                                                    disabled={Number(line.credit) > 0}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="py-4">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={line.credit}
+                                                    onChange={e => updateLine(index, 'credit', e.target.value)}
+                                                    className="text-right font-mono"
+                                                    onFocus={(e) => e.target.select()}
+                                                    disabled={Number(line.debit) > 0}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="py-4 pr-6 text-right">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                                                    onClick={() => removeLine(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <div className="p-4 bg-muted/5 border-t border-muted/40 flex justify-between items-center">
+                                <Button type="button" variant="outline" size="sm" onClick={addLine} className="border-dashed hover:border-solid hover:bg-primary/5 transition-all">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Another Line
+                                </Button>
+                                
+                                <div className="flex gap-8 items-center text-sm">
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Total Debit</span>
+                                        <span className={cn("font-mono font-bold text-base", !isBalanced ? "text-amber-600" : "text-emerald-600")}>
+                                            {totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
                                     </div>
-                                    <div className="col-span-2">
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={line.debit}
-                                            onChange={e => updateLine(index, 'debit', e.target.value)}
-                                            className="text-right"
-                                            onFocus={(e) => e.target.select()}
-                                            disabled={parseFloat(String(line.credit)) > 0}
-                                        />
-                                        {errors[`lines.${index}.debit`] && <p className="text-xs text-red-500">{errors[`lines.${index}.debit`]}</p>}
-                                    </div>
-                                    <div className="col-span-2">
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={line.credit}
-                                            onChange={e => updateLine(index, 'credit', e.target.value)}
-                                            className="text-right"
-                                            onFocus={(e) => e.target.select()}
-                                            disabled={parseFloat(String(line.debit)) > 0}
-                                        />
-                                        {errors[`lines.${index}.credit`] && <p className="text-xs text-red-500">{errors[`lines.${index}.credit`]}</p>}
-                                    </div>
-                                    <div className="col-span-2 flex justify-end">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-muted-foreground hover:text-red-500"
-                                            onClick={() => removeLine(index)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider">Total Credit</span>
+                                        <span className={cn("font-mono font-bold text-base", !isBalanced ? "text-amber-600" : "text-emerald-600")}>
+                                            {totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-
-                         <div className="flex justify-end space-x-8 px-4 py-2 border rounded-md bg-muted/20">
-                            <div className="text-sm font-medium">Total:</div>
-                            <div className={cn("text-sm font-bold w-24 text-right", !isBalanced && "text-red-500")}>
-                                {totalDebit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                             </div>
-                            <div className={cn("text-sm font-bold w-24 text-right", !isBalanced && "text-red-500")}>
-                                {totalCredit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </div>
-                            <div className="w-10"></div>
-                        </div>
-                        {!isBalanced && (
-                             <p className="text-sm text-red-500 text-right">
-                                Debit and Credit must be equal. Difference: {Math.abs(totalDebit - totalCredit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                             </p>
-                        )}
-                    </CardContent>
-                </Card>
-            </form>
+                        </CardContent>
+                    </Card>
+                </form>
+            </div>
         </AppLayout>
     )
 }
@@ -279,29 +374,81 @@ function AccountSelect({ accounts, value, onChange }: { accounts: ChartOfAccount
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between font-normal"
+                    className={cn(
+                        "w-full justify-between bg-background",
+                        !value && "text-muted-foreground"
+                    )}
                 >
-                    {selectedAccount
-                        ? selectedAccount.name
-                        : "Select account..."}
+                    <span className="truncate">
+                        {selectedAccount
+                            ? `${selectedAccount.code} - ${selectedAccount.name}`
+                            : "Select account..."}
+                    </span>
+                    <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[400px] p-0" align="start">
+            <PopoverContent className="w-[450px] p-0 shadow-xl border-muted/40" align="start">
                 <Command>
-                    <CommandInput placeholder="Search account..." />
-                    <CommandList>
+                    <div className="flex items-center border-b px-3">
+                        <CommandInput placeholder="Search by name or code..." className="h-10 border-none focus:ring-0" />
+                    </div>
+                    <CommandList className="max-h-[300px]">
                         <CommandEmpty>No account found.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="p-2">
                             {accounts.map((account) => (
                                 <CommandItem
                                     key={account.id}
-                                    value={account.name}
+                                    value={`${account.code} ${account.name}`}
                                     onSelect={() => {
                                         onChange(String(account.id))
                                         setOpen(false)
                                     }}
+                                    className="flex items-center justify-between rounded-md px-3 py-2 cursor-pointer hover:bg-primary/10 data-[selected=true]:bg-primary/10 transition-colors"
                                 >
-                                    {account.name}
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-xs font-mono font-bold text-primary tracking-tight">{account.code}</span>
+                                        <span className="text-sm font-medium">{account.name}</span>
+                                    </div>
+                                    <Badge variant="outline" className="text-[10px] h-4 bg-muted/50 font-normal uppercase tracking-tighter opacity-70">
+                                        {account.type}
+                                    </Badge>
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+function TemplateSelect({ templates, onSelect, value }: { templates: JournalTemplate[], onSelect: (id: string) => void, value?: string | null }) {
+    const [open, setOpen] = useState(false)
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                 <Button variant="outline" role="combobox" aria-expanded={open} className="w-[250px] justify-between">
+                    <span className="truncate">{value || "Load from Template..."}</span>
+                    <Plus className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[250px] p-0" align="end">
+                <Command>
+                    <CommandInput placeholder="Search templates..." className="h-9" />
+                    <CommandList>
+                        <CommandEmpty>No template found.</CommandEmpty>
+                        <CommandGroup>
+                            {templates.map((template) => (
+                                <CommandItem
+                                    key={template.id}
+                                    value={template.name}
+                                    onSelect={() => {
+                                        onSelect(String(template.id))
+                                        setOpen(false)
+                                    }}
+                                >
+                                    {template.name}
                                 </CommandItem>
                             ))}
                         </CommandGroup>

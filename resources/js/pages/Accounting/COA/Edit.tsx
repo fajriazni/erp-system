@@ -1,7 +1,9 @@
 import React from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
+import * as COA from '@/actions/App/Http/Controllers/Accounting/ChartOfAccountController';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,7 +16,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Props {
     account: any;
@@ -43,7 +46,14 @@ export default function Edit({ account, parents, types }: Props) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(`/accounting/coa/${account.id}`);
+        put(COA.update.url(account.id));
+    };
+
+    const handleDelete = () => {
+        router.delete(COA.destroy.url(account.id), {
+            preserveScroll: true,
+            onSuccess: () => router.visit(COA.index.url()),
+        });
     };
 
     return (
@@ -56,18 +66,27 @@ export default function Edit({ account, parents, types }: Props) {
         >
             <Head title={`Edit ${account.code}`} />
 
-            <div className="max-w-2xl mx-auto">
-                <div className="mb-6">
-                    <Button variant="ghost" asChild className="-ml-4">
-                        <Link href="/accounting/coa">
+            <div className="w-full">
+                <PageHeader
+                    title="Edit Account"
+                    description={`${account.code} - ${account.name}`}
+                    className="mb-6"
+                >
+                    <Button variant="outline" asChild>
+                        <Link href={COA.index.url()}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
                         </Link>
                     </Button>
-                    <h1 className="text-3xl font-bold tracking-tight mt-2">Edit Account</h1>
-                    <p className="text-muted-foreground">{account.code} - {account.name}</p>
-                </div>
+                </PageHeader>
 
                 <form onSubmit={submit}>
+                    {(errors as any).error && (
+                        <Alert variant="destructive" className="mb-6">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{(errors as any).error}</AlertDescription>
+                        </Alert>
+                    )}
                     <Card>
                         <CardHeader>
                             <CardTitle>Account Details</CardTitle>
@@ -121,7 +140,7 @@ export default function Edit({ account, parents, types }: Props) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">-- No Parent --</SelectItem>
-                                        {parents.map(p => (
+                                        {Array.isArray(parents) && parents.map(p => (
                                             <SelectItem key={p.id} value={String(p.id)}>
                                                 {p.code} - {p.name}
                                             </SelectItem>
@@ -153,7 +172,7 @@ export default function Edit({ account, parents, types }: Props) {
                         </CardContent>
                         <CardFooter className="flex justify-between border-t p-6 bg-muted/50">
                              <Button variant="outline" asChild>
-                                <Link href="/accounting/coa">Cancel</Link>
+                                <Link href={COA.index.url()}>Cancel</Link>
                             </Button>
                             <Button type="submit" disabled={processing}>
                                 {processing ? 'Updating...' : 'Update Account'}

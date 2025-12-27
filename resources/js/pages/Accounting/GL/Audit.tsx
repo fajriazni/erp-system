@@ -60,7 +60,7 @@ export default function Audit({ lines }: PageProps) {
                                     <TableCell>{line.journal_entry ? new Date(line.journal_entry.date).toLocaleDateString() : '-'}</TableCell>
                                     <TableCell className="font-medium">{line.journal_entry?.reference_number}</TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col">
+                                        <div className="w-full">
                                             <span className="font-bold">{line.chart_of_account?.code}</span>
                                             <span className="text-xs text-muted-foreground">{line.chart_of_account?.name}</span>
                                         </div>

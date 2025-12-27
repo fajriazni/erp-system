@@ -2,8 +2,8 @@
 
 namespace App\Domain\Inventory\Services;
 
-use App\Models\StockMove;
 use App\Models\Product;
+use App\Models\StockMove;
 use Illuminate\Database\Eloquent\Model;
 
 class StockService
@@ -11,13 +11,9 @@ class StockService
     /**
      * Record a stock movement.
      *
-     * @param int $warehouseId
-     * @param int $productId
-     * @param float $quantity Positive for incoming, negative for outgoing
-     * @param string $type inbound, outbound, internal, adjustment
-     * @param Model|null $reference The source document (e.g. SalesOrder)
-     * @param string|null $description
-     * @return StockMove
+     * @param  float  $quantity  Positive for incoming, negative for outgoing
+     * @param  string  $type  inbound, outbound, internal, adjustment
+     * @param  Model|null  $reference  The source document (e.g. SalesOrder)
      */
     public function recordMove(
         int $warehouseId,
@@ -28,7 +24,7 @@ class StockService
         ?string $description = null
     ): StockMove {
         // Here we could add logic to check stock availability for outbound moves
-        
+
         $move = StockMove::create([
             'warehouse_id' => $warehouseId,
             'product_id' => $productId,
@@ -39,10 +35,12 @@ class StockService
             'reference_id' => $reference ? $reference->id : null,
             'description' => $description,
         ]);
-        
+
         // Update product stock on hand (denormalized convenience)
         // Ideally this should be a listener or a separate process, but for simplicity:
         $this->updateProductStock($productId);
+
+        event(new \App\Domain\Inventory\Events\StockMoveRecorded($move));
 
         return $move;
     }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
-    Info, BarChart, TrendingUp, AlertTriangle, PieChart, Clock, LineChart
+    Info, BarChart, TrendingUp, AlertTriangle, PieChart, Clock, LineChart, Activity
 } from 'lucide-react';
 
 export default function AnalyticsGuide() {
@@ -154,6 +154,7 @@ export default function AnalyticsGuide() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
+                        </div>
                     </div>
                 </Tabs>
             </div>

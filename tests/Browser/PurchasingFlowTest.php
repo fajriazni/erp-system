@@ -8,6 +8,12 @@ use App\Models\Warehouse;
 
 use function Pest\Laravel\actingAs;
 
+/**
+ * @property User $user
+ * @property Contact $vendor
+ * @property Warehouse $warehouse
+ * @property Product $product
+ */
 beforeEach(function () {
     $this->user = User::factory()->create();
     $this->vendor = Contact::factory()->create(['type' => 'vendor']);

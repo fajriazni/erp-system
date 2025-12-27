@@ -20,11 +20,14 @@ class CustomerInvoice extends Model
         'tax_amount',
         'total_amount',
         'notes',
+        'journal_entry_id',
+        'posted_at',
     ];
 
     protected $casts = [
         'date' => 'date',
         'due_date' => 'date',
+        'posted_at' => 'datetime',
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
@@ -38,5 +41,10 @@ class CustomerInvoice extends Model
     public function lines()
     {
         return $this->hasMany(CustomerInvoiceLine::class);
+    }
+
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 }

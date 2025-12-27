@@ -33,7 +33,7 @@ export default function AssetCategoriesCreate({ accounts }: { accounts: any[] })
         >
             <Head title="Create Asset Category" />
 
-            <form onSubmit={submit} className="max-w-3xl mx-auto space-y-6">
+            <form onSubmit={submit} className="w-full space-y-6">
                  <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight">Create Category</h2>

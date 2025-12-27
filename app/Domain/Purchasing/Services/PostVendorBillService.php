@@ -23,7 +23,9 @@ class PostVendorBillService
 
         DB::transaction(function () use ($bill) {
             // Run 3-Way Match
-            $this->matchingService->performMatching($bill);
+            if ($bill->purchase_order_id) {
+                $this->matchingService->performMatching($bill);
+            }
 
             $bill->update(['status' => 'posted']);
 
@@ -31,7 +33,7 @@ class PostVendorBillService
             // TODO: In the future, these should be configurable settings
             $apAccount = ChartOfAccount::where('code', '2100')->firstOrFail(); // Accounts Payable
             $clearingAccount = ChartOfAccount::where('code', '2110')->firstOrFail(); // Unbilled Payables (GR/IR)
-            $inputTaxAccount = ChartOfAccount::where('code', '1500')->first(); // Input Tax / VAT Receivable
+            $inputTaxAccount = ChartOfAccount::where('code', '1401')->first(); // Input Tax / PPN Masukan
 
             // Prepare Journal Entry Lines
             $lines = [];
@@ -61,15 +63,16 @@ class PostVendorBillService
             } elseif ($bill->tax_amount > 0 && ! $inputTaxAccount) {
                 // If tax account missing, dump into clearing for now or throw error
                 // Ideally throw error to force setup
-                throw new Exception('Input Tax Account (1500) is missing in Chart of Accounts.');
+                throw new Exception('Input Tax Account (1401) is missing in Chart of Accounts.');
             }
 
             // Create Journal Entry
-            $this->createJournalEntryService->execute(
-                \Carbon\Carbon::parse($bill->date)->format('Y-m-d'),
-                $bill->bill_number,
-                "Vendor Bill #{$bill->bill_number} - {$bill->vendor->name}", // Vendor name might be company_name? using name as per previous fix
-                $lines
+            $journalEntry = $this->createJournalEntryService->execute(
+                $bill->date->format('Y-m-d'),
+                $bill->document_number,
+                "Vendor Bill #{$bill->document_number} - {$bill->vendor->name}",
+                $lines,
+                auth()->user()
             );
         });
     }
