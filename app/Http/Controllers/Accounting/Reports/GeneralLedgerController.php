@@ -76,8 +76,20 @@ class GeneralLedgerController extends Controller
             $validated['period_id'] ?? null
         );
 
-        // TODO: Implement PDF/Excel export
-        // For now, return JSON
-        return response()->json($reportData);
+        $startDate = $validated['start_date'] ?? date('Y-m-01');
+        $endDate = $validated['end_date'] ?? date('Y-m-t');
+        $filename = "General_Ledger_{$startDate}_{$endDate}";
+
+        $export = new \App\Exports\Accounting\GeneralLedgerExport(
+            $reportData,
+            $startDate,
+            $endDate
+        );
+
+        if ($validated['format'] === 'pdf') {
+            return \Maatwebsite\Excel\Facades\Excel::download($export, $filename . '.pdf', \Maatwebsite\Excel\Excel::DOMPDF);
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $filename . '.xlsx');
     }
 }

@@ -74,16 +74,26 @@ export default function GeneralLedger({ accounts, periods, filters, reportData }
                     description="View detailed account movements and running balances"
                 >
                     {reportData && (
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
-                                <FileDown className="mr-2 h-4 w-4" />
-                                Export PDF
-                            </Button>
-                            <Button variant="outline" size="sm">
-                                <FileDown className="mr-2 h-4 w-4" />
-                                Export Excel
-                            </Button>
-                        </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => {
+                                    const url = new URL(window.location.href)
+                                    url.pathname = '/accounting/reports/general-ledger/export'
+                                    url.searchParams.set('format', 'pdf')
+                                    window.open(url.toString(), '_blank')
+                                }}>
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Export PDF
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => {
+                                    const url = new URL(window.location.href)
+                                    url.pathname = '/accounting/reports/general-ledger/export'
+                                    url.searchParams.set('format', 'excel')
+                                    window.open(url.toString(), '_blank')
+                                }}>
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Export Excel
+                                </Button>
+                            </div>
                     )}
                 </PageHeader>
 

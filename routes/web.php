@@ -604,9 +604,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/bank/reconciliation', function () {
             return Inertia::render('Accounting/Bank/Reconciliation');
         })->name('bank.reconciliation');
-        Route::get('/bank/petty-cash', function () {
-            return Inertia::render('Accounting/Bank/PettyCash');
-        })->name('bank.petty-cash');
+        Route::get('/bank/reconciliation', function () {
+            return Inertia::render('Accounting/Bank/Reconciliation');
+        })->name('bank.reconciliation');
+        // Route::get('/bank/petty-cash', function () { ... }) replaced by finance.petty-cash
 
         // Closing & Reporting
         // Period Management
@@ -654,8 +655,54 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return Inertia::render('Finance/Dashboard');
         })->name('dashboard');
 
+        // Treasury / Bank Accounts
+        Route::resource('treasury', \App\Http\Controllers\Finance\BankAccountController::class);
+        Route::post('treasury/{bankAccount}/transaction', [\App\Http\Controllers\Finance\BankTransactionController::class, 'store'])->name('treasury.transaction');
+        // Route::post('treasury/transfer', [\App\Http\Controllers\Finance\BankTransactionController::class, 'transfer'])->name('treasury.transfer'); // Deprecated by FundTransferController
+        
+        // Fund Transfers
+        Route::get('transfers', [\App\Http\Controllers\Finance\FundTransferController::class, 'index'])->name('transfer.index');
+        Route::post('transfers', [\App\Http\Controllers\Finance\FundTransferController::class, 'store'])->name('transfer.store');
+
+        // Multi-Currency
+        Route::get('currency', [\App\Http\Controllers\Finance\CurrencyController::class, 'index'])->name('currency.index');
+        Route::post('currency', [\App\Http\Controllers\Finance\CurrencyController::class, 'store'])->name('currency.store');
+        Route::put('currency/{currency}', [\App\Http\Controllers\Finance\CurrencyController::class, 'update'])->name('currency.update');
+        Route::post('currency/rates', [\App\Http\Controllers\Finance\CurrencyController::class, 'storeRate'])->name('currency.rate.store');
+        
+        // Petty Cash
+        Route::resource('petty-cash', \App\Http\Controllers\Finance\PettyCashController::class);
+
+        // Reconciliation
+        Route::resource('reconciliation', \App\Http\Controllers\Finance\BankReconciliationController::class);
+        Route::post('reconciliation/{reconciliation}/finalize', [\App\Http\Controllers\Finance\BankReconciliationController::class, 'finalize'])->name('reconciliation.finalize');
+
         Route::resource('budgets', \App\Http\Controllers\Finance\BudgetController::class);
         Route::post('budgets/check', [\App\Http\Controllers\Finance\BudgetController::class, 'checkBudget'])->name('budgets.check');
+
+        // Analytics & Strategic
+        Route::get('/forecast', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Cash Flow Forecast']); })->name('forecast');
+        Route::get('/ratios', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Liquidity Ratios']); })->name('ratios');
+        Route::get('/spend', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Spend Analysis']); })->name('spend');
+
+        // Budgeting sub-routes
+        Route::prefix('budget')->name('budget.')->group(function () {
+            Route::get('/planning', function () { return redirect()->route('finance.budgets.index'); })->name('planning');
+            Route::get('/allocation', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Budget Allocation']); })->name('allocation');
+            Route::get('/monitoring', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Budget Monitoring']); })->name('monitoring');
+            Route::get('/variance', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Budget Variance']); })->name('variance');
+        });
+
+        // Expense Management
+        Route::prefix('expenses')->name('expenses.')->group(function () {
+            Route::resource('reimbursements', \App\Http\Controllers\Finance\ExpenseClaimController::class);
+            Route::post('reimbursements/{reimbursement}/submit', [\App\Http\Controllers\Finance\ExpenseClaimController::class, 'submit'])->name('reimbursements.submit');
+            Route::post('reimbursements/{reimbursement}/approve', [\App\Http\Controllers\Finance\ExpenseClaimController::class, 'approve'])->name('reimbursements.approve');
+            Route::post('reimbursements/{reimbursement}/reject', [\App\Http\Controllers\Finance\ExpenseClaimController::class, 'reject'])->name('reimbursements.reject');
+            Route::post('reimbursements/{reimbursement}/pay', [\App\Http\Controllers\Finance\ExpenseClaimController::class, 'pay'])->name('reimbursements.pay');
+            Route::get('/travel', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Travel Expenses']); })->name('travel');
+            Route::get('/cards', function () { return Inertia::render('Finance/Placeholder', ['title' => 'Corporate Cards']); })->name('cards');
+        });
     });
 
     Route::get('/hrm', function () {

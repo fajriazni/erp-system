@@ -60,6 +60,7 @@ class GeneralLedgerService
                 return [
                     'date' => $line->journalEntry->date->format('Y-m-d'),
                     'journal_entry_id' => $line->journal_entry_id,
+                    'reference_number' => $line->journalEntry->reference_number,
                     'description' => $line->description ?? $line->journalEntry->description,
                     'debit' => $debit,
                     'credit' => $credit,

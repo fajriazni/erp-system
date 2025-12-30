@@ -1,0 +1,24 @@
+
+> build
+> vite build
+
+vite v7.2.7 building client environment for production...
+[plugin @laravel/vite-plugin-wayfinder] Types generated for actions, routes, form variants
+transforming...
+✓ 1568 modules transformed.
+✗ Build failed in 11.00s
+error during build:
+[vite]: Rollup failed to resolve import "@radix-ui/react-icons" from "/Users/fajri/Projects/MINE/erp-system/resources/js/pages/Finance/Treasury/Create.tsx".
+This is most likely unintended because it can break your application at runtime.
+If you do want to externalize this module explicitly add it to
+`build.rollupOptions.external`
+    at viteLog (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33634:57)
+    at file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33668:73
+    at onwarn (file:///Users/fajri/Projects/MINE/erp-system/node_modules/@vitejs/plugin-react/dist/index.js:55:7)
+    at file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33668:28
+    at onRollupLog (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33663:63)
+    at onLog (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33466:4)
+    at file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:20866:32
+    at Object.logger [as onLog] (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:22748:9)
+    at ModuleLoader.handleInvalidResolvedId (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:21492:26)
+    at file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:21450:26

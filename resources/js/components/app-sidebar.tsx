@@ -382,10 +382,10 @@ const menuMap: Record<string, MenuGroup[]> = {
             group: 'Receivables (AR)',
             items: [
                 { title: "Customer Invoices", url: "/accounting/ar/invoices", icon: Receipt },
-                { title: "Payment Collection", url: "/finance/ar/collections", icon: HandCoins },
-                { title: "AR Aging Analysis", url: "/finance/ar/aging", icon: Hourglass },
-                { title: "Dunning Management", url: "/finance/ar/dunning", icon: Bell },
-                { title: "Credit Limit Management", url: "/finance/ar/credit-limit", icon: ShieldAlert },
+                { title: "Payment Collection", url: "/accounting/ar/payments", icon: HandCoins },
+                { title: "AR Aging Analysis", url: "/accounting/ar/aging", icon: Hourglass },
+                { title: "Dunning Management", url: "/accounting/ar/dunning", icon: Bell },
+                { title: "Credit Limit Management", url: "/accounting/ar/credit", icon: ShieldAlert },
                 { title: "Credit Notes (Returns)", url: "/accounting/notes?type=credit", icon: Undo2 },
             ]
         },
@@ -393,27 +393,27 @@ const menuMap: Record<string, MenuGroup[]> = {
             group: 'Payables (AP)',
             items: [
                 { title: "Vendor Bills", url: "/accounting/bills", icon: Receipt },
-                { title: "Payment Scheduling", url: "/finance/ap/scheduling", icon: CalendarDays },
-                { title: "Payment Runs", url: "/finance/ap/payment-runs", icon: Banknote },
-                { title: "AP Aging Analysis", url: "/finance/ap/aging", icon: Hourglass },
-                { title: "Vendor Payment Verification", url: "/finance/ap/verification", icon: FileCheck },
+                { title: "Payment Scheduling", url: "/accounting/ap/payments", icon: CalendarDays },
+                { title: "Payment Runs", url: "/accounting/vendor-payments", icon: Banknote },
+                { title: "AP Aging Analysis", url: "/accounting/ap/aging", icon: Hourglass },
+                { title: "Vendor Payment Verification", url: "/accounting/audit", icon: FileCheck },
                 { title: "Debit Notes (Returns)", url: "/accounting/notes?type=debit", icon: FileText },
             ]
         },
         {
             group: 'Cash & Treasury',
             items: [
-                { title: "Bank Accounts", url: "/finance/cash/accounts", icon: Landmark },
-                { title: "Bank Reconciliation", url: "/finance/cash/reconciliation", icon: Scale },
-                { title: "Petty Cash", url: "/finance/cash/petty-cash", icon: Wallet },
-                { title: "Fund Transfer", url: "/finance/cash/transfer", icon: ArrowRightLeft },
-                { title: "Multi-Currency Management", url: "/finance/cash/currency", icon: RefreshCw },
+                { title: "Bank Accounts", url: "/accounting/bank/sync", icon: Landmark },
+                { title: "Bank Reconciliation", url: "/accounting/bank/reconciliation", icon: Scale },
+                { title: "Petty Cash", url: "/finance/petty-cash", icon: Wallet },
+                { title: "Fund Transfer", url: "/finance/transfers", icon: ArrowRightLeft },
+                { title: "Multi-Currency", url: "/finance/currency", icon: RefreshCw },
             ]
         },
         {
             group: 'Budgeting & Planning',
             items: [
-                { title: "Budget Planning", url: "/finance/budget/planning", icon: Target },
+                { title: "Budget Planning", url: "/finance/budgets", icon: Target },
                 { title: "Budget Allocation", url: "/finance/budget/allocation", icon: PieChart },
                 { title: "Budget Monitoring", url: "/finance/budget/monitoring", icon: Activity },
                 { title: "Variance Analysis", url: "/finance/budget/variance", icon: BarChart },

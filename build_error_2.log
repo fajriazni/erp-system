@@ -1,0 +1,53 @@
+
+> build
+> vite build
+
+vite v7.2.7 building client environment for production...
+[plugin @laravel/vite-plugin-wayfinder] Types generated for actions, routes, form variants
+transforming...
+✓ 4244 modules transformed.
+✗ Build failed in 14.99s
+error during build:
+resources/js/pages/Purchasing/rfqs/show.tsx (12:16): "invite" is not exported by "resources/js/routes/purchasing/rfqs/index.ts", imported by "resources/js/pages/Purchasing/rfqs/show.tsx".
+file: /Users/fajri/Projects/MINE/erp-system/resources/js/pages/Purchasing/rfqs/show.tsx:12:16
+
+10: import { Badge } from '@/components/ui/badge';
+11: import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle, Crown } from 'lucide-react';
+12: import { index, invite, bid } from '@/routes/purchasing/rfqs';
+                    ^
+13: import { award } from '@/routes/purchasing/quotations';
+14: import {
+
+    at getRollupError (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at error (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/parseAst.js:397:42)
+    at Module.error (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:16875:16)
+    at Module.traceVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:17327:29)
+    at ModuleScope.findVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:14997:39)
+    at FunctionScope.findVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at FunctionBodyScope.findVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at ReturnValueScope.findVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at FunctionBodyScope.findVariable (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:5620:38)
+    at MemberExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:7324:49)
+    at CallExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at CallExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:12058:15)
+    at CallExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2781:28)
+    at CallExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:12058:15)
+    at ExpressionStatement.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at BlockStatement.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2781:28)
+    at ArrowFunctionExpression.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at VariableDeclarator.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at VariableDeclaration.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2781:28)
+    at BlockStatement.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2781:28)
+    at FunctionDeclaration.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at ExportDefaultDeclaration.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2785:23)
+    at Program.bind (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:2781:28)
+    at Module.bindReferences (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:16854:18)
+    at Graph.sortModules (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:22646:20)
+    at Graph.build (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:22544:14)
+    at async file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:23234:13
+    at async catchUnfinishedHookActions (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:22705:16)
+    at async rollupInternal (file:///Users/fajri/Projects/MINE/erp-system/node_modules/rollup/dist/es/shared/node-entry.js:23229:5)
+    at async buildEnvironment (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33540:12)
+    at async Object.build (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33899:19)
+    at async Object.buildApp (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/chunks/config.js:33896:153)
+    at async CAC.<anonymous> (file:///Users/fajri/Projects/MINE/erp-system/node_modules/vite/dist/node/cli.js:629:3)

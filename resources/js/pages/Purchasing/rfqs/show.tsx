@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCurrency } from "@/hooks/use-currency"
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Mail, Plus, Gavel, CheckCircle, XCircle, Crown } from 'lucide-react';
-import { index, invite, bid } from '@/routes/purchasing/rfqs';
+import { index, bid } from '@/routes/purchasing/rfqs';
 import { award } from '@/routes/purchasing/quotations';
 import {
     Dialog,
@@ -99,7 +99,7 @@ export default function Show({ rfq, vendors, products, suggestedVendorIds = [] }
 
     const handleInviteSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        postInvite(invite.url(rfq.id), {
+        postInvite(route('purchasing.rfqs.invite', rfq.id), {
             onSuccess: () => {
                 setInviteOpen(false);
                 resetInvite();
